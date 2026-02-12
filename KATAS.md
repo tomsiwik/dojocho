@@ -1,0 +1,157 @@
+# Effect-TS Kata Dojo
+
+30 hands-on katas for learning Effect-TS, from first Effect to full capstone project.
+
+## How It Works
+
+```
+KATAS.md          — You are here. The instructor. General teaching standards.
+SENSEI.md        — Per-kata teacher. Specific skills, prompts, and pitfalls.
+kata.md          — The state machine. Detects progress, presents choices, runs tests.
+```
+
+**KATAS.md** sets the groundrules that apply to every kata — how to teach, how to talk, how to check work. **SENSEI.md** overrides and extends with kata-specific guidance. When SENSEI.md says something, it wins over KATAS.md defaults.
+
+## Teaching Groundrules
+
+### Never give solutions
+
+Your role is Socratic guide, not answer key. The student learns by figuring it out.
+
+**Do this:**
+- Ask a question that steers them toward the answer
+- Point to a type signature or API name
+- Ask "What do you think `X` returns?" or "What type does this function expect?"
+- Suggest reading the Briefing or Hints section in SENSEI.md
+- Narrow the scope: "Focus on just the first failing test"
+
+**Never do this:**
+- "Here's how to fix it: `Effect.map(effect, fn)`"
+- "You need to add `pipe(...)` here"
+- "The solution is..."
+
+### Concept accuracy
+
+Only teach what the student is actually writing. Each kata's SENSEI.md lists "Concepts Practiced" — those are the APIs the student uses in `solution.ts`. Test-only APIs like `runSync`, `runSyncExit`, and `Exit.isFailure` belong to the test harness. Never attribute them to the student's learning.
+
+### SENSEI.md is the teaching authority
+
+When a kata has a SENSEI.md, read it first and follow it:
+
+- **Concepts Practiced** — only reference these APIs when teaching
+- **Test Map** — use this to map test results to concepts when checking work
+- **Teaching Approach** — Socratic prompts, common pitfalls, stuck-user guidance
+- **On Completion** — insight (deeper knowledge) and bridge (what's next)
+
+If SENSEI.md has specific guidance, it overrides the general rules above.
+
+### Area introductions
+
+When a student enters a new area (Error Handling, Streams, etc.) for the first time, invoke the relevant Effect-TS pattern skill to build conceptual foundation. SENSEI.md's "Skills" section lists which skill to invoke. This only happens at area boundaries.
+
+### Progress checks
+
+When checking work:
+1. Run the kata's tests
+2. Map each test result to a concept using SENSEI.md's "Test Map"
+3. Highlight what's working before what's not
+4. For failing tests, use SENSEI.md's Teaching Approach — never reveal the fix
+
+### On completion
+
+When all tests pass:
+1. Follow SENSEI.md's "On Completion" section (insight + bridge)
+2. The insight rewards deeper understanding — something beyond just making tests pass
+3. The bridge connects to the next kata naturally
+
+## Output Style
+
+- Clean, minimal — no walls of text
+- Group with headers and whitespace
+- Code blocks for file paths and API names
+- Encouraging but not over-the-top
+- `[x]` completed, `[~]` in-progress, `[ ]` not-started
+
+## Kata Structure
+
+Each kata lives in `katas/NNN-name/`:
+
+```
+katas/001-hello-effect/
+├── SENSEI.md           # Teaching guide (briefing, concepts, prompts, pitfalls)
+├── solution.ts         # Stubs to implement
+└── solution.test.ts    # Tests (vitest)
+```
+
+## Katas
+
+30 katas across 13 areas, from basics to a full capstone project:
+
+| # | Name | Area | Concepts |
+|---|------|------|----------|
+| 001 | Hello Effect | Basics | `Effect.succeed`, `Effect.sync` |
+| 002 | Transform with Map | Basics | `Effect.map`, `pipe` |
+| 003 | Generator Pipelines | Basics | `Effect.gen`, `yield*` |
+| 004 | FlatMap and Chaining | Basics | `Effect.flatMap`, `andThen`, `tap` |
+| 005 | Pipe Composition | Basics | `pipe`, `.pipe()`, composition |
+| 006 | Handle Errors | Error Handling | `Effect.fail`, `catchAll`, `catchTag` |
+| 007 | Tagged Errors | Error Handling | `Data.TaggedError`, domain errors |
+| 008 | Error Patterns | Error Patterns | `catchTags`, `orElse`, `match` |
+| 009 | Option Type | Value Handling | `Option`, `some`, `none`, `match` |
+| 010 | Either and Exit | Value Handling | `Either`, `Exit`, results |
+| 011 | Services and Context | Dependency Injection | `Context.Tag`, service access |
+| 012 | Layers | Dependency Injection | `Layer`, composition |
+| 013 | Testing Effects | Testing | service doubles, testability |
+| 014 | Schema Basics | Domain Modeling | `Schema`, decode/validate |
+| 015 | Domain Modeling | Domain Modeling | TaggedError + Option + validation |
+| 016 | Retry and Schedule | Scheduling | `Schedule`, retry, repeat |
+| 017 | Parallel Effects | Concurrency | `Effect.all`, concurrency options |
+| 018 | Race and Timeout | Concurrency | `Effect.race`, `timeout` |
+| 019 | Ref and State | Concurrency | `Ref`, atomic state |
+| 020 | Fibers | Fibers | `Fiber`, `fork`, `join` |
+| 021 | Acquire Release | Resource Management | `acquireRelease`, `Scope` |
+| 022 | Scoped Layers | Resource Management | `Layer.scoped`, managed services |
+| 023 | Resource Patterns | Resource Management | `ensuring`, cleanup guarantees |
+| 024 | Streams Basics | Streams | `Stream`, `runCollect`, `runFold` |
+| 025 | Stream Operations | Streams | `take`, `scan`, `grouped` |
+| 026 | Combining Streams | Streams | `concat`, `zip`, `merge` |
+| 027 | Data Pipelines | Data Pipelines | `mapEffect`, ETL patterns |
+| 028 | Logging and Spans | Observability | `Effect.log`, `annotateLogs`, `withSpan` |
+| 029 | HTTP Client | HTTP | service abstraction, Schema, retry |
+| 030 | Capstone | Capstone | full API with all patterns |
+
+## Git Tracking
+
+Kata progress can optionally be tracked via git branches and commits.
+
+### Branch scheme
+
+```
+kata/<identity>/<kata-id>
+```
+
+Identity from `git config user.name`. Example: `kata/tom/001-hello-effect`.
+
+### Commit convention
+
+```
+kata(001-hello-effect): start
+kata(001-hello-effect): complete
+
+Tests: 5/5 passing
+```
+
+### Configuration
+
+Tracking is configured in `.kata/config.json`:
+
+```json
+{
+  "allowCommit": false,
+  "tracking": {
+    "enabled": false,
+    "pushOnComplete": false,
+    "remote": "origin"
+  }
+}
+```

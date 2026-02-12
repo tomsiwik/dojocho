@@ -1,0 +1,400 @@
+{
+  "completed": 0,
+  "total": 30,
+  "transitions": [],
+  "katas": {
+    "001-hello-effect": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 5,
+      "total": 5,
+      "failedTests": [
+        "001 — Hello Effect hello() succeeds with 'Hello, Effect!'",
+        "001 — Hello Effect lazyRandom() produces a number between 0 and 1",
+        "001 — Hello Effect lazyRandom() is lazy (re-evaluates on each run)",
+        "001 — Hello Effect greet('World') succeeds with 'Hello, World!'",
+        "001 — Hello Effect greet('Effect') succeeds with 'Hello, Effect!'"
+      ]
+    },
+    "002-transform-with-map": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 7,
+      "total": 7,
+      "failedTests": [
+        "002 — Transform with Map double(5) succeeds with 10",
+        "002 — Transform with Map double(0) succeeds with 0",
+        "002 — Transform with Map double(-3) succeeds with -6",
+        "002 — Transform with Map strlen('hello') succeeds with 5",
+        "002 — Transform with Map strlen('') succeeds with 0",
+        "002 — Transform with Map doubleAndFormat(5) succeeds with 'Result: 10'",
+        "002 — Transform with Map doubleAndFormat(0) succeeds with 'Result: 0'"
+      ]
+    },
+    "003-generator-pipelines": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 7,
+      "total": 7,
+      "failedTests": [
+        "003 — Generator Pipelines fetchAndDouble(5) succeeds with 10",
+        "003 — Generator Pipelines fetchAndDouble(0) succeeds with 0",
+        "003 — Generator Pipelines combinedLength('hello', 'world') succeeds with 10",
+        "003 — Generator Pipelines combinedLength('', 'test') succeeds with 4",
+        "003 — Generator Pipelines pipeline('5') succeeds with 'Result: 10'",
+        "003 — Generator Pipelines pipeline('0') succeeds with 'Result: 0'",
+        "003 — Generator Pipelines pipeline('abc') fails with ParseError"
+      ]
+    },
+    "004-flatmap-and-chaining": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 6,
+      "total": 6,
+      "failedTests": [
+        "004 — FlatMap and Chaining lookupAndGreet(0) succeeds with 'Hello, Alice!'",
+        "004 — FlatMap and Chaining lookupAndGreet(1) succeeds with 'Hello, Bob!'",
+        "004 — FlatMap and Chaining lookupAndGreet(99) fails with 'NotFound'",
+        "004 — FlatMap and Chaining validateAndProcess('hello') succeeds with 'HELLO'",
+        "004 — FlatMap and Chaining validateAndProcess('') fails with 'EmptyInput'",
+        "004 — FlatMap and Chaining logAndReturn records side effect and returns value"
+      ]
+    },
+    "005-pipe-composition": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "005 — Pipe Composition processNumber(5) succeeds with '11'",
+        "005 — Pipe Composition processNumber(0) succeeds with '1'",
+        "005 — Pipe Composition processUser('Alice', 30) succeeds with 'Alice (age 30)'",
+        "005 — Pipe Composition processUser('', 30) fails with 'InvalidName'",
+        "005 — Pipe Composition processUser('Alice', -1) fails with 'InvalidAge'",
+        "005 — Pipe Composition pipeline('5') succeeds with 'Value: 5'",
+        "005 — Pipe Composition pipeline('abc') fails",
+        "005 — Pipe Composition pipeline('-3') fails with not positive"
+      ]
+    },
+    "006-handle-errors": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "006 — Handle Errors divide(10, 2) succeeds with 5",
+        "006 — Handle Errors divide(10, 0) fails with DivisionByZero",
+        "006 — Handle Errors safeDivide(10, 2) succeeds with 5",
+        "006 — Handle Errors safeDivide(10, 0) recovers with 0",
+        "006 — Handle Errors parseInteger('42') succeeds with 42",
+        "006 — Handle Errors parseInteger('-7') succeeds with -7",
+        "006 — Handle Errors parseInteger('abc') fails with ParseError",
+        "006 — Handle Errors parseInteger('3.14') fails with ParseError"
+      ]
+    },
+    "007-tagged-errors": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 10,
+      "total": 10,
+      "failedTests": [
+        "007 — Tagged Errors findUser findUser(1) succeeds with { id: 1, name: 'User 1' }",
+        "007 — Tagged Errors findUser findUser(42) succeeds with { id: 42, name: 'User 42' }",
+        "007 — Tagged Errors findUser findUser(-1) fails with NotFoundError",
+        "007 — Tagged Errors validateAge validateAge(25) succeeds with 25",
+        "007 — Tagged Errors validateAge validateAge(0) succeeds with 0",
+        "007 — Tagged Errors validateAge validateAge(150) succeeds with 150",
+        "007 — Tagged Errors validateAge validateAge(-1) fails with ValidationError",
+        "007 — Tagged Errors validateAge validateAge(151) fails with ValidationError",
+        "007 — Tagged Errors findUserOrDefault findUserOrDefault(1) succeeds with { id: 1, name: 'User 1' }",
+        "007 — Tagged Errors findUserOrDefault findUserOrDefault(-1) recovers with { id: 0, name: 'Guest' }"
+      ]
+    },
+    "008-error-patterns": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "008 — Error Patterns handleAllErrors handles NetworkError",
+        "008 — Error Patterns handleAllErrors handles TimeoutError",
+        "008 — Error Patterns handleAllErrors handles AuthError",
+        "008 — Error Patterns handleAllErrors passes through success",
+        "008 — Error Patterns withFallback uses primary on success",
+        "008 — Error Patterns withFallback uses fallback on failure",
+        "008 — Error Patterns toResult wraps success",
+        "008 — Error Patterns toResult wraps failure"
+      ]
+    },
+    "009-option-type": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 11,
+      "total": 11,
+      "failedTests": [
+        "009 — Option Type fromNullable converts value to Some",
+        "009 — Option Type fromNullable converts null to None",
+        "009 — Option Type fromNullable converts undefined to None",
+        "009 — Option Type describe returns 'Found: hello' for Some",
+        "009 — Option Type describe returns 'Nothing' for None",
+        "009 — Option Type doubleOption doubles Some(5) to Some(10)",
+        "009 — Option Type doubleOption returns None for None",
+        "009 — Option Type safeDivide(10, 2) returns Some(5)",
+        "009 — Option Type safeDivide(10, 0) returns None",
+        "009 — Option Type getOrDefault extracts Some value",
+        "009 — Option Type getOrDefault returns default for None"
+      ]
+    },
+    "010-either-and-exit": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 7,
+      "total": 7,
+      "failedTests": [
+        "010 — Either and Exit safeRun wraps success",
+        "010 — Either and Exit safeRun wraps failure",
+        "010 — Either and Exit validatePositive returns Right for positive",
+        "010 — Either and Exit validatePositive returns Left for zero",
+        "010 — Either and Exit validatePositive returns Left for negative",
+        "010 — Either and Exit inspectExit returns success string",
+        "010 — Either and Exit inspectExit returns failure string"
+      ]
+    },
+    "011-services-and-context": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 2,
+      "total": 2,
+      "failedTests": [
+        "011 — Services and Context getRandomNumber returns the service value",
+        "011 — Services and Context rollDice formats the result"
+      ]
+    },
+    "012-layers": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 2,
+      "total": 2,
+      "failedTests": [
+        "012 — Layers ConfigLive provides baseUrl",
+        "012 — Layers getEndpoint returns full URL"
+      ]
+    },
+    "013-testing-effects": {
+      "status": "in-progress",
+      "passed": 1,
+      "failed": 3,
+      "total": 4,
+      "failedTests": [
+        "013 — Testing Effects getUser(1) returns 'User: Alice'",
+        "013 — Testing Effects getUserSafe(1) returns 'User: Alice'",
+        "013 — Testing Effects getUserSafe(99) returns 'User: Unknown'"
+      ]
+    },
+    "014-schema-basics": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 6,
+      "total": 6,
+      "failedTests": [
+        "014 — Schema Basics parseUser succeeds with valid input",
+        "014 — Schema Basics parseUser fails with missing field",
+        "014 — Schema Basics parseUser fails with wrong type",
+        "014 — Schema Basics parseStrictUser succeeds with valid input",
+        "014 — Schema Basics parseStrictUser fails with empty name",
+        "014 — Schema Basics parseStrictUser fails with negative age"
+      ]
+    },
+    "015-domain-modeling": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "015 — Domain Modeling validateEmail succeeds with valid email",
+        "015 — Domain Modeling validateEmail fails without @",
+        "015 — Domain Modeling validateAge succeeds with valid age",
+        "015 — Domain Modeling validateAge fails with negative",
+        "015 — Domain Modeling createUser succeeds with valid input",
+        "015 — Domain Modeling createUser fails with invalid email",
+        "015 — Domain Modeling formatUser without nickname",
+        "015 — Domain Modeling formatUser with nickname"
+      ]
+    },
+    "016-retry-and-schedule": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "016 — Retry and Schedule retryThreeTimes succeeds on first try",
+        "016 — Retry and Schedule flakyEffect that fails 2 times then succeeds",
+        "016 — Retry and Schedule flakyEffect that fails 5 times still fails after 3 retries",
+        "016 — Retry and Schedule repeatCollect collects repeated values"
+      ]
+    },
+    "017-parallel-effects": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "017 — Parallel Effects fetchAll runs effects and collects results",
+        "017 — Parallel Effects fetchAll fails if any effect fails",
+        "017 — Parallel Effects processWithLimit applies function to each item",
+        "017 — Parallel Effects processWithLimit fails if any processing fails"
+      ]
+    },
+    "018-race-and-timeout": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "018 — Race and Timeout raceTwo returns the faster result",
+        "018 — Race and Timeout withTimeout succeeds within time",
+        "018 — Race and Timeout withTimeoutFallback returns fallback on slow effect"
+      ]
+    },
+    "019-ref-and-state": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "019 — Ref and State counter(5) returns 5",
+        "019 — Ref and State counter(0) returns 0",
+        "019 — Ref and State accumulate collects all items",
+        "019 — Ref and State getAndIncrement returns current then increments"
+      ]
+    },
+    "020-fibers": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "020 — Fibers forkAndJoin returns the effect result",
+        "020 — Fibers forkBoth returns both results",
+        "020 — Fibers forkAndInterrupt returns 'interrupted'"
+      ]
+    },
+    "021-acquire-release": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 2,
+      "total": 2,
+      "failedTests": [
+        "021 — Acquire Release useResource acquires, uses, and releases",
+        "021 — Acquire Release useTwoResources releases in reverse order"
+      ]
+    },
+    "022-scoped-layers": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 1,
+      "total": 1,
+      "failedTests": [
+        "022 — Scoped Layers DatabaseLive connects and disconnects"
+      ]
+    },
+    "023-resource-patterns": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 2,
+      "total": 2,
+      "failedTests": [
+        "023 — Resource Patterns withEnsuring runs all cleanup",
+        "023 — Resource Patterns releaseOnFailure still releases on error"
+      ]
+    },
+    "024-streams-basics": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 5,
+      "total": 5,
+      "failedTests": [
+        "024 — Streams Basics streamFromArray collects all elements",
+        "024 — Streams Basics streamFromArray handles empty array",
+        "024 — Streams Basics filterAndDouble returns [4, 8]",
+        "024 — Streams Basics sumStream sums all elements",
+        "024 — Streams Basics sumStream of empty is 0"
+      ]
+    },
+    "025-stream-operations": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 5,
+      "total": 5,
+      "failedTests": [
+        "025 — Stream Operations takeFirst(3) returns [1, 2, 3]",
+        "025 — Stream Operations takeFirst(0) returns []",
+        "025 — Stream Operations runningTotal of [1,2,3] is [1,3,6]",
+        "025 — Stream Operations runningTotal of [] is []",
+        "025 — Stream Operations batchItems groups into chunks"
+      ]
+    },
+    "026-combining-streams": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "026 — Combining Streams concatStreams appends second after first",
+        "026 — Combining Streams zipStreams pairs elements",
+        "026 — Combining Streams mergeStreams contains all elements"
+      ]
+    },
+    "027-data-pipelines": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "027 — Data Pipelines processItems applies function to each",
+        "027 — Data Pipelines sumPositiveNumbers parses, filters, and sums",
+        "027 — Data Pipelines sumPositiveNumbers of empty is 0"
+      ]
+    },
+    "028-logging-and-spans": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "028 — Logging and Spans logAndReturn returns 'done'",
+        "028 — Logging and Spans logWithContext returns 'done'",
+        "028 — Logging and Spans withTracking preserves the effect result"
+      ]
+    },
+    "029-http-client": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 3,
+      "total": 3,
+      "failedTests": [
+        "029 — HTTP Client fetchUser succeeds with valid response",
+        "029 — HTTP Client fetchUser fails with invalid url",
+        "029 — HTTP Client fetchUserWithRetry succeeds with valid response"
+      ]
+    },
+    "030-capstone": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 6,
+      "total": 6,
+      "failedTests": [
+        "030 — Capstone findProduct(1) returns Some(Widget)",
+        "030 — Capstone findProduct(99) returns None",
+        "030 — Capstone getValidatedProduct(1, 5) succeeds",
+        "030 — Capstone getValidatedProduct(1, 20) fails with ValidationError",
+        "030 — Capstone getValidatedProduct(99, 0) fails with NotFoundError",
+        "030 — Capstone formatExpensiveProducts(5) returns Widget and Gadget"
+      ]
+    }
+  },
+  "config": {
+    "allowCommit": false
+  },
+  "lastUpdated": "2026-02-12T16:49:17Z"
+}

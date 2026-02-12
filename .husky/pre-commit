@@ -1,0 +1,23 @@
+current_branch=$(git branch --show-current)
+
+# Allow commits on kata tracking branches
+if [[ "$current_branch" == kata/* ]]; then
+  exit 0
+fi
+
+CONFIG=".kata/config.json"
+
+if [ -f "$CONFIG" ]; then
+  ALLOW=$(node -e "try { const c = JSON.parse(require('fs').readFileSync('$CONFIG','utf8')); console.log(!!c.allowCommit) } catch { console.log(false) }")
+  if [ "$ALLOW" = "true" ]; then
+    exit 0
+  fi
+fi
+
+echo ""
+echo "  Commits are disabled in the kata dojo (keeps your workspace clean)."
+echo ""
+echo "  To enable commits, set in .kata/config.json:"
+echo '    { "allowCommit": true }'
+echo ""
+exit 1
