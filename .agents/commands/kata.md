@@ -111,7 +111,7 @@ If no Skill listed: use SENSEI.md's "Prerequisites" and "Bridge" from the previo
 
 1. Present the Goal and Tasks from SENSEI.md's Briefing section
 2. Read the kata's `solution.ts` — walk through type signatures and what each stub expects
-3. End with: **"Edit `katas/NNN-name/solution.ts`, then run `/kata` when ready."**
+3. End with: **"Edit `katas/NNN-name/solution.ts`, then run `/kata` when ready. You can also ask me questions anytime — I'm here to help between `/kata` runs too."**
 
 **3e. Tracking — start kata**
 
@@ -119,13 +119,27 @@ If tracking is enabled, create the tracking branch and start commit.
 
 ### 4. Check Phase (when continuing an in-progress kata)
 
-Run targeted tests:
+**4a. Code review first**
+
+Before running tests, read the student's `katas/NNN-name/solution.ts` and review it against SENSEI.md's concepts:
+
+- **Type correctness** — Are the return types right? Any `as` casts or type mismatches?
+- **Idiomatic patterns** — Is the code using Effect APIs as intended? (e.g., using `Effect.succeed` where `Effect.sync` is needed, wrapping functions as values instead of computing directly, unnecessary intermediate variables)
+- **Best practices** — Clean code, proper use of the APIs taught in this kata, no antipatterns
+
+If issues are found, mention them as Socratic guidance (never give the fix) before showing test results. Frame it as: "Before we run the tests, I noticed..."
+
+**4b. Run tests to verify**
+
+Even if the code looks correct, always verify by running tests — don't assume:
 ```bash
 pnpm vitest run katas/NNN-name/ --reporter=verbose
 ```
 
+**4c. Present results**
+
 Present results using SENSEI.md's "Test Map" to map each test result to a concept:
-- **All pass** — follow SENSEI.md "On Completion" (insight, bridge). Handle tracking commit.
+- **All pass** — if code review found quality issues, address those before celebrating. Otherwise follow SENSEI.md "On Completion" (insight, bridge). Handle tracking commit.
 - **Some pass** — show pass/fail breakdown mapped to concepts, then use SENSEI.md "Teaching Approach" for guidance
 - **None pass** — encourage, use SENSEI.md prompts for common pitfalls
 

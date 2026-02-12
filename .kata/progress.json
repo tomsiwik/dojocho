@@ -1,50 +1,30 @@
 {
-  "completed": 0,
-  "total": 30,
-  "transitions": [],
+  "completed": 3,
+  "total": 40,
+  "transitions": [
+    "003-generator-pipelines"
+  ],
   "katas": {
     "001-hello-effect": {
-      "status": "not-started",
-      "passed": 0,
-      "failed": 5,
+      "status": "completed",
+      "passed": 5,
+      "failed": 0,
       "total": 5,
-      "failedTests": [
-        "001 — Hello Effect hello() succeeds with 'Hello, Effect!'",
-        "001 — Hello Effect lazyRandom() produces a number between 0 and 1",
-        "001 — Hello Effect lazyRandom() is lazy (re-evaluates on each run)",
-        "001 — Hello Effect greet('World') succeeds with 'Hello, World!'",
-        "001 — Hello Effect greet('Effect') succeeds with 'Hello, Effect!'"
-      ]
+      "failedTests": []
     },
     "002-transform-with-map": {
-      "status": "not-started",
-      "passed": 0,
-      "failed": 7,
+      "status": "completed",
+      "passed": 7,
+      "failed": 0,
       "total": 7,
-      "failedTests": [
-        "002 — Transform with Map double(5) succeeds with 10",
-        "002 — Transform with Map double(0) succeeds with 0",
-        "002 — Transform with Map double(-3) succeeds with -6",
-        "002 — Transform with Map strlen('hello') succeeds with 5",
-        "002 — Transform with Map strlen('') succeeds with 0",
-        "002 — Transform with Map doubleAndFormat(5) succeeds with 'Result: 10'",
-        "002 — Transform with Map doubleAndFormat(0) succeeds with 'Result: 0'"
-      ]
+      "failedTests": []
     },
     "003-generator-pipelines": {
-      "status": "not-started",
-      "passed": 0,
-      "failed": 7,
+      "status": "completed",
+      "passed": 7,
+      "failed": 0,
       "total": 7,
-      "failedTests": [
-        "003 — Generator Pipelines fetchAndDouble(5) succeeds with 10",
-        "003 — Generator Pipelines fetchAndDouble(0) succeeds with 0",
-        "003 — Generator Pipelines combinedLength('hello', 'world') succeeds with 10",
-        "003 — Generator Pipelines combinedLength('', 'test') succeeds with 4",
-        "003 — Generator Pipelines pipeline('5') succeeds with 'Result: 10'",
-        "003 — Generator Pipelines pipeline('0') succeeds with 'Result: 0'",
-        "003 — Generator Pipelines pipeline('abc') fails with ParseError"
-      ]
+      "failedTests": []
     },
     "004-flatmap-and-chaining": {
       "status": "not-started",
@@ -181,12 +161,13 @@
       ]
     },
     "013-testing-effects": {
-      "status": "in-progress",
-      "passed": 1,
-      "failed": 3,
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
       "total": 4,
       "failedTests": [
         "013 — Testing Effects getUser(1) returns 'User: Alice'",
+        "013 — Testing Effects getUser(99) fails with 'not found'",
         "013 — Testing Effects getUserSafe(1) returns 'User: Alice'",
         "013 — Testing Effects getUserSafe(99) returns 'User: Unknown'"
       ]
@@ -248,12 +229,13 @@
     "018-race-and-timeout": {
       "status": "not-started",
       "passed": 0,
-      "failed": 3,
-      "total": 3,
+      "failed": 4,
+      "total": 4,
       "failedTests": [
         "018 — Race and Timeout raceTwo returns the faster result",
         "018 — Race and Timeout withTimeout succeeds within time",
-        "018 — Race and Timeout withTimeoutFallback returns fallback on slow effect"
+        "018 — Race and Timeout withTimeoutFallback returns fallback on slow effect",
+        "018 — Race and Timeout withTimeout fails when effect exceeds duration"
       ]
     },
     "019-ref-and-state": {
@@ -292,10 +274,11 @@
     "022-scoped-layers": {
       "status": "not-started",
       "passed": 0,
-      "failed": 1,
-      "total": 1,
+      "failed": 2,
+      "total": 2,
       "failedTests": [
-        "022 — Scoped Layers DatabaseLive connects and disconnects"
+        "022 — Scoped Layers DatabaseLive connects and disconnects",
+        "022 — Scoped Layers DatabaseLive disconnects even when query fails"
       ]
     },
     "023-resource-patterns": {
@@ -362,20 +345,21 @@
       "failed": 3,
       "total": 3,
       "failedTests": [
-        "028 — Logging and Spans logAndReturn returns 'done'",
-        "028 — Logging and Spans logWithContext returns 'done'",
+        "028 — Logging and Spans logAndReturn logs the message and returns 'done'",
+        "028 — Logging and Spans logWithContext annotates logs with requestId",
         "028 — Logging and Spans withTracking preserves the effect result"
       ]
     },
     "029-http-client": {
       "status": "not-started",
       "passed": 0,
-      "failed": 3,
-      "total": 3,
+      "failed": 4,
+      "total": 4,
       "failedTests": [
         "029 — HTTP Client fetchUser succeeds with valid response",
         "029 — HTTP Client fetchUser fails with invalid url",
-        "029 — HTTP Client fetchUserWithRetry succeeds with valid response"
+        "029 — HTTP Client fetchUserWithRetry succeeds with valid response",
+        "029 — HTTP Client fetchUserWithRetry retries on failure"
       ]
     },
     "030-capstone": {
@@ -391,10 +375,148 @@
         "030 — Capstone getValidatedProduct(99, 0) fails with NotFoundError",
         "030 — Capstone formatExpensiveProducts(5) returns Widget and Gadget"
       ]
+    },
+    "031-config-and-environment": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "031 — Config and Environment getAppName reads APP_NAME config",
+        "031 — Config and Environment getPort reads PORT config as number",
+        "031 — Config and Environment getPort falls back to 3000 when PORT is missing",
+        "031 — Config and Environment getAppConfig returns both name and port"
+      ]
+    },
+    "032-cause-and-defects": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "032 — Cause and Defects boom dies with 'boom'",
+        "032 — Cause and Defects catchDefect recovers from a die",
+        "032 — Cause and Defects catchDefect recovers from an Error defect",
+        "032 — Cause and Defects catchDefect passes through normal values",
+        "032 — Cause and Defects sandboxed exposes cause on failure",
+        "032 — Cause and Defects safeDivide succeeds with positive numbers",
+        "032 — Cause and Defects safeDivide fails with 'zero' for 0",
+        "032 — Cause and Defects safeDivide dies for negative numbers"
+      ]
+    },
+    "033-pattern-matching": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 8,
+      "total": 8,
+      "failedTests": [
+        "033 — Pattern Matching area of Circle",
+        "033 — Pattern Matching area of Rectangle",
+        "033 — Pattern Matching area of Triangle",
+        "033 — Pattern Matching describeShape for Circle",
+        "033 — Pattern Matching describeShape for Rectangle",
+        "033 — Pattern Matching classifyNumber negative",
+        "033 — Pattern Matching classifyNumber zero",
+        "033 — Pattern Matching classifyNumber positive"
+      ]
+    },
+    "034-deferred-and-coordination": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "034 — Deferred and Coordination completeAndAwait resolves with the value",
+        "034 — Deferred and Coordination completeAndAwait works with strings",
+        "034 — Deferred and Coordination forkThenComplete coordinates via deferred",
+        "034 — Deferred and Coordination gatedExecution both fibers run after gate opens"
+      ]
+    },
+    "035-queue-and-backpressure": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "035 — Queue and Backpressure roundTrip offers and takes items",
+        "035 — Queue and Backpressure roundTrip works with empty array",
+        "035 — Queue and Backpressure backpressureDemo collects all 3 items despite bounded queue",
+        "035 — Queue and Backpressure producerConsumer collects n items"
+      ]
+    },
+    "036-schema-advanced": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 7,
+      "total": 7,
+      "failedTests": [
+        "036 — Schema Advanced PositiveInt accepts positive integers",
+        "036 — Schema Advanced PositiveInt rejects negative numbers",
+        "036 — Schema Advanced PositiveInt rejects non-integers",
+        "036 — Schema Advanced DateFromString transforms date string to Date",
+        "036 — Schema Advanced decodeUser succeeds with valid data",
+        "036 — Schema Advanced decodeUser fails with invalid id",
+        "036 — Schema Advanced decodeUser fails with empty name"
+      ]
+    },
+    "037-cache-and-memoization": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "037 — Cache and Memoization makeUserCache creates a cache",
+        "037 — Cache and Memoization cachedLookup returns the computed value",
+        "037 — Cache and Memoization cachedLookup returns same value on repeated calls",
+        "037 — Cache and Memoization demonstrateCaching returns same value and only computes once"
+      ]
+    },
+    "038-metrics": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 6,
+      "total": 6,
+      "failedTests": [
+        "038 — Metrics requestCount is a counter",
+        "038 — Metrics responseTime is a histogram",
+        "038 — Metrics activeConnections is a gauge",
+        "038 — Metrics countRequest increments counter and returns 'counted'",
+        "038 — Metrics recordTime records a value and returns 'recorded'",
+        "038 — Metrics setConnections sets gauge and returns 'set'"
+      ]
+    },
+    "039-managed-runtime": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "039 — Managed Runtime makeRuntime creates a runtime",
+        "039 — Managed Runtime greetWith runs an effect using the runtime",
+        "039 — Managed Runtime greetWith works with different names",
+        "039 — Managed Runtime fullLifecycle creates, uses, and disposes runtime"
+      ]
+    },
+    "040-request-batching": {
+      "status": "not-started",
+      "passed": 0,
+      "failed": 4,
+      "total": 4,
+      "failedTests": [
+        "040 — Request Batching getUser fetches a single user",
+        "040 — Request Batching getUser fails for unknown id",
+        "040 — Request Batching getUsers fetches multiple users",
+        "040 — Request Batching getUsers batches requests into a single resolver call"
+      ]
     }
   },
   "config": {
-    "allowCommit": false
+    "allowCommit": true,
+    "tracking": {
+      "enabled": false,
+      "pushOnComplete": false,
+      "remote": "origin"
+    }
   },
-  "lastUpdated": "2026-02-12T16:49:17Z"
+  "lastUpdated": "2026-02-12T22:03:38Z"
 }

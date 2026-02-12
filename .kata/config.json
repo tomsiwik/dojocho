@@ -1,3 +1,8 @@
 {
-  "allowCommit": true
+  "allowCommit": true,
+  "tracking": {
+    "enabled": false,
+    "pushOnComplete": false,
+    "remote": "origin"
+  }
 }
