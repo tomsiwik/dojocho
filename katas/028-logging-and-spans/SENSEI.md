@@ -14,20 +14,12 @@ Learn to use `Effect.log` for structured logging within effects, `Effect.annotat
 
 ## Prerequisites
 
-- **001-027** — all prior katas (this kata uses basic Effect composition)
+- **003 Generator Pipelines** — `Effect.gen`, `yield*`
+- **011 Services and Context** — `Context.Tag`, service access
 
 ## Skills
 
 Invoke `effect-patterns-observability` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.log` — emit a structured log message through the runtime
-- `Effect.annotateLogs` — attach contextual metadata to all logs within a scope
-- `Effect.withSpan` — wrap an effect in a named tracing span
-- `Effect.map` or `Effect.flatMap` or `Effect.gen` — sequencing log with return value (review)
 
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
@@ -35,17 +27,17 @@ APIs the user writes in `solution.ts`:
 
 | Test | Concept | Verifies |
 |------|---------|----------|
-| `logAndReturn returns 'done'` | `Effect.log` + sequencing | Log a message, then return `"done"` |
-| `logWithContext returns 'done'` | `Effect.annotateLogs` + `Effect.log` | Annotate with `requestId`, log, return `"done"` |
+| `logAndReturn logs the message and returns 'done'` | `Effect.log` + sequencing | Custom logger captures "hello"; returns `"done"` |
+| `logWithContext annotates logs with requestId` | `Effect.annotateLogs` + `Effect.log` | Custom logger captures `requestId: "req-1"` annotation |
 | `withTracking preserves the effect result` | `Effect.withSpan` | Wrapping `Effect.succeed(42)` in a span still yields 42 |
 
 ## Teaching Approach
 
 ### Socratic prompts
 
-- "In regular TypeScript you might use `console.log`. How is `Effect.log` different? What does 'structured' logging mean?"
-- "If you have a request ID and want every log in that request's scope to include it, how would you avoid passing it to every function manually?"
-- "What does `withSpan` add to an effect? Does it change the result?"
+- "If you removed all logging calls, would the tests still pass? What does that tell you about how the current tests verify observability?"
+- "If you have a request ID and want every log in that request's scope to include it, how would you avoid passing it to every function manually? How does `annotateLogs` solve this?"
+- "`withSpan` doesn't change the result of the effect. So what *does* it do, and why would you want it in production?"
 
 ### Common pitfalls
 
@@ -53,13 +45,7 @@ APIs the user writes in `solution.ts`:
 2. **annotateLogs wraps an effect** — `Effect.annotateLogs(effect, { requestId })` adds annotations to ALL logs within that effect's scope. The annotation is the outer wrapper; the logging happens inside. Ask: "Does `annotateLogs` emit a log itself, or does it modify logs emitted by the effect you give it?"
 3. **withSpan is a simple wrapper** — `Effect.withSpan(effect, "name")` or `effect.pipe(Effect.withSpan("name"))` does not change the effect's result. Students may overthink it. Ask: "If you wrap `Effect.succeed(42)` in a span, what value comes out?"
 4. **Argument order** — `Effect.annotateLogs` and `Effect.withSpan` have specific argument orders. Check the types if unsure.
-
-### When stuck
-
-1. Start with `logAndReturn` — "Use `Effect.gen`: yield `Effect.log(message)`, then return 'done'"
-2. For `logWithContext`: "Same pattern, but wrap the whole thing in `Effect.annotateLogs` with `{ requestId }`"
-3. For `withTracking`: "Just pipe the effect through `Effect.withSpan(name)` — it passes the result through unchanged"
-4. Refer them to the `log`, `annotateLogs`, and `withSpan` patterns in the Concepts Practiced section above
+5. **Sequencing with `Effect.gen`** — for `logAndReturn`, use `Effect.gen`: yield `Effect.log(message)`, then return `"done"`. The same pattern applies to `logWithContext` with `annotateLogs` wrapping the generator.
 
 ## On Completion
 

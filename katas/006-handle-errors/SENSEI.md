@@ -43,15 +43,6 @@ const recovered2 = Effect.catchTag(failed, "MyError", (error) =>
 
 Invoke `effect-patterns-error-handling` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.succeed` — wrap a successful result
-- `Effect.fail` — create a failed Effect with a typed error
-- `Effect.catchAll` — recover from any error by providing an alternative Effect
-- `Effect.catchTag` — recover from a specific tagged error
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -82,13 +73,7 @@ APIs the user writes in `solution.ts`:
 2. **Using try/catch instead of Effect.fail** — students coming from imperative code may wrap division in try/catch. Nudge: "In Effect, errors are values, not exceptions. How do you create an error value?"
 3. **Double-wrapping in safeDivide** — students may try `Effect.succeed(divide(a, b))` instead of calling `divide` and catching errors. Ask: "What does `divide(a, b)` return? Is it a plain number or an Effect?"
 4. **ParseError for integers** — `parseInt('3.14')` returns `3`, not `NaN`. Students need to check that the string represents a whole number. Ask: "Does `parseInt('3.14')` fail? How do you detect that `'3.14'` isn't an integer?"
-
-### When stuck
-
-1. Start with `divide` — "Check the divisor first. If it's zero, fail. Otherwise, succeed with the result."
-2. For `safeDivide`: "Call `divide`, then use `catchAll` to turn any error into `Effect.succeed(0)`"
-3. For `parseInteger`: "Use `parseInt`, check if the result is `NaN`, and also verify the original string is a valid integer"
-4. Point to the Briefing Hints section above and the error type definitions in solution.ts
+5. **Start with `divide`** — check the divisor first; if it's zero, fail; otherwise, succeed with the result.
 
 ## On Completion
 

@@ -21,17 +21,6 @@ Learn to define an `HttpClient` service abstraction for testability, parse HTTP 
 
 Invoke `effect-patterns-making-http-requests` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.gen` + `yield*` — generator-based sequencing (review)
-- `HttpClient` service — `yield*` to access the injected HTTP client
-- `Schema.decodeUnknown` — validate and decode raw response data against `UserSchema`
-- `Effect.retry` — retry a failing effect according to a schedule
-- `Schedule.recurs` — create a retry schedule with a fixed number of retries
-- `Effect.mapError` — normalize error types (e.g., schema parse errors to string)
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Effect.provideService` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -41,6 +30,7 @@ APIs the user writes in `solution.ts`:
 | `fetchUser succeeds with valid response` | `HttpClient.get` + `Schema.decodeUnknown` | Fetch from `/user/1`, decode to `{ id: 1, name: "Alice" }` |
 | `fetchUser fails with invalid url` | Error propagation | Fetch from `/user/999` fails — HttpClient returns `"not found"` |
 | `fetchUserWithRetry succeeds with valid response` | `fetchUser` + `Effect.retry` | Same success case, but wrapped with retry logic |
+| `fetchUserWithRetry retries on failure` | `Effect.retry` + `Schedule.recurs` | Flaky client fails twice, succeeds on third — verifies retry behavior |
 
 ## Teaching Approach
 
@@ -56,13 +46,7 @@ APIs the user writes in `solution.ts`:
 2. **fetchUserWithRetry wraps fetchUser, not the raw HTTP call** — avoid duplicating the fetch+decode logic. Simply call `fetchUser(url)` and pipe it through `Effect.retry`. Ask: "You already have `fetchUser` working. How can you add retry to it without rewriting it?"
 3. **Accessing the HttpClient service** — inside `Effect.gen`, use `yield* HttpClient` to get the service implementation. Students sometimes try to call `HttpClient.get` directly as a static method. Ask: "How do you access a service inside a generator?"
 4. **Schedule.recurs argument** — `Schedule.recurs(2)` means 2 retries (3 total attempts). Students may confuse retries with total attempts.
-
-### When stuck
-
-1. Start with `fetchUser` — "Use `Effect.gen`. First, yield the HttpClient to get the service. Then call `.get(url)`. Then decode the result with `Schema.decodeUnknown(UserSchema)`"
-2. For error mapping: "If `Schema.decodeUnknown` gives you a `ParseError` but you need a `string`, use `Effect.mapError` to convert it"
-3. For `fetchUserWithRetry`: "Just call `fetchUser(url)` and pipe it through `Effect.retry(Schedule.recurs(2))`"
-4. Refer them to the service access and schema decode patterns in the Concepts Practiced section above
+5. **Error mapping for Schema** — if `Schema.decodeUnknown` gives you a `ParseError` but you need a `string`, use `Effect.mapError` to convert it.
 
 ## On Completion
 

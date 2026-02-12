@@ -14,22 +14,12 @@ Learn to use `Stream.fromIterable` to create streams, `Stream.map` and `Stream.f
 
 ## Prerequisites
 
-- **001–023** — all prior katas (Basics through Resource Management)
+- **003 Generator Pipelines** — `Effect.gen`, `yield*`
+- **005 Pipe Composition** — `pipe`, function composition
 
 ## Skills
 
 Invoke `effect-patterns-streams-getting-started` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Stream.fromIterable` — create a Stream from an array or iterable
-- `Stream.filter` — keep only elements matching a predicate
-- `Stream.map` — transform each element in the stream
-- `Stream.runCollect` — consume the stream and collect all elements into a Chunk
-- `Stream.runFold` — consume the stream by folding over elements with an accumulator
-- `Chunk.toArray` — convert a Chunk to a plain array
 
 > **Note**: `Effect.runSync` appears only in tests. The student does NOT write it. Never attribute it to their learning.
 
@@ -47,10 +37,10 @@ APIs the user writes in `solution.ts`:
 
 ### Socratic prompts
 
-- "You've been working with single Effect values. What if you need to process a *sequence* of values — like rows from a database or events from a websocket?"
-- "How is a Stream different from an array? When would you prefer one over the other?"
-- "After `runCollect`, you get a `Chunk`, not an array. Why do you think Effect uses its own collection type?"
-- "What's the relationship between `Stream.runFold` and `Array.reduce`? What's the initial value for?"
+- "What happens to elements in a Stream that you never consume? How does laziness help when the data source is huge or infinite?"
+- "If `runCollect` forces the entire stream into memory, when is that acceptable and when would you prefer `runFold`?"
+- "After `runCollect`, you get a `Chunk`, not an array. Why do you think Effect uses its own collection type instead of plain arrays?"
+- "What's the relationship between `Stream.runFold` and `Array.reduce`? Could you express `runCollect` in terms of `runFold`?"
 
 ### Common pitfalls
 
@@ -58,13 +48,7 @@ APIs the user writes in `solution.ts`:
 2. **`filterAndDouble` source data** — the stream is created from `[1, 2, 3, 4, 5]`. Evens are 2 and 4. Doubled: `[4, 8]`. Students may filter odds instead. Ask: "Which numbers from 1 to 5 are even?"
 3. **`runFold` signature** — it takes an initial value, a combining function, and returns an Effect (not a Stream). Students may try to chain more stream operations after it. Ask: "Is `runFold` a transformation or a terminal operation?"
 4. **Forgetting that stream operations return new streams** — `Stream.filter` and `Stream.map` don't consume the stream. You need a terminal operation like `runCollect` or `runFold` to get a result. Ask: "What turns a stream description into an actual value?"
-
-### When stuck
-
-1. Start with `streamFromArray` — "Create a stream with `Stream.fromIterable`, then `runCollect` it, then convert the Chunk to an array."
-2. For `filterAndDouble`: "Same as `streamFromArray` but add `filter` and `map` steps between creation and collection."
-3. For `sumStream`: "Instead of `runCollect`, use `runFold` — it's like `Array.reduce`. What should the initial value be for a sum?"
-4. Refer them to the stream creation and terminal operation patterns in the Concepts Practiced section above
+5. **`runFold` is like `Array.reduce`** — for `sumStream`, use `runFold` with initial value `0` and a function `(acc, n) => acc + n`. Ask: "What should the sum be if the stream is empty?"
 
 ## On Completion
 

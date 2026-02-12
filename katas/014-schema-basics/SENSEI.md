@@ -33,20 +33,12 @@ const Positive = Schema.Number.pipe(Schema.positive());
 
 ## Prerequisites
 
-- **001-013** — all prior katas (basics, errors, value handling, services, layers, testing)
+- **007 Tagged Errors** — `Data.TaggedError`, domain errors
+- **009 Option Type** — `Option`, `some`, `none`, `match`
 
 ## Skills
 
 Invoke `effect-patterns-domain-modeling` before teaching this kata. This is the first kata in the Domain Modeling area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Schema.decodeUnknown` — parse an unknown value against a Schema, returning an Effect
-- `Schema.NonEmptyString` — a refined string schema that rejects empty strings
-- `Schema.Number.pipe(Schema.positive())` or `Schema.filter` — constrain numbers to positive values
-- `Schema.Struct` — define a schema for an object shape (already provided, but extended for `StrictUserSchema`)
 
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
@@ -76,13 +68,7 @@ APIs the user writes in `solution.ts`:
 2. **Modifying UserSchema instead of creating StrictUserSchema** — `UserSchema` should stay as-is (the first three tests use it). `StrictUserSchema` is a separate, stricter schema. Nudge: "Keep `UserSchema` untouched — build `StrictUserSchema` with refined field types."
 3. **Wrong refinement for age** — the test rejects negative age (`-1`). Students might use `Schema.positive()` which also rejects zero, but the test for `parseStrictUser` with `{ name: "Alice", age: 30 }` only needs `>= 0`. Check whether `Schema.nonNegative()` or `Schema.filter` with `(n) => n >= 0` is needed. Look at what the tests actually check.
 4. **Forgetting the pipe for refinements** — `Schema.NonEmptyString` is a standalone schema, but for number refinements you typically use `Schema.Number.pipe(Schema.positive())`. Students may try `Schema.positive(Schema.Number)` which isn't the API.
-
-### When stuck
-
-1. Start with `parseUser` — "Use `Schema.decodeUnknown(UserSchema)(input)` — that's it. One line."
-2. For `StrictUserSchema`: "Copy the shape of `UserSchema` but replace `Schema.String` with `Schema.NonEmptyString` for name, and add a pipe to `Schema.Number` for age"
-3. For `parseStrictUser`: "Same pattern as `parseUser` but use `StrictUserSchema` instead"
-4. Point to the Briefing hints showing `decodeUnknown` and refinement patterns
+5. **`parseUser` is a one-liner** — `Schema.decodeUnknown(UserSchema)(input)` is all you need. The curried form takes the schema first, then the input.
 
 ## On Completion
 

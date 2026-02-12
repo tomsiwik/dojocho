@@ -56,6 +56,16 @@ The JSON above is the ground truth. Parse it to understand:
 | 028 | `028-logging-and-spans` | Observability | `effect-patterns-observability` |
 | 029 | `029-http-client` | HTTP | `effect-patterns-making-http-requests` |
 | 030 | `030-capstone` | Capstone | `effect-patterns-building-apis` |
+| 031 | `031-config-and-environment` | Configuration | `effect-patterns-platform` |
+| 032 | `032-cause-and-defects` | Error Patterns | |
+| 033 | `033-pattern-matching` | Pattern Matching | |
+| 034 | `034-deferred-and-coordination` | Coordination | |
+| 035 | `035-queue-and-backpressure` | Coordination | |
+| 036 | `036-schema-advanced` | Domain Modeling | |
+| 037 | `037-cache-and-memoization` | Performance | |
+| 038 | `038-metrics` | Observability | |
+| 039 | `039-managed-runtime` | Runtime | `effect-patterns-project-setup--execution` |
+| 040 | `040-request-batching` | Batching | |
 
 ## Flow
 
@@ -79,7 +89,7 @@ Build options dynamically from the progress data:
 - "View full progress"
 - "Jump to a specific kata"
 
-For **"View full progress"**: show `X/30 completed`, each area grouped with `[x]`/`[~]`/`[ ]` indicators. Then re-present choices via another `AskUserQuestion`.
+For **"View full progress"**: show `X/40 completed`, each area grouped with `[x]`/`[~]`/`[ ]` indicators. Then re-present choices via another `AskUserQuestion`.
 
 For **"Jump to a specific kata"**: show 3-4 katas near the user's progress point. Include an option for typing a specific number.
 

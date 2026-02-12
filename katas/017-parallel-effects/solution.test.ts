@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
 import { fetchAll, processWithLimit } from "./solution.js";
 
@@ -12,7 +12,7 @@ describe("017 — Parallel Effects", () => {
   it("fetchAll fails if any effect fails", () => {
     const effects = [Effect.succeed(1), Effect.fail("oops"), Effect.succeed(3)];
     const exit = Effect.runSyncExit(fetchAll(effects));
-    expect(exit._tag).toBe("Failure");
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 
   it("processWithLimit applies function to each item", () => {
@@ -28,6 +28,6 @@ describe("017 — Parallel Effects", () => {
         n === 2 ? Effect.fail("bad") : Effect.succeed(n),
       ),
     );
-    expect(exit._tag).toBe("Failure");
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });

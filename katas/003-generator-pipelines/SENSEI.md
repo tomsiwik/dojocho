@@ -31,19 +31,6 @@ const program = Effect.gen(function* () {
 - **001 Hello Effect** — `Effect.succeed`, `Effect.sync`
 - **002 Transform with Map** — `Effect.map`, `pipe`
 
-## Skills
-
-None — continuing in the Basics area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.gen` — create Effects using generator syntax
-- `yield*` — unwrap an Effect's success value inside a generator
-- `Effect.succeed` — create successful Effects (review)
-- `Effect.fail` — create a failed Effect with a typed error
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -72,13 +59,7 @@ APIs the user writes in `solution.ts`:
 2. **Using `return` vs `yield*` for the final value** — the last expression in `Effect.gen` should be a plain `return`, not `yield* Effect.succeed(...)`. Nudge: "You can just `return` the computed value directly."
 3. **ParseError shape** — the `pipeline` function needs to fail with `{ _tag: "ParseError", input: s }`. Students may forget the `input` field. Ask: "What does the `ParseError` interface require?"
 4. **Checking for NaN** — `parseInt("abc")` returns `NaN`, not an error. Ask: "How do you detect when parsing didn't work?"
-
-### When stuck
-
-1. Start with `fetchAndDouble` — it's just `yield*` an Effect, transform, return: "Write `Effect.gen(function* () { ... })` and yield a succeed"
-2. For `combinedLength`: "Same pattern but with two yields — how do you combine the results?"
-3. For `pipeline`: "Break it into three steps: parse, check validity, format. Which step might fail?"
-4. Point to the `ParseError` interface in solution.ts — it defines exactly what the error must look like
+5. **Break `pipeline` into steps** — parse, check validity, format. Ask: "Which step might fail?" and point to the `ParseError` interface in solution.ts.
 
 ## On Completion
 

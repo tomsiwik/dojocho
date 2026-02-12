@@ -17,21 +17,6 @@ Learn to use `Stream.concat` to concatenate two streams sequentially, `Stream.zi
 - **024 Streams Basics** — `Stream`, `Stream.fromIterable`, `Stream.runCollect`
 - **025 Stream Operations** — `Stream.map`, `Stream.filter`, `Stream.take`
 
-## Skills
-
-None — continuing in the Streams area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Stream.fromIterable` — create a stream from an array
-- `Stream.concat` — append one stream after another (sequential)
-- `Stream.zip` — pair elements from two streams lock-step
-- `Stream.merge` — interleave elements from two streams concurrently
-- `Stream.runCollect` — collect all stream elements into a Chunk
-- `Chunk.toArray` — convert a Chunk to a plain array
-
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
 ## Test Map
@@ -46,23 +31,17 @@ APIs the user writes in `solution.ts`:
 
 ### Socratic prompts
 
-- "You know how to create and transform a single stream. What if you have TWO streams and need to combine them? What different relationships could two data sources have?"
-- "What's the difference between putting one stream after another vs pairing their elements vs running them at the same time?"
-- "If one stream has 3 elements and the other has 5, what should `zip` produce? What about `concat`? What about `merge`?"
+- "What ordering guarantees does `merge` give you vs `concat`? If you need results in a specific order, which do you pick?"
+- "If one stream has 3 elements and the other has 5, what should `zip` produce? What about `concat`? What about `merge`? Think about the semantics of each combinator."
+- "When would you choose `merge` (non-deterministic interleaving) over `concat` (sequential) in a real application?"
 
 ### Common pitfalls
 
 1. **zip stops at the shorter stream** — `Stream.zip` produces pairs until one stream runs out. If the streams have different lengths, the extra elements from the longer one are dropped. Ask: "How many pairs do you get from zipping [1,2,3] with ['a','b']?"
 2. **merge order is non-deterministic** — `Stream.merge` interleaves elements as they become available. The test uses `.sort()` to verify contents regardless of order. Ask: "Can you guarantee which element comes first from a merge? Why does the test sort the result?"
-3. **Forgetting Chunk.toArray** — `Stream.runCollect` returns a `Chunk`, not an array. The tests expect plain arrays. Ask: "What type does `runCollect` give you? What do the tests expect?"
+3. **Forgetting Chunk.toArray** — See kata 024 for `Chunk.toArray` -- same pattern applies here.
 4. **Confusing concat and merge** — `concat` is sequential (all of A, then all of B), while `merge` is concurrent (interleaved). Ask: "If stream A takes a long time, does `concat` start B before A finishes?"
-
-### When stuck
-
-1. Start with `concatStreams` — it's the most intuitive: "Create two streams from the arrays, then use `concat` to join them"
-2. For `zipStreams`: "Same idea — two streams, but `zip` pairs them up element by element"
-3. For `mergeStreams`: "Same two streams, but `merge` runs them concurrently. The test sorts, so order doesn't matter"
-4. Remind them: "All three functions end the same way — `runCollect` then `Chunk.toArray`"
+5. **All three end the same way** — every combinator function ends with `runCollect` then `Chunk.toArray`. Start with `concatStreams` (most intuitive), then apply the same pattern to `zip` and `merge`.
 
 ## On Completion
 

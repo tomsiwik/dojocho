@@ -39,6 +39,6 @@ Kata progress can be tracked via git branches and commits. See `KATAS.md` for br
 
 ## Skills reference
 
-The 24 skills cover: core concepts, error handling, concurrency, domain modeling, streams, testing, observability, HTTP requests, scheduling, platform, resource management, data pipelines, APIs, and tooling/debugging.
+The 24 skills cover: core concepts, error handling, concurrency, domain modeling, streams, testing, observability, HTTP requests, scheduling, platform, resource management, data pipelines, APIs, configuration, pattern matching, coordination, performance, metrics, runtime, batching, and tooling/debugging.
 
 Skills are auto-activated by context. Invoke manually with `/skill effect-patterns-{category}`.

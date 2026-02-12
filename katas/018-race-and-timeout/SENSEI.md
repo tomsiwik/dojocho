@@ -37,20 +37,6 @@ const safe = myEffect.pipe(
 
 - **017 Parallel Effects** — `Effect.all`, `Effect.forEach`, concurrency options
 
-## Skills
-
-None — continuing in the Concurrency area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.race` — run two effects concurrently, return whichever finishes first
-- `Effect.timeoutFail` — fail with a custom error if the effect exceeds a duration
-- `Effect.timeout` — wrap an effect with a timeout that returns `Option<A>`
-- `Option.getOrElse` — extract a value from an Option with a fallback (possibly)
-- `Effect.map` or `Effect.catchAll` — handle the timeout result (possibly)
-
 > **Note**: `Effect.runSync`, `Effect.runPromise`, and `Effect.delay` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -59,6 +45,7 @@ APIs the user writes in `solution.ts`:
 |------|---------|----------|
 | `raceTwo returns the faster result` | `Effect.race` | First-to-finish semantics |
 | `withTimeout succeeds within time` | `Effect.timeoutFail` | Timeout with custom error — success path |
+| `withTimeout fails when effect exceeds duration` | `Effect.timeoutFail` | Timeout with custom error — failure path |
 | `withTimeoutFallback returns fallback on slow effect` | `Effect.timeout` + fallback | Timeout producing a fallback value |
 
 ## Teaching Approach
@@ -75,13 +62,7 @@ APIs the user writes in `solution.ts`:
 1. **`withTimeout` — using `Effect.timeout` instead of `Effect.timeoutFail`** — `Effect.timeout` wraps the result in Option and never fails on timeout. `Effect.timeoutFail` lets you specify a custom error. Ask: "Does this function need to fail on timeout, or return a fallback?"
 2. **`withTimeoutFallback` — not handling the Option** — `Effect.timeout` changes the success type from `A` to `Option<A>`. You need to unwrap it with `Option.getOrElse` (via `Effect.map`) or another approach. Ask: "What's the type of the effect after applying `Effect.timeout`?"
 3. **Duration import** — the functions take `Duration.DurationInput`, which accepts strings like `"1 second"`. Students don't need to construct Duration objects manually.
-
-### When stuck
-
-1. Start with `raceTwo` — it's a single function call: "Pass both effects to `Effect.race`"
-2. For `withTimeout`: "Look at `Effect.timeoutFail` — it takes the effect, a duration, and a function that creates the error"
-3. For `withTimeoutFallback`: "Use `Effect.timeout` then handle the Option — when it's None (timed out), return the fallback"
-4. Point to the Briefing hints for `Effect.race` and timeout patterns
+4. **`withTimeout` uses `Effect.timeoutFail`** — it takes the effect, a duration, and a function that creates the error. Don't confuse with `Effect.timeout` which wraps in Option instead of failing.
 
 ## On Completion
 

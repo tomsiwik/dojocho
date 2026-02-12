@@ -52,18 +52,6 @@ const value = Option.getOrElse(none, () => 0);
 
 Invoke `effect-patterns-value-handling` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Option.fromNullable` — convert a nullable value to an Option
-- `Option.match` — handle both Some and None cases
-- `Option.map` — transform the value inside a Some
-- `Option.flatMap` — chain Option-producing functions
-- `Option.some` — create a Some value
-- `Option.none` — create a None value
-- `Option.getOrElse` — extract the value or provide a default
-
 ## Test Map
 
 | Test | Concept | Verifies |
@@ -95,13 +83,7 @@ APIs the user writes in `solution.ts`:
 2. **Using if/else instead of Option.match** — students may extract the value manually. Nudge: "Option.match handles both cases in one expression — what does it look like?"
 3. **fromNullable with falsy values** — `Option.fromNullable(0)` returns `Some(0)`, not `None`. Only `null` and `undefined` produce None. Ask: "Is `0` the same as `null`?"
 4. **Returning raw values from map** — `Option.map(opt, (n) => n * 2)` is correct. Students sometimes try to wrap the result in `Option.some` inside the callback. Ask: "What does `map` do with your callback's return value?"
-
-### When stuck
-
-1. Start with `fromNullable` — "Just pass the value to `Option.fromNullable` and return the result"
-2. For `describe`: "Use `Option.match` with two handlers — `onNone` returns `'Nothing'`, `onSome` returns the formatted string"
-3. For `safeDivide`: "Check if `b` is zero. Return `Option.none()` if so, `Option.some(a / b)` otherwise"
-4. For `getOrDefault`: "Use `Option.getOrElse` with a function that returns the default"
+5. **Start with `fromNullable`** — just pass the value to `Option.fromNullable` and return the result; it's the simplest function here.
 
 ## On Completion
 

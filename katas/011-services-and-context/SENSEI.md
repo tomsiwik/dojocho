@@ -47,14 +47,6 @@ const result = Effect.runSync(
 
 Invoke `effect-patterns-core-concepts` before teaching this kata. This is the first kata in the Dependency Injection area.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.gen` — create Effects using generator syntax (review)
-- `yield* Random` — access a service from the Effect context (the R channel)
-- `yield* svc.next` — unwrap a service method that returns an Effect
-
 > **Note**: `Effect.runSync` and `Effect.provideService` appear only in tests. The student does NOT write them. Never attribute them to their learning.
 
 ## Test Map
@@ -77,12 +69,7 @@ APIs the user writes in `solution.ts`:
 1. **Calling Random directly** — `Random.next` doesn't exist. `Random` is a tag, not an instance. You need `yield* Random` first to get the service implementation, THEN access `.next` on it. Ask: "What does `Random` represent — the service itself, or a key to look it up?"
 2. **Forgetting the second yield*** — `yield* Random` gives you the service object, but `svc.next` is still an Effect. You need a second `yield*` to unwrap it. Ask: "What's the type of `svc.next`? Is it a number or an Effect?"
 3. **String formatting in rollDice** — students may return the number instead of the formatted string. The test expects `"Roll: 4"`. Nudge: "Check the test — what exact string format does `rollDice` need to produce?"
-
-### When stuck
-
-1. Start with `getRandomNumber` — "Inside `Effect.gen`, first `yield*` the `Random` tag to get the service, then `yield*` its `next` method to get the number"
-2. For `rollDice`: "Same two yields as `getRandomNumber`, then format the number into a string with a template literal"
-3. Point to the Briefing hints — they show the `yield* Tag` then `yield* method` pattern
+4. **Two-step yield pattern** — inside `Effect.gen`, first `yield*` the `Random` tag to get the service, then `yield*` its `next` method to get the number. The Briefing hints show this pattern.
 
 ## On Completion
 

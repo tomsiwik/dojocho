@@ -35,13 +35,6 @@ None — this is the first kata.
 
 Invoke `effect-patterns-getting-started` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.succeed` — wrap a known value in a successful Effect
-- `Effect.sync` — wrap a lazy computation that runs each time the Effect executes
-
 > **Note**: `Effect.runSync` appears only in tests. The student does NOT write it. Never attribute it to their learning.
 
 ## Test Map
@@ -66,12 +59,7 @@ APIs the user writes in `solution.ts`:
 
 1. **Using `succeed` for `lazyRandom`** — `Effect.succeed(Math.random())` evaluates `Math.random()` immediately when the function is called, not when the Effect is run. The value gets "baked in". Ask: "Try running `lazyRandom()` twice and comparing — are they always different? Why or why not?"
 2. **Overcomplicating `greet`** — students may try template literals inside `sync`. Nudge: "Does `greet` need laziness? It already has the name parameter."
-
-### When stuck
-
-1. Point to the Briefing Hints section above — it shows both `succeed` and `sync` patterns
-2. Ask them to look at the type signatures — "What does each function need to return?"
-3. Focus on one function at a time: "Get `hello()` passing first, then think about what makes `lazyRandom` different"
+3. **Tackle one function at a time** — get `hello()` passing first, then think about what makes `lazyRandom` different.
 
 ## On Completion
 

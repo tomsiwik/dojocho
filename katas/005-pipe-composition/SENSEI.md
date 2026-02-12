@@ -38,21 +38,6 @@ const fluent = Effect.succeed("hello").pipe(
 - **003 Generator Pipelines** — `Effect.gen`, `yield*`, `Effect.fail`
 - **004 FlatMap and Chaining** — `Effect.flatMap`, `Effect.andThen`, `Effect.tap`
 
-## Skills
-
-None — final kata in the Basics area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `pipe` — standalone function for composing transforms left-to-right
-- `.pipe()` — fluent method on Effect for chaining operators
-- `Effect.succeed` — create successful Effects (review)
-- `Effect.map` — transform success values (review)
-- `Effect.flatMap` — chain dependent Effects (review)
-- `Effect.fail` — create failed Effects (review)
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -83,13 +68,7 @@ APIs the user writes in `solution.ts`:
 2. **Validation ordering in `processUser`** — students may validate name and age in a single step. Nudge: "What if name is empty AND age is negative? Which error should win? Check the tests."
 3. **Parse + validate confusion in `pipeline`** — parsing and positivity check are separate concerns. Ask: "What does `parseInt` return for `'abc'`? How about `'-3'` — does it parse? Is it positive?"
 4. **String conversion** — `processNumber` needs the final value as a string. Students may forget the `String()` or template literal step.
-
-### When stuck
-
-1. Start with `processNumber` — it's pure `pipe` + `map`, no errors: "Three maps in a row: double, add one, stringify"
-2. For `processUser`: "Start with `Effect.succeed` of the formatted string, then add validation steps before it using `flatMap`"
-3. For `pipeline`: "Break it into three pieces: parse the string, check it's positive, format it. Each piece either succeeds or fails."
-4. Point to the Briefing Hints section above showing both `pipe()` and `.pipe()` patterns
+5. **Start with `processNumber`** — it's pure `pipe` + `map`, no errors: three maps in a row (double, add one, stringify).
 
 ## On Completion
 

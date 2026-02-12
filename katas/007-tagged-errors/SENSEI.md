@@ -34,19 +34,6 @@ const recovered = Effect.catchTag(failing, "MyError", (e) =>
 
 - **006 Handle Errors** — `Effect.fail`, `Effect.catchAll`, `Effect.catchTag`
 
-## Skills
-
-None — continuing in the Error Handling area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Data.TaggedError` — define class-based errors with a `_tag` discriminant
-- `Effect.succeed` — create successful Effects (review)
-- `Effect.fail` — create failed Effects with tagged errors
-- `Effect.catchTag` — recover from a specific tagged error type
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -79,13 +66,7 @@ APIs the user writes in `solution.ts`:
 2. **Boundary conditions in validateAge** — the tests show `0` and `150` are valid, but `-1` and `151` are not. Ask: "What exact range is valid? Check the boundary test cases carefully."
 3. **Using `catchAll` instead of `catchTag`** — for `findUserOrDefault`, `catchAll` works but `catchTag` is the lesson. Nudge: "Can you be more specific about which error you're catching?"
 4. **Wrong user format** — `findUser` must return `{ id, name: 'User ${id}' }`. Students may forget the name format. Ask: "Check the test expectations — what shape does the user object need?"
-
-### When stuck
-
-1. Start with the error classes — "Define `NotFoundError` and `ValidationError` using `Data.TaggedError`. Each one just needs a `_tag`."
-2. For `findUser`: "Check if id is negative. If so, fail with `new NotFoundError()`. Otherwise, succeed with the user object."
-3. For `validateAge`: "What range is valid? Use the test boundary cases to figure it out."
-4. For `findUserOrDefault`: "Call `findUser`, then use `catchTag('NotFoundError', ...)` to recover with a default user."
+5. **Start with error classes** — define `NotFoundError` and `ValidationError` using `Data.TaggedError` first, then implement the functions that use them.
 
 ## On Completion
 

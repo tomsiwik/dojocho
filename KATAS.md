@@ -1,6 +1,6 @@
 # Effect-TS Kata Dojo
 
-30 hands-on katas for learning Effect-TS, from first Effect to full capstone project.
+40 hands-on katas for learning Effect-TS, from first Effect to full capstone project.
 
 ## How It Works
 
@@ -32,15 +32,14 @@ Your role is Socratic guide, not answer key. The student learns by figuring it o
 
 ### Concept accuracy
 
-Only teach what the student is actually writing. Each kata's SENSEI.md lists "Concepts Practiced" — those are the APIs the student uses in `solution.ts`. Test-only APIs like `runSync`, `runSyncExit`, and `Exit.isFailure` belong to the test harness. Never attribute them to the student's learning.
+Only teach what the student is actually writing. Each kata's SENSEI.md Test Map shows which concepts each test verifies — those are the APIs the student uses in `solution.ts`. Test-only APIs like `runSync`, `runSyncExit`, and `Exit.isFailure` belong to the test harness. Never attribute them to the student's learning.
 
 ### SENSEI.md is the teaching authority
 
 When a kata has a SENSEI.md, read it first and follow it:
 
-- **Concepts Practiced** — only reference these APIs when teaching
 - **Test Map** — use this to map test results to concepts when checking work
-- **Teaching Approach** — Socratic prompts, common pitfalls, stuck-user guidance
+- **Teaching Approach** — Socratic prompts, common pitfalls
 - **On Completion** — insight (deeper knowledge) and bridge (what's next)
 
 If SENSEI.md has specific guidance, it overrides the general rules above.
@@ -85,7 +84,7 @@ katas/001-hello-effect/
 
 ## Katas
 
-30 katas across 13 areas, from basics to a full capstone project:
+40 katas across 20 areas, from basics to a full capstone project:
 
 | # | Name | Area | Concepts |
 |---|------|------|----------|
@@ -119,6 +118,16 @@ katas/001-hello-effect/
 | 028 | Logging and Spans | Observability | `Effect.log`, `annotateLogs`, `withSpan` |
 | 029 | HTTP Client | HTTP | service abstraction, Schema, retry |
 | 030 | Capstone | Capstone | full API with all patterns |
+| 031 | Config and Environment | Configuration | `Config.string`, `.number`, `ConfigProvider.fromMap` |
+| 032 | Cause and Defects | Error Patterns | `Effect.die`, `.sandbox`, `Cause`, `.catchAllDefect` |
+| 033 | Pattern Matching | Pattern Matching | `Match.type`, `Data.TaggedEnum`, exhaustive matching |
+| 034 | Deferred and Coordination | Coordination | `Deferred.make`, `.succeed`, `.await` |
+| 035 | Queue and Backpressure | Coordination | `Queue.bounded`, `.offer`, `.take` |
+| 036 | Schema Advanced | Domain Modeling | `Schema.brand`, `.transform`, `.NonEmptyString` |
+| 037 | Cache and Memoization | Performance | `Cache.make`, `.get`, TTL, capacity |
+| 038 | Metrics | Observability | `Metric.counter`, `.histogram`, `.gauge` |
+| 039 | Managed Runtime | Runtime | `ManagedRuntime.make`, `.runSync`, `.dispose` |
+| 040 | Request Batching | Batching | `Request`, `RequestResolver`, batched queries |
 
 ## Git Tracking
 

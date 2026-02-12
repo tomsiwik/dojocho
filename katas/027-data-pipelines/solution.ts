@@ -1,7 +1,7 @@
 import { Effect, Stream } from "effect";
 
-// TODO: Use Stream.mapEffect to asynchronously process each item
-// Apply fn to each element in the stream, collect results
+/** Use Stream.mapEffect to asynchronously process each item
+ * Apply fn to each element in the stream, collect results */
 export const processItems = <A, B>(
   items: A[],
   fn: (a: A) => Effect.Effect<B>,
@@ -9,8 +9,8 @@ export const processItems = <A, B>(
   throw new Error("Not implemented");
 };
 
-// TODO: Build a pipeline: take array of strings, parse to numbers (skip non-numeric),
-// filter positives, sum them
+/** Build a pipeline: take array of strings, parse to numbers (skip non-numeric),
+ * filter positives, sum them */
 export const sumPositiveNumbers = (items: string[]): Effect.Effect<number> => {
   throw new Error("Not implemented");
 };

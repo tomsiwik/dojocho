@@ -32,18 +32,6 @@ const result = pipe(
 
 - **001 Hello Effect** — `Effect.succeed`, `Effect.sync` (creating Effects)
 
-## Skills
-
-None — continuing in the Basics area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.succeed` — create an Effect from a value (review from 001)
-- `Effect.map` — transform the success value inside an Effect
-- `pipe` — compose operations left-to-right
-
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
 ## Test Map
@@ -71,12 +59,7 @@ APIs the user writes in `solution.ts`:
 1. **Returning plain values from map** — `Effect.map(effect, (n) => n * 2)` is correct. Students sometimes try `Effect.succeed(Effect.map(...))` — double-wrapping. Ask: "What does `map` already return?"
 2. **Skipping pipe for `doubleAndFormat`** — students may try to nest maps or create intermediate variables. Nudge: "Can you express both steps in a single `pipe` chain?"
 3. **Confusing `pipe` import** — `pipe` comes from `"effect"`, not a separate module. The type signature helps: it takes a value and a series of functions.
-
-### When stuck
-
-1. Start with `double` — it's the simplest: "Just create an Effect with `succeed`, then transform it with `map`"
-2. For `doubleAndFormat`: "You already know `double`. Now add a second `map` step in the same `pipe`"
-3. Point to the Briefing Hints section above — it shows both standalone `Effect.map` and the `pipe` pattern
+4. **Start simple** — start with `double` (just `succeed` + `map`), then for `doubleAndFormat` add a second `map` step in the same `pipe`.
 
 ## On Completion
 

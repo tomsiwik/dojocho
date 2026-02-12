@@ -49,16 +49,6 @@ const result = Effect.runSync(
 
 Invoke `effect-patterns-testing` before teaching this kata. This is the first kata in the Testing area.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.gen` — create Effects using generator syntax (review)
-- `yield*` on a service tag — access UserRepo from context (review)
-- `yield*` on a service method — call `repo.findById(id)` (review)
-- `Effect.catchAll` — recover from any error, providing a fallback Effect
-- String formatting — template literals for `"User: {name}"`
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Effect.provideService` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -66,7 +56,7 @@ APIs the user writes in `solution.ts`:
 | Test | Concept | Verifies |
 |------|---------|----------|
 | `getUser(1) returns 'User: Alice'` | `yield* UserRepo` + `yield* repo.findById` | Service access and method call — success path |
-| `getUser(99) fails` | Error propagation | Service method failure passes through |
+| `getUser(99) fails with 'not found'` | Error propagation | Service method failure passes through exactly |
 | `getUserSafe(1) returns 'User: Alice'` | `Effect.gen` + service access | Success path with error recovery in scope |
 | `getUserSafe(99) returns 'User: Unknown'` | `Effect.catchAll` | Recovering from service errors with a fallback |
 
@@ -85,13 +75,7 @@ APIs the user writes in `solution.ts`:
 2. **Using try/catch instead of catchAll** — inside `Effect.gen`, errors short-circuit the generator. You can't catch them with JavaScript `try/catch`. Use `Effect.catchAll` on the whole effect or use `yield*` with a caught effect. Ask: "How does error handling work in Effect vs regular JavaScript?"
 3. **Applying catchAll too narrowly** — `catchAll` should wrap the entire pipeline for `getUserSafe`, not just the `findById` call. The simplest approach: write `getUser(id)` first, then pipe it through `catchAll` for the safe version.
 4. **Returning the wrong fallback** — `getUserSafe(99)` should return `"User: Unknown"`, not just `"Unknown"`. The `"User: "` prefix must be in the fallback too.
-
-### When stuck
-
-1. Start with `getUser` — "Inside `Effect.gen`, yield the `UserRepo` tag, then yield `repo.findById(id)`, then format the result as `User: ${name}`"
-2. For `getUserSafe`: "Start by calling `getUser(id)` — you already wrote it. Then pipe it through `catchAll` to handle the error case."
-3. The fallback in `catchAll` should return `Effect.succeed("User: Unknown")`
-4. Point to the Briefing hints showing the `catchAll` pattern
+5. **Reuse `getUser` in `getUserSafe`** — call `getUser(id)` (already written) then pipe it through `catchAll` to handle the error case with `Effect.succeed("User: Unknown")`.
 
 ## On Completion
 

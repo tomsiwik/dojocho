@@ -39,21 +39,6 @@ const tapped = Effect.succeed(42).pipe(
 - **002 Transform with Map** — `Effect.map`, `pipe`
 - **003 Generator Pipelines** — `Effect.gen`, `yield*`, `Effect.fail`
 
-## Skills
-
-None — continuing in the Basics area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.flatMap` — chain an Effect that depends on a previous Effect's result
-- `Effect.andThen` — sequence two Effects, passing the result forward
-- `Effect.tap` — run a side effect without changing the result
-- `Effect.succeed` — create successful Effects (review)
-- `Effect.fail` — create failed Effects (review)
-- `Effect.sync` — lazy side effects (for `tap`)
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -82,13 +67,7 @@ APIs the user writes in `solution.ts`:
 2. **Lookup logic** — students may overcomplicate the id-to-name mapping. Nudge: "A simple `if/else` or ternary works. What should happen for id 0? For id 1? For anything else?"
 3. **`tap` changing the value** — the callback in `tap` runs for its side effect; its return value is ignored (the original value passes through). Ask: "After `tap`, what value does the chain continue with?"
 4. **`logAndReturn` side effect** — students need to push to the `sideEffects` array. This is a mutation, so use `Effect.sync(() => { ... })` inside `tap`.
-
-### When stuck
-
-1. Start with `lookupAndGreet` — "First create an Effect that looks up the name. Then use `flatMap` to turn that name into a greeting Effect."
-2. For `validateAndProcess`: "What should happen first — validation or processing? `andThen` sequences them."
-3. For `logAndReturn`: "You want to push to an array (side effect) but return the original value unchanged. Which operator does that?"
-4. Point to the Briefing Hints section above for the patterns of each operator
+5. **Start with `lookupAndGreet`** — first create an Effect that looks up the name, then use `flatMap` to turn that name into a greeting Effect.
 
 ## On Completion
 

@@ -20,19 +20,6 @@ Learn to use `Stream.take` to take the first n elements from a stream, `Stream.s
 
 Invoke `effect-patterns-streams` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Stream.iterate` or `Stream.range` — create an infinite or bounded stream of numbers
-- `Stream.take` — limit a stream to the first n elements
-- `Stream.scan` — stateful transformation emitting each intermediate accumulation
-- `Stream.grouped` — batch elements into fixed-size chunks
-- `Stream.fromIterable` — create a stream from an array (review)
-- `Stream.runCollect` — collect stream results into a Chunk (review)
-- `Chunk.toArray` — convert Chunk to array (review)
-- `Chunk.map` — transform inner chunks (for converting nested Chunk structures)
-
 > **Note**: `Effect.runSync` appears only in tests. The student does NOT write it. Never attribute it to their learning.
 
 ## Test Map
@@ -49,9 +36,9 @@ APIs the user writes in `solution.ts`:
 
 ### Socratic prompts
 
-- "How would you safely take 3 elements from an infinite list? In an array, you'd need the whole thing in memory first. How does a stream handle this?"
-- "What's the difference between `runFold` (from kata 024) and `scan`? Hint: how many values does each produce?"
-- "For batching, you need groups of a fixed size — but the last group might be smaller. How does `grouped` handle that?"
+- "How does `scan` differ from `reduce` / `runFold`? When would you want *all* the intermediate results instead of just the final one?"
+- "If you `take(3)` from an infinite stream, how does laziness prevent the stream from running forever?"
+- "For batching, the last group might be smaller than the batch size. How does `grouped` handle that — does it drop it, pad it, or emit it as-is?"
 
 ### Common pitfalls
 
@@ -59,13 +46,7 @@ APIs the user writes in `solution.ts`:
 2. **`scan` emits every intermediate value** — unlike `runFold` which produces one final result, `scan` emits each accumulation step. For `[1, 2, 3]` with addition, scan emits `[1, 3, 6]`, not just `6`. Students may confuse scan with fold. Ask: "How many elements does the output stream have compared to the input?"
 3. **`grouped` returns Chunk<Chunk<A>>** — after `runCollect`, you get a `Chunk` of `Chunk`s. You need to convert both the outer and inner chunks to arrays. Students may forget the inner conversion. Ask: "After `runCollect`, what's the type? How do you get `number[][]` from it?"
 4. **`scan` initial value and empty streams** — `scan` with an initial value of 0 would emit `[0, 1, 3, 6]` for input `[1, 2, 3]`. The test expects `[1, 3, 6]` — no leading zero. Students need to think about whether to use an initial value or start from the first element. Ask: "The test expects 3 elements out for 3 elements in. Does your scan add an extra element?"
-
-### When stuck
-
-1. For `takeFirst`: "Start with `Stream.iterate(1, n => n + 1)` — that's an infinite stream of 1, 2, 3, ... Then pipe through `Stream.take(n)` and collect."
-2. For `runningTotal`: "Think of `scan` like a running version of `fold`. Each step adds the next element to the running sum and emits it."
-3. For `batchItems`: "Create a stream from the array, pipe through `Stream.grouped(size)`, collect, then convert the nested chunks to arrays."
-4. Refer them to the `take`, `scan`, and `grouped` patterns in the Concepts Practiced section above
+5. **`takeFirst` uses `Stream.iterate`** — create an infinite stream with `Stream.iterate(1, n => n + 1)`, then pipe through `Stream.take(n)` and collect. Don't pre-allocate a finite array.
 
 ## On Completion
 

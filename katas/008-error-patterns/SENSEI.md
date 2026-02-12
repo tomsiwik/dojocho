@@ -46,14 +46,6 @@ const matched = effect.pipe(
 
 Invoke `effect-patterns-error-handling-resilience` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.catchTags` — handle multiple tagged error types exhaustively
-- `Effect.orElse` — replace a failed Effect with a fallback Effect
-- `Effect.match` — fold an Effect into a single success value by handling both outcomes
-
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
 ## Test Map
@@ -84,13 +76,7 @@ APIs the user writes in `solution.ts`:
 2. **Confusing `orElse` and `catchAll`** — `orElse` takes a function that returns an Effect (ignoring the error), while `catchAll` receives the error as a parameter. Ask: "Do you need to inspect the error, or just try something else entirely?"
 3. **`match` return types** — both the success and failure handlers in `match` must return the same type. Ask: "If success returns a string, what must failure return?"
 4. **`withFallback` error type** — when both primary and fallback can fail, the resulting error type is the fallback's error type. Students may be surprised that the primary's error disappears.
-
-### When stuck
-
-1. Start with `handleAllErrors` — "Use `Effect.catchTags` with an object mapping each `_tag` to a recovery function"
-2. For `withFallback`: "Pipe the primary effect into `Effect.orElse(() => fallback)` — if primary fails, run fallback instead"
-3. For `toResult`: "Use `Effect.match` with two handlers: one for success, one for failure. Both return a string."
-4. Point to the error type definitions at the top of solution.ts — they tell you exactly which `_tag` values to handle
+5. **Start with `handleAllErrors`** — use `Effect.catchTags` with an object mapping each `_tag` to a recovery function; check the error type definitions in solution.ts for the exact `_tag` values to handle.
 
 ## On Completion
 

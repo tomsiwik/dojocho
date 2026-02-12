@@ -41,22 +41,6 @@ const greet = (nickname: Option.Option<string>) =>
 - **009 Option Type** — `Option`, `some`, `none`, `match`
 - **014 Schema Basics** — `Schema`, `decodeUnknown`
 
-## Skills
-
-None — final kata in the Domain Modeling area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.succeed` — return a validated value (review)
-- `Effect.fail` — return a domain error (review)
-- `Effect.gen` — sequence validators in a generator (review)
-- `yield*` — unwrap effects from validators (review)
-- `Option.none()` — represent absent optional fields
-- `Option.match` — handle both cases of an Option (onNone, onSome)
-- `Data.TaggedError` — already defined, but students learn the pattern
-
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -88,14 +72,7 @@ APIs the user writes in `solution.ts`:
 3. **Using if/else in createUser instead of Effect.gen** — students might try to validate everything in a single conditional. Nudge: "You already have `validateEmail` and `validateAge` as separate Effects. How does `yield*` let you compose them?"
 4. **Option.match syntax** — the API is `Option.match(option, { onNone: () => ..., onSome: (value) => ... })`. Students may forget the object shape or try to pattern match differently. Check the Effect docs for the exact signature.
 5. **formatUser output format** — the tests expect `"Alice <a@b.com>"` without nickname and `"Alice <a@b.com> aka Al"` with nickname. Watch the exact spacing and format.
-
-### When stuck
-
-1. Start with `validateEmail` — "Check if `email.includes('@')`. If yes, `Effect.succeed(email)`. If no, `Effect.fail(new InvalidEmail({ email }))`."
-2. For `validateAge`: "Same pattern — check `age >= 0 && age <= 150`, succeed or fail accordingly."
-3. For `createUser`: "Use `Effect.gen`. Yield `validateEmail(email)`, yield `validateAge(age)`, then return the User object with `Option.none()` for nickname."
-4. For `formatUser`: "Use `Option.match` on `user.nickname`. When none, return `{name} <{email}>`. When some, append ` aka {nickname}`."
-5. Point to the Briefing hints showing the validation and Option.match patterns
+6. **Compose validators with `Effect.gen`** — use `yield* validateEmail(email)`, then `yield* validateAge(age)`, then return the User object with `Option.none()` for nickname. If the first validator fails, the generator short-circuits.
 
 ## On Completion
 

@@ -33,21 +33,6 @@ const old = yield* Ref.modify(ref, (n) => [n, n + 1]);
 - **017 Parallel Effects** — `Effect.all`, concurrency
 - **018 Race and Timeout** — `Effect.race`, `Effect.timeout`
 
-## Skills
-
-None — continuing in the Concurrency area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Ref.make` — create a new mutable reference with an initial value
-- `Ref.get` — read the current value of a Ref
-- `Ref.update` — modify the value inside a Ref with a function
-- `Ref.modify` — atomically read and update a Ref in one step
-- `Effect.gen` — sequence Effects with generator syntax (review)
-- `yield*` — unwrap Effect values in generators (review)
-
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
 ## Test Map
@@ -74,13 +59,7 @@ APIs the user writes in `solution.ts`:
 2. **`Ref.modify` tuple order** — `Ref.modify` takes a function that returns `[returnValue, newState]`. The return value comes first, the new state second. Getting this backwards means `getAndIncrement` returns the wrong value. Ask: "What does the tuple `[current, current + 1]` mean — which part is returned, which is stored?"
 3. **Using `Ref.get` + `Ref.update` instead of `Ref.modify`** — for `getAndIncrement`, a separate get-then-update is not atomic. Between the read and the write, another fiber could modify the Ref. Ask: "What if two fibers call `getAndIncrement` at the same time with separate get and update?"
 4. **Forgetting `yield*` on Ref operations** — `Ref.make`, `Ref.get`, `Ref.update`, and `Ref.modify` all return Effects. They must be yielded inside a generator. Ask: "What type does `Ref.make(0)` return?"
-
-### When stuck
-
-1. Start with `counter` — "Create a Ref with 0, loop n times incrementing it, then read the final value with `Ref.get`"
-2. For `accumulate`: "Same pattern as counter but the Ref holds an array. Each update pushes one item."
-3. For `getAndIncrement`: "You need to return the current value AND increment. `Ref.modify` does both in one step — it takes a function from current state to `[returnValue, newState]`"
-4. Point to the Briefing hints for `Ref.make`, `Ref.update`, and `Ref.modify` patterns
+5. **`Ref.modify` returns `[returnValue, newState]`** — you need to return the current value AND set the new one in a single step. The function signature is `(current) => [valueToReturn, newState]`.
 
 ## On Completion
 

@@ -1,11 +1,27 @@
-import { Effect, Exit, Option } from "effect";
+import { Effect, Exit, Layer, Option } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   findProduct,
   getValidatedProduct,
   formatExpensiveProducts,
-  TestProductRepo,
+  ProductRepo,
+  NotFoundError,
 } from "./solution.js";
+
+const testProducts = [
+  { id: 1, name: "Widget", price: 9.99 },
+  { id: 2, name: "Gadget", price: 24.99 },
+  { id: 3, name: "Gizmo", price: 4.99 },
+];
+
+const TestProductRepo = Layer.succeed(ProductRepo, {
+  findById: (id: number) => {
+    const product = testProducts.find((p) => p.id === id);
+    if (product) return Effect.succeed(product);
+    return Effect.fail(new NotFoundError({ id }));
+  },
+  findAll: () => Effect.succeed(testProducts),
+});
 
 const run = <A, E>(effect: Effect.Effect<A, E, any>) =>
   Effect.runSync(Effect.provide(effect, TestProductRepo));

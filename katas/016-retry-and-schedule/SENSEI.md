@@ -26,25 +26,12 @@ const repeated = Effect.repeat(myEffect, Schedule.recurs(3));
 
 ## Prerequisites
 
-- **001-015** — all prior katas (Basics, Error Handling, Error Patterns, Value Handling, Dependency Injection, Testing, Domain Modeling)
+- **006 Handle Errors** — `Effect.fail`, `catchAll`
+- **008 Error Patterns** — `catchTag`, error recovery patterns
 
 ## Skills
 
 Invoke `effect-patterns-scheduling` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.retry` — retry a failing effect according to a schedule
-- `Schedule.recurs` — create a schedule that recurs a fixed number of times
-- `Ref.make` — create a mutable reference for tracking state
-- `Ref.get` — read the current value of a Ref
-- `Ref.update` — modify the value inside a Ref
-- `Effect.gen` — sequence Effects with generator syntax (review)
-- `Effect.succeed` — create a successful Effect (review)
-- `Effect.fail` — create a failed Effect (review)
-- `Effect.repeat` — repeat a successful effect according to a schedule
 
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, and `Effect.runPromise` appear only in tests. Never attribute them to the user's learning.
 
@@ -72,13 +59,7 @@ APIs the user writes in `solution.ts`:
 2. **`repeatCollect` needs to collect results** — `Effect.repeat` with `Schedule.recurs(3)` runs the effect 1 + 3 = 4 times. Look at the schedule's return type or use a Ref to accumulate. Ask: "How many times does the effect run with `recurs(3)`? The initial run plus 3 repeats."
 3. **Confusing retry and repeat** — retry applies to failing effects (retries on failure), repeat applies to succeeding effects (repeats on success). Ask: "Does `retryThreeTimes` retry successes or failures?"
 4. **Off-by-one with `Schedule.recurs`** — `recurs(3)` means 3 retries (not 3 total attempts). So the effect runs up to 4 times total. Check the test expectations carefully.
-
-### When stuck
-
-1. Start with `retryThreeTimes` — it's the simplest: "Just apply `Effect.retry` with `Schedule.recurs(3)` to the effect"
-2. For `flakyEffect`: "Use `Effect.gen` to create a Ref, then on each call increment it and decide whether to fail or succeed based on the count"
-3. For `repeatCollect`: "Think about how to accumulate results across repeats — a Ref<number[]> can collect each value"
-4. Point to the Briefing hints for `Effect.retry` and `Schedule.recurs` patterns
+5. **`flakyEffect` state tracking** — use `Effect.gen` to create a Ref, then on each call increment it and decide whether to fail or succeed based on the count vs `failCount`.
 
 ## On Completion
 

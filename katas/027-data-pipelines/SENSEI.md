@@ -21,18 +21,6 @@ Learn to use `Stream.mapEffect` to apply an effectful function to each stream el
 
 Invoke `effect-patterns-building-data-pipelines` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Stream.fromIterable` — create a stream from an array
-- `Stream.mapEffect` — transform each element through an effectful function
-- `Stream.map` — transform elements (review)
-- `Stream.filter` — keep elements matching a predicate (review)
-- `Stream.runCollect` — collect all stream elements into a Chunk
-- `Stream.runFold` — reduce a stream to a single accumulated value
-- `Chunk.toArray` — convert a Chunk to a plain array
-
 > **Note**: `Effect.runSync` appears only in tests. Never attribute it to the user's learning.
 
 ## Test Map
@@ -47,9 +35,9 @@ APIs the user writes in `solution.ts`:
 
 ### Socratic prompts
 
-- "You've used `Stream.map` for pure transformations. What if each transformation step needs to be an Effect — like a database lookup or an API call?"
-- "For `sumPositiveNumbers`, there are three stages: parse strings to numbers, filter out bad or negative values, sum the rest. How would you chain those as stream operations?"
-- "What's the difference between `runCollect` (gather everything) and `runFold` (reduce to one value)? When would you use each?"
+- "If one step in your pipeline fails (e.g., a bad parse or a failed API call), what happens to the partially processed data? Does the entire pipeline abort?"
+- "For `sumPositiveNumbers`, there are three stages: parse, filter, sum. What happens if you reorder them -- say, filter before parse? Does the pipeline still work?"
+- "What makes `mapEffect` different from `map`? When would each step in a pipeline *need* to be effectful vs pure?"
 
 ### Common pitfalls
 
@@ -57,13 +45,7 @@ APIs the user writes in `solution.ts`:
 2. **processItems uses mapEffect, not map** — since `fn` returns an `Effect`, you need `Stream.mapEffect` to unwrap each result into the stream. Using `Stream.map` would give you a stream of Effects. Ask: "What type do you get if you `map` with a function that returns an Effect?"
 3. **runFold needs an initial value and a combine function** — `Stream.runFold(0, (acc, n) => acc + n)` starts at 0 and adds each element. Ask: "What should the sum be if the stream is empty?"
 4. **Filter placement matters** — filter out `NaN` values BEFORE filtering for positive numbers. Both checks can be combined, but the parse step must come first.
-
-### When stuck
-
-1. Start with `processItems` — it's straightforward: "Create a stream from items, mapEffect with fn, runCollect, convert to array"
-2. For `sumPositiveNumbers`: "Break it into stages: fromIterable -> map(parseInt) -> filter(not NaN and positive) -> runFold to sum"
-3. Remind them that `runFold` takes two arguments: the initial accumulator and a function `(acc, element) => newAcc`
-4. Refer them to the `mapEffect` and `runFold` patterns in the Concepts Practiced section above
+5. **Pipeline stage order** — break `sumPositiveNumbers` into stages: `fromIterable` -> `map(parseInt)` -> `filter(not NaN and positive)` -> `runFold` to sum.
 
 ## On Completion
 

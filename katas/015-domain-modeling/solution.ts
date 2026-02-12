@@ -16,18 +16,18 @@ export interface User {
   readonly nickname: Option.Option<string>;
 }
 
-// TODO: Validate email contains "@", fail with InvalidEmail otherwise
+/** Validate email contains "@", fail with InvalidEmail otherwise */
 export const validateEmail = (email: string): Effect.Effect<string, InvalidEmail> => {
   throw new Error("Not implemented");
 };
 
-// TODO: Validate age is 0-150, fail with InvalidAge otherwise
+/** Validate age is 0-150, fail with InvalidAge otherwise */
 export const validateAge = (age: number): Effect.Effect<number, InvalidAge> => {
   throw new Error("Not implemented");
 };
 
-// TODO: Use Effect.gen to validate email and age, then construct a User
-// nickname should be Option.none()
+/** Use Effect.gen to validate email and age, then construct a User
+ * nickname should be Option.none() */
 export const createUser = (
   name: string,
   email: string,
@@ -36,7 +36,7 @@ export const createUser = (
   throw new Error("Not implemented");
 };
 
-// TODO: Format user as "{name} <{email}>" with optional " aka {nickname}" if present
+/** Format user as "{name} <{email}>" with optional " aka {nickname}" if present */
 export const formatUser = (user: User): string => {
   throw new Error("Not implemented");
 };

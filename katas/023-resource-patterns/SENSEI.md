@@ -16,21 +16,6 @@ Learn to use `Effect.ensuring` to add additional cleanup that always runs, verif
 - **021 Acquire Release** — `Effect.acquireRelease`, `Effect.scoped`
 - **022 Scoped Layers** — `Layer.scoped`, service lifetime
 
-## Skills
-
-None — final kata in the Resource Management area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.acquireRelease` — pair acquire with guaranteed release (review)
-- `Effect.ensuring` — add a finalizer that runs regardless of outcome
-- `Effect.scoped` — define the scope boundary (review)
-- `Effect.gen` — sequence effects in a generator
-- `Effect.sync` — wrap side effects like logging
-- `Effect.catchAll` or `Effect.catchTag` — recover from errors after the scoped block
-
 > **Note**: `Effect.runSync` appears only in tests. The student does NOT write it. Never attribute it to their learning.
 
 ## Test Map
@@ -54,13 +39,7 @@ APIs the user writes in `solution.ts`:
 2. **`releaseOnFailure` — catching after scoped** — the use phase fails inside the scope, but `acquireRelease` still releases. To return `"released"`, you need to catch the error *after* `Effect.scoped`. Students may try to catch inside the scope. Ask: "Where should the `catchAll` go — inside or outside the `Effect.scoped` call?"
 3. **Forgetting `Effect.scoped`** — same pitfall as kata 021. The scope boundary triggers the release. Without it, nothing gets cleaned up.
 4. **`withEnsuring` structure** — students need to combine `acquireRelease` (with its own release) *and* `ensuring` on the outer effect. The ensuring callback is separate from the acquireRelease release function.
-
-### When stuck
-
-1. For `withEnsuring`: "Start with an `acquireRelease` that logs `'acquire'` and `'release'`. Wrap the whole scoped effect with `ensuring` that logs `'ensure-cleanup'`."
-2. Clarify `ensuring`: "It's like a `finally` block that runs after everything else — even after the acquireRelease release."
-3. For `releaseOnFailure`: "Create an `acquireRelease` where the use phase calls `Effect.fail`. Wrap with `Effect.scoped`. Then catch the error outside the scope and return `'released'`."
-4. Refer them to the `ensuring` and error recovery patterns in the Concepts Practiced section above
+5. **`releaseOnFailure` catch placement** — create an `acquireRelease` where the use phase calls `Effect.fail`, wrap with `Effect.scoped`, then catch the error *outside* the scope and return `'released'`.
 
 ## On Completion
 

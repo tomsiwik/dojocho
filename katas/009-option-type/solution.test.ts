@@ -1,8 +1,8 @@
 import { Option } from "effect";
-import { describe as desc, expect, it } from "vitest";
-import { fromNullable, describe as describeOpt, doubleOption, safeDivide, getOrDefault } from "./solution.js";
+import { describe, expect, it } from "vitest";
+import { fromNullable, describeOption, doubleOption, safeDivide, getOrDefault } from "./solution.js";
 
-desc("009 — Option Type", () => {
+describe("009 — Option Type", () => {
   it("fromNullable converts value to Some", () => {
     expect(fromNullable(42)).toEqual(Option.some(42));
   });
@@ -16,11 +16,11 @@ desc("009 — Option Type", () => {
   });
 
   it("describe returns 'Found: hello' for Some", () => {
-    expect(describeOpt(Option.some("hello"))).toBe("Found: hello");
+    expect(describeOption(Option.some("hello"))).toBe("Found: hello");
   });
 
   it("describe returns 'Nothing' for None", () => {
-    expect(describeOpt(Option.none())).toBe("Nothing");
+    expect(describeOption(Option.none())).toBe("Nothing");
   });
 
   it("doubleOption doubles Some(5) to Some(10)", () => {

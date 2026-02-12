@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
 import { UserRepo, getUser, getUserSafe } from "./solution.js";
 
@@ -18,11 +18,11 @@ describe("013 — Testing Effects", () => {
     expect(result).toBe("User: Alice");
   });
 
-  it("getUser(99) fails", () => {
+  it("getUser(99) fails with 'not found'", () => {
     const exit = Effect.runSyncExit(
       Effect.provideService(getUser(99), UserRepo, TestUserRepo),
     );
-    expect(exit._tag).toBe("Failure");
+    expect(exit).toEqual(Exit.fail("not found"));
   });
 
   it("getUserSafe(1) returns 'User: Alice'", () => {

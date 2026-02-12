@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
 import { raceTwo, withTimeout, withTimeoutFallback } from "./solution.js";
 
@@ -20,5 +20,11 @@ describe("018 — Race and Timeout", () => {
     const slow = Effect.succeed("slow").pipe(Effect.delay("1 second"));
     const result = await Effect.runPromise(withTimeoutFallback(slow, "10 millis", "default"));
     expect(result).toBe("default");
+  });
+
+  it("withTimeout fails when effect exceeds duration", async () => {
+    const slow = Effect.succeed("slow").pipe(Effect.delay("1 second"));
+    const exit = await Effect.runPromiseExit(withTimeout(slow, "10 millis"));
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 });

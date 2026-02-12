@@ -25,18 +25,12 @@ const processed = Effect.forEach(items, fn, { concurrency: 3 });
 
 ## Prerequisites
 
-- **001-016** — all prior katas (Basics through Scheduling)
+- **003 Generator Pipelines** — `Effect.gen`, `yield*`
+- **005 Pipe Composition** — `pipe`, composing effects
 
 ## Skills
 
 Invoke `effect-patterns-concurrency` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.all` — run multiple effects and collect results, with optional concurrency
-- `Effect.forEach` — apply an effectful function to each item in a collection, with optional concurrency
 
 > **Note**: `Effect.runSync` and `Effect.runSyncExit` appear only in tests. Never attribute them to the user's learning.
 
@@ -63,12 +57,7 @@ APIs the user writes in `solution.ts`:
 1. **Forgetting the concurrency option** — without `{ concurrency: "unbounded" }`, `Effect.all` runs sequentially. The tests pass either way for correctness, but the kata is about parallelism. Ask: "Is your code actually running in parallel, or just sequentially?"
 2. **Using `Effect.all` instead of `Effect.forEach` for `processWithLimit`** — `Effect.forEach` takes a collection and a function, while `Effect.all` takes pre-built effects. Ask: "You have items and a function. Which combinator takes both?"
 3. **Wrong concurrency value for `processWithLimit`** — the function should limit to 3 concurrent operations. Check: "What does `{ concurrency: 3 }` mean exactly?"
-
-### When stuck
-
-1. Start with `fetchAll` — it's a single function call: "Pass the array of effects to `Effect.all` with the right options"
-2. For `processWithLimit`: "Think of it as `Array.map` but each mapping produces an Effect. Which Effect function does this?"
-3. Point to the Briefing hints for `Effect.all` and `Effect.forEach` patterns
+4. **`processWithLimit` is effectful map** — think of it as `Array.map` but each mapping produces an Effect. `Effect.forEach` takes items and a function, unlike `Effect.all` which takes pre-built effects.
 
 ## On Completion
 

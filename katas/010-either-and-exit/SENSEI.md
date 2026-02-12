@@ -43,21 +43,6 @@ const result = Exit.match(exit, {
 
 - **009 Option Type** — `Option`, `some`, `none`, `match`, `map`, `flatMap`
 
-## Skills
-
-None — continuing in the Value Handling area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.either` — convert an Effect's error channel into an Either value
-- `Either.match` — handle both Left and Right cases
-- `Either.right` — create a Right (success) value
-- `Either.left` — create a Left (failure) value
-- `Effect.runSyncExit` — run an Effect and get an Exit result
-- `Exit.match` — handle both Success and Failure exit cases
-
 > **Note**: Unlike previous katas, the user DOES write `Effect.runSyncExit` and `Exit.match` in `inspectExit`. This is intentional — inspecting an Exit is the lesson.
 
 ## Test Map
@@ -88,13 +73,7 @@ APIs the user writes in `solution.ts`:
 3. **Exit vs Either** — Exit is what you get after running an Effect. It's similar to Either but lives in the "execution" world, not the "pure data" world. Ask: "When do you get an Exit? Before or after running an Effect?"
 4. **Forgetting Effect.either in safeRun** — students may try to use try/catch or Effect.catchAll. Nudge: "`Effect.either` gives you the Either directly — no catching needed."
 5. **inspectExit uses runSyncExit** — this is the one place in the kata series where the user writes runtime execution code. It's intentional. Ask: "Why would you want to inspect the Exit rather than just running the Effect normally?"
-
-### When stuck
-
-1. Start with `validatePositive` — it's pure, no Effects: "If `n` is positive, return `Either.right(n)`. Otherwise, return `Either.left` with an error message."
-2. For `safeRun`: "Pipe the effect through `Effect.either` to get an `Effect<Either<...>>`, then `Effect.map` with `Either.match` to turn both sides into strings"
-3. For `inspectExit`: "Call `Effect.runSyncExit(effect)` to get an Exit, then use `Exit.match` to convert both cases to strings"
-4. Point to the Briefing Hints section above showing the `Effect.either` and `Exit.match` patterns
+6. **Start with `validatePositive`** — it's pure, no Effects: if `n` is positive, return `Either.right(n)`, otherwise return `Either.left` with an error message.
 
 ## On Completion
 

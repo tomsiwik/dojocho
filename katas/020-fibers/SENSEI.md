@@ -42,16 +42,6 @@ const interrupted = Effect.gen(function* () {
 
 Invoke `effect-patterns-concurrency-getting-started` before teaching this kata.
 
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.fork` — start an effect as a background fiber
-- `Fiber.join` — wait for a fiber to complete and get its result
-- `Fiber.interrupt` — cancel a running fiber
-- `Effect.gen` — sequence Effects with generator syntax (review)
-- `yield*` — unwrap Effect values in generators (review)
-
 > **Note**: `Effect.runPromise` and `Effect.delay` appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -77,13 +67,7 @@ APIs the user writes in `solution.ts`:
 2. **Forgetting `yield*` on fork/join** — `Effect.fork` and `Fiber.join` both return Effects. They must be yielded. Ask: "What type does `Effect.fork(myEffect)` return?"
 3. **`forkBoth` — joining sequentially vs concurrently** — you can join two fibers one after another since they're already running concurrently (they were forked). The join just waits for completion. Ask: "If both fibers are already running, does the order you join them matter for correctness?"
 4. **Confusing fork with Effect.all** — `Effect.all` handles parallelism for you. `fork` gives you the fiber handle for manual control. Ask: "When would you choose `fork` over `Effect.all`?"
-
-### When stuck
-
-1. Start with `forkAndJoin` — it's the minimal pattern: "Fork the effect to get a fiber, then join the fiber to get the result"
-2. For `forkBoth`: "Same pattern twice — fork both effects, then join both fibers. How do you combine the two results into a tuple?"
-3. For `forkAndInterrupt`: "Fork the effect, interrupt the fiber, then just return the string 'interrupted'"
-4. Point to the Briefing hints for `Effect.fork`, `Fiber.join`, and `Fiber.interrupt` patterns
+5. **`forkBoth` is the pattern twice** — fork both effects to get two fibers, then join both fibers. Combine the two results into a tuple `[resultA, resultB]`.
 
 ## On Completion
 

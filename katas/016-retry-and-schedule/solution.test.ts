@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
 import { retryThreeTimes, flakyEffect, repeatCollect } from "./solution.js";
 
@@ -14,7 +14,7 @@ describe("016 — Retry and Schedule", () => {
 
   it("flakyEffect that fails 5 times still fails after 3 retries", () => {
     const exit = Effect.runSyncExit(retryThreeTimes(flakyEffect(5)));
-    expect(exit._tag).toBe("Failure");
+    expect(Exit.isFailure(exit)).toBe(true);
   });
 
   it("repeatCollect collects repeated values", async () => {

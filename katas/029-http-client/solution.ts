@@ -13,12 +13,12 @@ export const UserSchema = Schema.Struct({
 
 export type User = typeof UserSchema.Type;
 
-// TODO: Use HttpClient.get to fetch from the url, then decode with UserSchema
+/** Use HttpClient.get to fetch from the url, then decode with UserSchema */
 export const fetchUser = (url: string): Effect.Effect<User, string, HttpClient> => {
   throw new Error("Not implemented");
 };
 
-// TODO: Fetch user with retry (up to 2 retries)
+/** Fetch user with retry (up to 2 retries) */
 export const fetchUserWithRetry = (url: string): Effect.Effect<User, string, HttpClient> => {
   throw new Error("Not implemented");
 };

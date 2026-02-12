@@ -37,20 +37,6 @@ const result = Effect.runSync(Effect.provide(program, Combined));
 
 - **011 Services and Context** — `Context.Tag`, `yield*` on a tag, `yield*` on a service method
 
-## Skills
-
-None — continuing in the Dependency Injection area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Layer.succeed` — create a Layer from a static value
-- `Layer.effect` — create a Layer from an Effect (alternative approach)
-- `Effect.gen` — create Effects using generator syntax (review)
-- `yield*` on services — access Config and Logger from context (review)
-- `Effect.log` — log a message (for Logger implementation)
-
 > **Note**: `Effect.runSync`, `Effect.provide`, `Layer.merge`, and `Layer.succeed` (in tests) appear only in tests. Never attribute them to the user's learning.
 
 ## Test Map
@@ -74,13 +60,7 @@ APIs the user writes in `solution.ts`:
 2. **Forgetting to call Logger.log** — `getEndpoint` needs to use the Logger service. Students may skip the logging step. Check the test to see if logging is required for the test to pass.
 3. **Layer type annotation** — the stub uses a type cast. Students need to replace the entire implementation with a proper `Layer.succeed(Config, { ... })` call. Nudge: "Delete the placeholder and write a fresh `Layer.succeed` call."
 4. **String concatenation in getEndpoint** — the test expects `"https://test.com/users"`. Make sure to include the `/` between baseUrl and `"users"`.
-
-### When stuck
-
-1. Start with `ConfigLive` — "Use `Layer.succeed(Config, { baseUrl: 'https://api.example.com' })` to create a Layer that provides the Config service"
-2. For `LoggerLive`: "Same pattern — `Layer.succeed(Logger, { log: (msg) => Effect.log(msg) })`"
-3. For `getEndpoint`: "Yield both services, then combine `config.baseUrl + '/users'`"
-4. Point to the Briefing hints showing the `Layer.succeed` pattern
+5. **Start with `Layer.succeed`** — the simplest form is `Layer.succeed(Config, { baseUrl: 'https://api.example.com' })`. Use that pattern for both `ConfigLive` and `LoggerLive`.
 
 ## On Completion
 

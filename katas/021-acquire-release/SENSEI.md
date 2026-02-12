@@ -13,21 +13,13 @@ Learn to use `Effect.acquireRelease` to safely acquire and release resources, `E
 
 ## Prerequisites
 
-- **001–020** — all prior katas (Basics, Error Handling, Value Handling, Dependency Injection, Testing, Domain Modeling, Scheduling, Concurrency, Fibers)
+- **003 Generator Pipelines** — `Effect.gen`, `yield*`
+- **011 Services and Context** — `Context.Tag`, service access
+- **012 Layers** — `Layer`, composition
 
 ## Skills
 
 Invoke `effect-patterns-resource-management` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.acquireRelease` — pair an acquire effect with a release finalizer guaranteed to run
-- `Effect.scoped` — define the scope boundary for acquired resources
-- `Effect.gen` — sequence multiple resource acquisitions in a generator
-- `yield*` — unwrap Effect values inside a generator
-- `Effect.sync` — wrap side effects like logging (pushing to the log array)
 
 > **Note**: `Effect.runSync` appears only in tests. The student does NOT write it. Never attribute it to their learning.
 
@@ -52,13 +44,7 @@ APIs the user writes in `solution.ts`:
 2. **Release function signature** — the release function receives the acquired resource as its argument. Students may try to close over the resource variable instead. Nudge: "Look at the type of the release callback — what parameter does it get?"
 3. **`useTwoResources` structure** — both resources should be acquired inside a single `Effect.gen` wrapped with `Effect.scoped`. Each `yield*` of an `acquireRelease` registers its finalizer on the same scope. Ask: "If you yield two acquireRelease calls inside one gen, how many finalizers are registered?"
 4. **Using `Effect.sync` for log mutations** — pushing to the log array is a side effect. It needs to be wrapped in `Effect.sync(() => { ... })`. Students may try bare mutations inside the generator.
-
-### When stuck
-
-1. Start with `useResource` — "Create an `acquireRelease` where acquire pushes `'db:open'` and returns the resource, release pushes `'db:closed'`. Then use the resource in the middle."
-2. Point out that the "use" phase is separate from acquire/release — "After acquiring, you need to actually use the resource. Where does that code go?"
-3. For `useTwoResources`: "Same pattern twice inside an `Effect.gen`. Acquire 'a', then acquire 'b', then use both. Wrap the whole thing in `Effect.scoped`."
-4. Refer them to the `acquireRelease` pattern in the Concepts Practiced section above
+5. **Separate "use" phase** — the "use" phase is separate from acquire/release. After acquiring, you still need code to actually use the resource before the scope closes.
 
 ## On Completion
 

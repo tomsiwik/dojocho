@@ -16,20 +16,6 @@ Learn to use `Layer.scoped` to create layers that manage resource lifetimes, and
 - **012 Layers** — `Layer`, composition
 - **021 Acquire Release** — `Effect.acquireRelease`, `Effect.scoped`
 
-## Skills
-
-None — continuing in the Resource Management area.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Layer.scoped` — create a layer whose service lifetime is tied to a scope
-- `Effect.acquireRelease` — pair connection setup with teardown inside the layer
-- `Effect.gen` — sequence effects in a generator (for `runQuery`)
-- `yield*` — unwrap the Database service and call its methods
-- `Effect.sync` — wrap side effects like logging
-
 > **Note**: `Effect.runSync`, `Effect.scoped`, and `Effect.provide` appear only in tests. The student does NOT write them. Never attribute them to their learning.
 
 ## Test Map
@@ -37,6 +23,7 @@ APIs the user writes in `solution.ts`:
 | Test | Concept | Verifies |
 |------|---------|----------|
 | `DatabaseLive connects and disconnects` | `Layer.scoped` + `Effect.acquireRelease` | Log contains `"db:connected"` and `"db:disconnected"`; query returns `"result:SELECT 1"` |
+| `DatabaseLive disconnects even when query fails` | `acquireRelease` cleanup guarantee | Cleanup runs even when the use phase fails — `"db:disconnected"` still in log |
 
 ## Teaching Approach
 
@@ -52,13 +39,7 @@ APIs the user writes in `solution.ts`:
 2. **Returning the service, not the connection** — the acquireRelease creates and manages the connection, but the layer needs to provide a `Database` service (with a `query` method). Students may return the raw connection instead. Nudge: "What does the Database tag expect? A connection or a service with a `query` method?"
 3. **`runQuery` needs to access the service** — use `yield*` with the Database tag to get the service, then call `query`. Students may try to access the database directly. Ask: "How do you get a service from the context inside `Effect.gen`?"
 4. **Logging in the right places** — `"db:connected"` should be logged during acquire, `"db:disconnected"` during release. Students may log in the wrong phase.
-
-### When stuck
-
-1. Start with the shape: "Inside `Layer.scoped`, write an Effect that does `acquireRelease`. The acquire effect logs and returns something. The release effect logs cleanup."
-2. Clarify the return value: "After acquireRelease, return an object with a `query` method. That object is your Database service."
-3. For `runQuery`: "Use `yield*` to get the Database service from context, then call its `query` method with the SQL string."
-4. Refer them to the `Layer.scoped` pattern in the Concepts Practiced section above
+5. **Shape of `Layer.scoped`** — inside `Layer.scoped`, write an Effect that does `acquireRelease`, then return an object with a `query` method. That object is your Database service.
 
 ## On Completion
 

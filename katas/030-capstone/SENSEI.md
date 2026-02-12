@@ -11,7 +11,7 @@ Bring it all together -- services, layers, tagged errors, Option, Schema, and te
 1. Implement `findProduct` -- look up a product by id. If found, return it wrapped in `Option.some`. If not found, catch the error and return `Option.none`.
 2. Implement `getValidatedProduct` -- validate that price meets `minPrice`, then look up the product by id. Fail with `ValidationError` if price is invalid, or `NotFoundError` if the product is not found.
 3. Implement `formatExpensiveProducts` -- get all products, filter those with price above `minPrice`, and format each as `"{name}: ${price}"`.
-4. Implement `TestProductRepo` -- create a test `Layer` for `ProductRepo` with three products: Widget ($9.99), Gadget ($24.99), and Gizmo ($4.99).
+4. The `TestProductRepo` is provided in the test file — study it to understand the service interface.
 
 ## Prerequisites
 
@@ -20,19 +20,6 @@ Bring it all together -- services, layers, tagged errors, Option, Schema, and te
 ## Skills
 
 Invoke `effect-patterns-building-apis` before teaching this kata.
-
-## Concepts Practiced
-
-APIs the user writes in `solution.ts`:
-
-- `Effect.gen` + `yield*` — generator sequencing with service access (review)
-- `Option.some` / `Option.none()` — wrapping optional results
-- `Effect.catchTag` or `Effect.catchAll` — recovering from tagged errors
-- `Effect.fail` — producing typed errors (review)
-- `Data.TaggedError` — domain error definitions (provided, but used in logic)
-- `Layer.succeed` — creating a test layer for `ProductRepo`
-- `Effect.map` — transforming results (review)
-- `Array.filter` / `Array.map` — standard array operations inside Effects
 
 > **Note**: `Effect.runSync`, `Effect.runSyncExit`, `Effect.provide`, `Option.isSome`, `Option.isNone`, and `Exit.isFailure` appear only in tests. Never attribute them to the user's learning.
 
@@ -63,14 +50,7 @@ APIs the user writes in `solution.ts`:
 3. **TestProductRepo needs both findById and findAll** — `findById` should find a product by id or fail with `NotFoundError`. `findAll` should return all three products. Students may forget one method. Ask: "What does the `ProductRepo` interface require?"
 4. **Format string must match exactly** — the test expects `"Widget: $9.99"` format. Students may use different formatting. Ask: "Check the test assertion — what exact string format does it expect?"
 5. **Layer.succeed vs Layer.effect** — since the repo methods return Effects but don't need external state, `Layer.succeed(ProductRepo, { ... })` works. The service value is the object with `findById` and `findAll` methods.
-
-### When stuck
-
-1. Start with `TestProductRepo` — define the three products, implement `findById` (find in array or fail with NotFoundError) and `findAll` (return all)
-2. For `findProduct`: "Use `Effect.gen` — yield the ProductRepo, call findById, wrap in `Option.some`. Then catch `NotFoundError` and return `Option.none()`"
-3. For `getValidatedProduct`: "Yield the repo, call findById, check if product.price >= minPrice, fail with ValidationError if not"
-4. For `formatExpensiveProducts`: "Yield the repo, call findAll, filter by price, map to formatted strings"
-5. Refer them to the Layer, Option, and catchTag patterns in the Concepts Practiced section above
+6. **Start with `TestProductRepo`** — define the three products first, implement `findById` (find in array or fail with NotFoundError) and `findAll` (return all). Everything else depends on having the repo.
 
 ## On Completion
 
@@ -80,4 +60,4 @@ This capstone proves you can build real applications with Effect: **services** f
 
 ### Bridge
 
-Congratulations — you have completed the entire Effect Kata dojo. You've gone from `Effect.succeed` to building a fully-typed, testable, service-oriented application. The patterns you practiced — composition, typed errors, dependency injection, streams, observability, and resource management — are the foundation of production Effect-TS code. Keep these katas as a reference, and build something real.
+Congratulations — you've completed the core curriculum! You've gone from `Effect.succeed` to building a fully-typed, testable, service-oriented application. The patterns you practiced — composition, typed errors, dependency injection, streams, observability, and resource management — are the foundation of production Effect-TS code. Katas 031-040 cover advanced topics like configuration, causes and defects, pattern matching, coordination primitives, caching, metrics, managed runtimes, and request batching.
