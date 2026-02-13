@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { handleAllErrors, withFallback, toResult, NetworkError, TimeoutError, AuthError } from "./solution.js";
+import { handleAllErrors, withFallback, toResult, NetworkError, TimeoutError, AuthError } from "@/katas/008-error-patterns/solution.js";
 
 describe("008 — Error Patterns", () => {
   it("handleAllErrors handles NetworkError", () => {

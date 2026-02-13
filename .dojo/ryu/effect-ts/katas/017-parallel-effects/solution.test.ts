@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { fetchAll, processWithLimit } from "./solution.js";
+import { fetchAll, processWithLimit } from "@/katas/017-parallel-effects/solution.js";
 
 describe("017 — Parallel Effects", () => {
   it("fetchAll runs effects and collects results", () => {

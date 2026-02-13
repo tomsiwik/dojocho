@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { processNumber, processUser, pipeline } from "./solution.js";
+import { processNumber, processUser, pipeline } from "@/katas/005-pipe-composition/solution.js";
 
 describe("005 — Pipe Composition", () => {
   it("processNumber(5) succeeds with '11'", () => {

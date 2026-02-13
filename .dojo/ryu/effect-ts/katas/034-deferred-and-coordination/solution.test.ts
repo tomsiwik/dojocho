@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { completeAndAwait, forkThenComplete, gatedExecution } from "./solution.js";
+import { completeAndAwait, forkThenComplete, gatedExecution } from "@/katas/034-deferred-and-coordination/solution.js";
 
 describe("034 — Deferred and Coordination", () => {
   it("completeAndAwait resolves with the value", async () => {

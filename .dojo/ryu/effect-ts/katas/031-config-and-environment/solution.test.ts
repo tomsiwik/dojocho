@@ -1,6 +1,6 @@
 import { Config, ConfigProvider, Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { getAppName, getPort, getAppConfig } from "./solution.js";
+import { getAppName, getPort, getAppConfig } from "@/katas/031-config-and-environment/solution.js";
 
 const TestConfig = ConfigProvider.fromMap(
   new Map([

@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { parseUser, parseStrictUser } from "./solution.js";
+import { parseUser, parseStrictUser } from "@/katas/014-schema-basics/solution.js";
 
 describe("014 — Schema Basics", () => {
   it("parseUser succeeds with valid input", () => {

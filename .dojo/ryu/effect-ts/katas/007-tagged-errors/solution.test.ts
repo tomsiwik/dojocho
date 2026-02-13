@@ -6,7 +6,7 @@ import {
   NotFoundError,
   validateAge,
   ValidationError,
-} from "./solution.js";
+} from "@/katas/007-tagged-errors/solution.js";
 
 describe("007 — Tagged Errors", () => {
   describe("findUser", () => {

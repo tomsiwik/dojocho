@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { concatStreams, zipStreams, mergeStreams } from "./solution.js";
+import { concatStreams, zipStreams, mergeStreams } from "@/katas/026-combining-streams/solution.js";
 
 describe("026 — Combining Streams", () => {
   it("concatStreams appends second after first", () => {

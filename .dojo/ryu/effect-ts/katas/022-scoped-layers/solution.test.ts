@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { Database, DatabaseLive, runQuery } from "./solution.js";
+import { Database, DatabaseLive, runQuery } from "@/katas/022-scoped-layers/solution.js";
 
 describe("022 — Scoped Layers", () => {
   it("DatabaseLive connects and disconnects", () => {

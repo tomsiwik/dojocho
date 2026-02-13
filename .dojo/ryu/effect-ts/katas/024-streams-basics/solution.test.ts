@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { streamFromArray, filterAndDouble, sumStream } from "./solution.js";
+import { streamFromArray, filterAndDouble, sumStream } from "@/katas/024-streams-basics/solution.js";
 
 describe("024 — Streams Basics", () => {
   it("streamFromArray collects all elements", () => {

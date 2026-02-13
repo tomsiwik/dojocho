@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { withEnsuring, releaseOnFailure } from "./solution.js";
+import { withEnsuring, releaseOnFailure } from "@/katas/023-resource-patterns/solution.js";
 
 describe("023 — Resource Patterns", () => {
   it("withEnsuring runs all cleanup", () => {

@@ -1,6 +1,6 @@
 import { Option } from "effect";
 import { describe, expect, it } from "vitest";
-import { fromNullable, describeOption, doubleOption, safeDivide, getOrDefault } from "./solution.js";
+import { fromNullable, describeOption, doubleOption, safeDivide, getOrDefault } from "@/katas/009-option-type/solution.js";
 
 describe("009 — Option Type", () => {
   it("fromNullable converts value to Some", () => {

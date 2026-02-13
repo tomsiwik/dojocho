@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Shape, area, describeShape, classifyNumber } from "./solution.js";
+import { Shape, area, describeShape, classifyNumber } from "@/katas/033-pattern-matching/solution.js";
 
 describe("033 — Pattern Matching", () => {
   it("area of Circle", () => {

@@ -4,7 +4,7 @@ import {
   makeUserCache,
   cachedLookup,
   demonstrateCaching,
-} from "./solution.js";
+} from "@/katas/037-cache-and-memoization/solution.js";
 
 describe("037 — Cache and Memoization", () => {
   it("makeUserCache creates a cache", async () => {

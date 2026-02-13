@@ -1,6 +1,6 @@
 import { Effect, Ref } from "effect";
 import { describe, expect, it } from "vitest";
-import { counter, accumulate, getAndIncrement } from "./solution.js";
+import { counter, accumulate, getAndIncrement } from "@/katas/019-ref-and-state/solution.js";
 
 describe("019 — Ref and State", () => {
   it("counter(5) returns 5", () => {

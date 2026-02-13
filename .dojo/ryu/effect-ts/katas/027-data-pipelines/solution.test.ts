@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { processItems, sumPositiveNumbers } from "./solution.js";
+import { processItems, sumPositiveNumbers } from "@/katas/027-data-pipelines/solution.js";
 
 describe("027 — Data Pipelines", () => {
   it("processItems applies function to each", () => {

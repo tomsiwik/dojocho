@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { raceTwo, withTimeout, withTimeoutFallback } from "./solution.js";
+import { raceTwo, withTimeout, withTimeoutFallback } from "@/katas/018-race-and-timeout/solution.js";
 
 describe("018 — Race and Timeout", () => {
   it("raceTwo returns the faster result", () => {

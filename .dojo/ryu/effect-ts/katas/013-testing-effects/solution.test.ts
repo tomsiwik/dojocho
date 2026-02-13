@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { UserRepo, getUser, getUserSafe } from "./solution.js";
+import { UserRepo, getUser, getUserSafe } from "@/katas/013-testing-effects/solution.js";
 
 // Test double
 const TestUserRepo = {

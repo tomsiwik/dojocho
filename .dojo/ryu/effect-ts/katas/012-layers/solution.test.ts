@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { Config, Logger, ConfigLive, LoggerLive, getEndpoint } from "./solution.js";
+import { Config, Logger, ConfigLive, LoggerLive, getEndpoint } from "@/katas/012-layers/solution.js";
 
 describe("012 — Layers", () => {
   it("ConfigLive provides baseUrl", () => {

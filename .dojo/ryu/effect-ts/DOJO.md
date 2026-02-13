@@ -71,16 +71,24 @@ When all tests pass:
 - Encouraging but not over-the-top
 - `[x]` completed, `[~]` in-progress, `[ ]` not-started
 
-## Kata Structure
+## Workspace Model
 
-Each kata lives in `katas/NNN-name/` within the ryu:
+The ryu is a **hidden library** — like a registry of templates. The student's workspace gets just the solution stubs.
 
 ```
-.dojo/ryu/effect-ts/katas/001-hello-effect/
-├── SENSEI.md           # Teaching guide (briefing, concepts, prompts, pitfalls)
-├── solution.ts         # Stubs to implement
-└── solution.test.ts    # Tests (vitest)
+.dojo/ryu/effect-ts/katas/001-hello-effect/   # Library (hidden)
+├── SENSEI.md           # Teaching guide
+├── solution.ts         # Template stub (copied to workspace on start)
+└── solution.test.ts    # Tests (imports from workspace via @/katas alias)
+
+./katas/001-hello-effect/                      # Workspace (student-facing)
+└── solution.ts         # Student's working file
 ```
+
+- **Library** (`.dojo/ryu/effect-ts/`) — tests, SENSEI.md, and template stubs
+- **Workspace** (`KATAS_PATH` from `dojo.config.ts`, default `./katas/`) — student solution files
+- Tests import from `@/katas/<kata-dir>/solution.js` which resolves to the workspace
+- State is derived from file existence, never stored in `katas.json`
 
 ## Katas
 

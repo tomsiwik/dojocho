@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { Random, getRandomNumber, rollDice } from "./solution.js";
+import { Random, getRandomNumber, rollDice } from "@/katas/011-services-and-context/solution.js";
 
 const TestRandom = {
   next: Effect.succeed(4),

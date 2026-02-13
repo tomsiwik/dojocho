@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeRuntime, greetWith, fullLifecycle } from "./solution.js";
+import { makeRuntime, greetWith, fullLifecycle } from "@/katas/039-managed-runtime/solution.js";
 
 describe("039 — Managed Runtime", () => {
   it("makeRuntime creates a runtime", async () => {

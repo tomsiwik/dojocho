@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { double, doubleAndFormat, strlen } from "./solution.js";
+import { double, doubleAndFormat, strlen } from "@/katas/002-transform-with-map/solution.js";
 
 describe("002 — Transform with Map", () => {
   it("double(5) succeeds with 10", () => {

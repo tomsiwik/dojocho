@@ -1,6 +1,6 @@
 import { Effect, Either } from "effect";
 import { describe, expect, it } from "vitest";
-import { safeRun, validatePositive, inspectExit } from "./solution.js";
+import { safeRun, validatePositive, inspectExit } from "@/katas/010-either-and-exit/solution.js";
 
 describe("010 — Either and Exit", () => {
   it("safeRun wraps success", () => {

@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { combinedLength, fetchAndDouble, pipeline } from "./solution.js";
+import { combinedLength, fetchAndDouble, pipeline } from "@/katas/003-generator-pipelines/solution.js";
 
 describe("003 — Generator Pipelines", () => {
   it("fetchAndDouble(5) succeeds with 10", () => {

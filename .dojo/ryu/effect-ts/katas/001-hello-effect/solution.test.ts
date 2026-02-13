@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { greet, hello, lazyRandom } from "./solution.js";
+import { greet, hello, lazyRandom } from "@/katas/001-hello-effect/solution.js";
 
 describe("001 — Hello Effect", () => {
   it("hello() succeeds with 'Hello, Effect!'", () => {

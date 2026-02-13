@@ -1,6 +1,6 @@
 import { Effect, Exit, Option } from "effect";
 import { describe, expect, it } from "vitest";
-import { validateEmail, validateAge, createUser, formatUser } from "./solution.js";
+import { validateEmail, validateAge, createUser, formatUser } from "@/katas/015-domain-modeling/solution.js";
 
 describe("015 — Domain Modeling", () => {
   it("validateEmail succeeds with valid email", () => {

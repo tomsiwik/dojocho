@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { roundTrip, backpressureDemo, producerConsumer } from "./solution.js";
+import { roundTrip, backpressureDemo, producerConsumer } from "@/katas/035-queue-and-backpressure/solution.js";
 
 describe("035 — Queue and Backpressure", () => {
   it("roundTrip offers and takes items", async () => {

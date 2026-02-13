@@ -1,6 +1,6 @@
 import { Cause, Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { boom, catchDefect, sandboxed, safeDivide } from "./solution.js";
+import { boom, catchDefect, sandboxed, safeDivide } from "@/katas/032-cause-and-defects/solution.js";
 
 describe("032 — Cause and Defects", () => {
   it("boom dies with 'boom'", () => {

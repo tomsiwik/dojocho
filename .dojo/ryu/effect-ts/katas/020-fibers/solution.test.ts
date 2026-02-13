@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { forkAndJoin, forkBoth, forkAndInterrupt } from "./solution.js";
+import { forkAndJoin, forkBoth, forkAndInterrupt } from "@/katas/020-fibers/solution.js";
 
 describe("020 — Fibers", () => {
   it("forkAndJoin returns the effect result", async () => {

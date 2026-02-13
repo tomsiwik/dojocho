@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { lookupAndGreet, validateAndProcess, logAndReturn } from "./solution.js";
+import { lookupAndGreet, validateAndProcess, logAndReturn } from "@/katas/004-flatmap-and-chaining/solution.js";
 
 describe("004 — FlatMap and Chaining", () => {
   it("lookupAndGreet(0) succeeds with 'Hello, Alice!'", () => {

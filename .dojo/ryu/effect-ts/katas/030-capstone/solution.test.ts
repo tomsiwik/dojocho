@@ -6,7 +6,7 @@ import {
   formatExpensiveProducts,
   ProductRepo,
   NotFoundError,
-} from "./solution.js";
+} from "@/katas/030-capstone/solution.js";
 
 const testProducts = [
   { id: 1, name: "Widget", price: 9.99 },

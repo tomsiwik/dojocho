@@ -6,7 +6,7 @@ import {
   UserSchema,
   decodeUser,
   encodeUser,
-} from "./solution.js";
+} from "@/katas/036-schema-advanced/solution.js";
 
 describe("036 — Schema Advanced", () => {
   it("PositiveInt accepts positive integers", () => {

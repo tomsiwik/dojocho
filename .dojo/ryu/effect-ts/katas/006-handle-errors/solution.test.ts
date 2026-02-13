@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { divide, parseInteger, safeDivide } from "./solution.js";
+import { divide, parseInteger, safeDivide } from "@/katas/006-handle-errors/solution.js";
 
 describe("006 — Handle Errors", () => {
   it("divide(10, 2) succeeds with 5", () => {

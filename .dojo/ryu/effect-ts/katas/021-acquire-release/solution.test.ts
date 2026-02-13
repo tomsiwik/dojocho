@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { useResource, useTwoResources } from "./solution.js";
+import { useResource, useTwoResources } from "@/katas/021-acquire-release/solution.js";
 
 describe("021 — Acquire Release", () => {
   it("useResource acquires, uses, and releases", () => {

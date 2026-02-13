@@ -1,6 +1,6 @@
 import { Effect, Logger, Ref, LogLevel, HashMap } from "effect";
 import { describe, expect, it } from "vitest";
-import { logAndReturn, logWithContext, withTracking } from "./solution.js";
+import { logAndReturn, logWithContext, withTracking } from "@/katas/028-logging-and-spans/solution.js";
 
 // Helper: create a test logger that captures messages to a Ref
 const makeTestLogger = () =>

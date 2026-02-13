@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { retryThreeTimes, flakyEffect, repeatCollect } from "./solution.js";
+import { retryThreeTimes, flakyEffect, repeatCollect } from "@/katas/016-retry-and-schedule/solution.js";
 
 describe("016 — Retry and Schedule", () => {
   it("retryThreeTimes succeeds on first try", () => {

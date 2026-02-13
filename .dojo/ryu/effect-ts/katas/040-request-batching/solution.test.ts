@@ -5,7 +5,7 @@ import {
   makeUserResolver,
   getUser,
   getUsers,
-} from "./solution.js";
+} from "@/katas/040-request-batching/solution.js";
 
 const testData = new Map([
   [1, "Alice"],

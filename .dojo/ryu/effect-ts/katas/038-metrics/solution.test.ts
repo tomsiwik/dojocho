@@ -7,7 +7,7 @@ import {
   countRequest,
   recordTime,
   setConnections,
-} from "./solution.js";
+} from "@/katas/038-metrics/solution.js";
 
 describe("038 — Metrics", () => {
   it("requestCount is a counter", () => {

@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { takeFirst, runningTotal, batchItems } from "./solution.js";
+import { takeFirst, runningTotal, batchItems } from "@/katas/025-stream-operations/solution.js";
 
 describe("025 — Stream Operations", () => {
   it("takeFirst(3) returns [1, 2, 3]", () => {

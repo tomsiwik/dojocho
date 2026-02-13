@@ -1,6 +1,6 @@
 import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
-import { HttpClient, fetchUser, fetchUserWithRetry } from "./solution.js";
+import { HttpClient, fetchUser, fetchUserWithRetry } from "@/katas/029-http-client/solution.js";
 
 const TestClient = {
   get: (url: string) => {
