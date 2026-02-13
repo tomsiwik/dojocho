@@ -1,4 +1,5 @@
 {
+  "active": "effect-ts",
   "allowCommit": true,
   "tracking": {
     "enabled": false,

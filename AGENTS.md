@@ -1,44 +1,43 @@
-# Effect Kata
+# Dojocho
 
-A hands-on learning repository for Effect-TS patterns and best practices.
+A kata dojo system for hands-on learning with coding agents.
 
 ## Structure
 
-- `KATAS.md` — Instructor entry-file: teaching groundrules, output style, kata table of contents
-- `katas/NNN-name/SENSEI.md` — Per-kata teacher: briefing, skills, concepts, Socratic prompts, pitfalls
-- `katas/NNN-name/solution.ts` — Stubs to implement
-- `katas/NNN-name/solution.test.ts` — Tests (vitest)
-- `.agents/commands/kata.md` — `/kata` command (state machine + tracking orchestrator)
-- `.agents/scripts/setup.sh` — Idempotent bootstrap (symlinks, deps)
-- `.agents/scripts/progress.sh` — Test runner + progress tracker
-- `.agents/skills/` — 24 Effect-TS pattern skills (from [EffectPatterns](https://github.com/PaulJPhilp/EffectPatterns))
-- `.claude/`, `.opencode/`, `.codex/` — Mirror symlinks to `.agents/` (commands + skills)
-- `.kata/` — Local progress tracking and config (gitignored)
-- `.kata/config.json` — User config (`allowCommit`, `tracking`)
-- `.husky/pre-commit` — Blocks commits unless on a `kata/*` branch or `.kata/config.json` has `allowCommit: true`
+```
+.dojorc                                  — Dojo config (active ryu, commit settings, tracking)
+.dojo/
+├── scripts/setup.sh                     — Bootstrap (symlinks, deps)
+└── ryu/<pack>/                          — Installed ryu (schools/styles)
+    ├── package.json                     — Identity + dependencies
+    ├── katas.json                       — Kata catalog, state, test command
+    ├── DOJO.md                          — Teaching philosophy and standards
+    ├── katas/<name>/                    — Individual kata exercises
+    │   ├── SENSEI.md                    — Per-kata teacher (briefing, prompts, pitfalls)
+    │   ├── solution.ts                  — Stubs to implement
+    │   └── solution.test.ts             — Tests
+    ├── commands/kata.md                 — /kata command (state machine)
+    └── skills/                          — Pattern skills
+.claude/, .opencode/, .codex/            — Agent symlinks → active ryu
+```
 
 ## Teaching Architecture
 
 ```
-KATAS.md (instructor)     — General standards. How to teach, talk, check work.
+DOJO.md (style)       — General standards. How to teach, talk, check work.
   └── SENSEI.md (teacher) — Kata-specific. Skills, prompts, pitfalls, rewards.
-       └── kata.md (state machine) — Orchestrates flow. Reads both files.
+       └── kata.md (state machine) — Reads katas.json, runs tests, updates state.
 ```
-
-**KATAS.md** sets sensible defaults for all katas. **SENSEI.md** introduces niche concepts and situation-specific teaching for each kata. When SENSEI.md has specific guidance, it overrides KATAS.md defaults. See `KATAS.md` for full details.
 
 ## Kata Workflow
 
-1. `/kata` — start the dojo (auto-bootstraps, detects progress, teaches concepts)
-2. Edit `katas/NNN-name/solution.ts` to implement the solution
-3. `/kata` — check your work and continue
+1. `/kata` — reads `katas.json`, finds current kata, teaches or checks
+2. Edit the solution file
+3. `/kata` — runs tests, updates state, continues
 
-## Git Tracking
+## Key Files
 
-Kata progress can be tracked via git branches and commits. See `KATAS.md` for branch scheme, commit convention, and configuration.
-
-## Skills reference
-
-The 24 skills cover: core concepts, error handling, concurrency, domain modeling, streams, testing, observability, HTTP requests, scheduling, platform, resource management, data pipelines, APIs, configuration, pattern matching, coordination, performance, metrics, runtime, batching, and tooling/debugging.
-
-Skills are auto-activated by context. Invoke manually with `/skill effect-patterns-{category}`.
+- **`katas.json`** — ordered array of katas with file paths and state. Defines test command.
+- **`DOJO.md`** — teaching philosophy (never give solutions, Socratic method)
+- **`SENSEI.md`** — per-kata teaching guide (briefing, test map, prompts)
+- **`.dojorc`** — active ryu, tracking, commit settings

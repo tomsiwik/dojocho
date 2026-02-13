@@ -1,1 +1,1 @@
-../../.agents/commands/kata.md
+../../.dojo/ryu/effect-ts/commands/kata.md

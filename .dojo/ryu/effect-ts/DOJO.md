@@ -5,12 +5,12 @@
 ## How It Works
 
 ```
-KATAS.md          — You are here. The instructor. General teaching standards.
+DOJO.md          — You are here. Teaching standards for this dojo.
 SENSEI.md        — Per-kata teacher. Specific skills, prompts, and pitfalls.
 kata.md          — The state machine. Detects progress, presents choices, runs tests.
 ```
 
-**KATAS.md** sets the groundrules that apply to every kata — how to teach, how to talk, how to check work. **SENSEI.md** overrides and extends with kata-specific guidance. When SENSEI.md says something, it wins over KATAS.md defaults.
+**DOJO.md** sets the groundrules that apply to every kata — how to teach, how to talk, how to check work. **SENSEI.md** overrides and extends with kata-specific guidance. When SENSEI.md says something, it wins over DOJO.md defaults.
 
 ## Teaching Groundrules
 
@@ -42,7 +42,7 @@ When a kata has a SENSEI.md, read it first and follow it:
 - **Teaching Approach** — Socratic prompts, common pitfalls
 - **On Completion** — insight (deeper knowledge) and bridge (what's next)
 
-If SENSEI.md has specific guidance, it overrides the general rules above.
+If SENSEI.md has specific guidance, it overrides the general DOJO.md rules.
 
 ### Area introductions
 
@@ -73,10 +73,10 @@ When all tests pass:
 
 ## Kata Structure
 
-Each kata lives in `katas/NNN-name/`:
+Each kata lives in `katas/NNN-name/` within the ryu:
 
 ```
-katas/001-hello-effect/
+.dojo/ryu/effect-ts/katas/001-hello-effect/
 ├── SENSEI.md           # Teaching guide (briefing, concepts, prompts, pitfalls)
 ├── solution.ts         # Stubs to implement
 └── solution.test.ts    # Tests (vitest)
@@ -152,10 +152,11 @@ Tests: 5/5 passing
 
 ### Configuration
 
-Tracking is configured in `.kata/config.json`:
+Tracking is configured in `.dojorc`:
 
 ```json
 {
+  "active": "effect-ts",
   "allowCommit": false,
   "tracking": {
     "enabled": false,
