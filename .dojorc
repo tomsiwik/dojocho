@@ -1,5 +1,7 @@
 {
   "active": "effect-ts",
+  "current": "001-hello-effect",
+  "editor": "code",
   "allowCommit": true,
   "tracking": {
     "enabled": false,

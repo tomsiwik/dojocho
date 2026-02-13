@@ -63,6 +63,39 @@ When all tests pass:
 2. The insight rewards deeper understanding — something beyond just making tests pass
 3. The bridge connects to the next kata naturally
 
+## CLI Protocol
+
+The dojo uses a CLI to manage state. CLI output is structured as instructions for you to follow.
+
+### "Ask the student:" blocks
+
+When CLI output contains an "Ask the student:" block, you MUST:
+1. Present the listed choices to the student (use AskUserQuestion)
+2. **WAIT** for the student to respond
+3. Only then take the action corresponding to their choice
+
+**Never** act preemptively. If the output says `"Open the file" → run: code ...`, do NOT open the file — ask first, then act on their answer.
+
+### Choice format
+
+Each choice line follows: `- "Label" (Description) → action`
+
+- **Label** → use as the AskUserQuestion option `label`
+- **Text in parentheses** → use as the AskUserQuestion option `description`
+- **After →** → internal instruction for you (not shown to student)
+
+### "run:" actions
+
+`→ run: ./cli/dist/index.js check` means: execute this command ONLY after the student selects that choice.
+
+### "read:" actions
+
+`→ read .dojo/ryu/.../SENSEI.md` means: read this file ONLY after the student selects that choice, then use it to guide teaching.
+
+### Never run tests directly
+
+Always use `./cli/dist/index.js check` to run tests. Never invoke vitest or any test runner directly.
+
 ## Output Style
 
 - Clean, minimal — no walls of text

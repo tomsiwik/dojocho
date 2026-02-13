@@ -38,16 +38,27 @@ for dir in .claude .opencode .codex; do
     changed=true
   done
 
-  if [ ! -e "$dir/commands/kata.md" ]; then
-    ln -sf "../../$RYU_DIR/commands/kata.md" "$dir/commands/kata.md"
-    changed=true
-  fi
+  for cmd in "$RYU_DIR/commands"/*.md; do
+    [ -f "$cmd" ] || continue
+    cmd_name="$(basename "$cmd")"
+    link="$dir/commands/$cmd_name"
+    if [ ! -e "$link" ]; then
+      ln -sf "../../$RYU_DIR/commands/$cmd_name" "$link"
+      changed=true
+    fi
+  done
 done
 
 # 3. Dependencies (install from ryu directory)
 if [ ! -d "$RYU_DIR/node_modules" ]; then
   echo "Installing dependencies..." >&2
   (cd "$RYU_DIR" && pnpm install) >&2
+  changed=true
+fi
+
+# 4. Root node_modules symlink (for editor resolution)
+if [ ! -e "$ROOT/node_modules" ]; then
+  ln -s "$RYU_DIR/node_modules" "$ROOT/node_modules"
   changed=true
 fi
 

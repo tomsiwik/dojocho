@@ -1,34 +1,20 @@
-# Effect Kata
+# Dojocho
 
-A self-tracking Effect-TS dojo. Learn Effect patterns through test-driven katas.
+Installable coding dojos that turn your AI agent into a sensei.
 
 ## Quick Start
 
 ```bash
-# start you favorite coding agent
-claude
+# pick repo for persistence + setup your favorite coding agent & editor
+dojo setup
 
-# run /kata command
-# enjoy
-```
+# add your ryu/school you want to study
+dojo add effect-ts
 
-## Workflow
-
-1. **`/kata`** — start the dojo (auto-detects progress, teaches concepts, suggests next kata)
-2. Edit `katas/NNN-name/solution.ts` to make the tests pass
-3. **`/kata`** — check your work and continue
-
-That's it. One command does everything.
-
-## Configuration
-
-Commits are blocked by default to keep your workspace clean. To enable:
-
-```json
-// .kata/config.json
-{ "allowCommit": true }
+# run /kata and let you agent run you through some excercises
+claude "/kata"
 ```
 
 ## Special thanks to
 
-[PaulJPhilp/EffectPatterns](https://github.com/PaulJPhilp/EffectPatterns). The `refs/effect-patterns/` submodule contains 700+ Effect-TS patterns - highly useful on it's own but this guy also added skills which allowed me to create this in the first place.
+[PaulJPhilp/EffectPatterns](https://github.com/PaulJPhilp/EffectPatterns) contains 700+ Effect-TS patterns - highly useful on it's own but this guy also added skills which allowed me to create this in the first place
