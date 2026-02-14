@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@dojocho/effect-ts", "@dojocho/docs", "@dojocho/web"]
+  "ignore": ["@dojocho/docs", "@dojocho/web"]
 }
