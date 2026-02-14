@@ -4,16 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@dojocho/config': link:packages/config
-
 importers:
 
   .:
-    dependencies:
-      '@dojocho/config':
-        specifier: link:packages/config
-        version: link:packages/config
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.8
@@ -91,7 +84,7 @@ importers:
   dojos/effect-ts:
     dependencies:
       '@dojocho/config':
-        specifier: link:../../packages/config
+        specifier: workspace:*
         version: link:../../packages/config
       effect:
         specifier: ^3.14.0
@@ -110,7 +103,7 @@ importers:
   packages/cli:
     dependencies:
       '@dojocho/config':
-        specifier: link:../config
+        specifier: workspace:*
         version: link:../config
     devDependencies:
       tsup:

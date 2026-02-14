@@ -13,13 +13,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ],
-    "overrides": {
-      "@dojocho/config": "link:packages/config"
-    }
-  },
-  "dependencies": {
-    "@dojocho/config": "link:packages/config"
+    ]
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
