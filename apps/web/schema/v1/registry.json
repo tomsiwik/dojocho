@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dojocho.ai/schema/v1/registry.json",
+  "title": "RegistryItem",
+  "description": "A registry item pointing to a dojocho dojo package.",
+  "type": "object",
+  "required": ["name", "version", "description", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Package name of the dojo.",
+      "examples": ["@dojocho/effect-ts"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+",
+      "description": "Semver version.",
+      "examples": ["0.0.1"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description."
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "package"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "npm" },
+            "package": {
+              "type": "string",
+              "description": "npm package name to install.",
+              "examples": ["@dojocho/effect-ts"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "tarball" },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL to a .tgz archive."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

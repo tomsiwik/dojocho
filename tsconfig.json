@@ -1,9 +1,0 @@
-{
-  "extends": "./.dojos/effect-ts/tsconfig.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": [
-    "katas/**/*.ts"
-  ]
-}

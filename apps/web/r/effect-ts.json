@@ -1,0 +1,10 @@
+{
+  "$schema": "https://dojocho.ai/schema/v1/registry.json",
+  "name": "@dojocho/effect-ts",
+  "version": "0.0.1",
+  "description": "Master Effect-TS through 40 hands-on katas",
+  "source": {
+    "type": "npm",
+    "package": "@dojocho/effect-ts"
+  }
+}

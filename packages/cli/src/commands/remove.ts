@@ -8,21 +8,17 @@ import {
 
 export function remove(root: string, args: string[]): void {
   const name = args.find((a) => !a.startsWith("--"));
-  if (!name) {
-    console.log("Usage: dojo remove <name>");
-    process.exit(1);
+  if (!name) throw new Error("Usage: dojo remove <name>");
+
+  const dojoPath = resolve(root, DOJOS_DIR, name);
+  if (!existsSync(dojoPath)) {
+    throw new Error(`Dojo "${name}" not found at ${DOJOS_DIR}/${name}`);
   }
 
-  const ryuPath = resolve(root, DOJOS_DIR, name);
-  if (!existsSync(ryuPath)) {
-    console.log(`Ryu "${name}" not found at ${DOJOS_DIR}/${name}`);
-    process.exit(1);
-  }
+  // Remove the dojo directory
+  rmSync(dojoPath, { recursive: true, force: true });
 
-  // Remove the ryu directory
-  rmSync(ryuPath, { recursive: true, force: true });
-
-  // Clean symlinks in agent directories that pointed into the removed ryu
+  // Clean symlinks that pointed into the removed dojo
   const agentDirs = [".claude", ".opencode", ".codex"];
   for (const dir of agentDirs) {
     for (const sub of ["commands", "skills"]) {
@@ -43,11 +39,11 @@ export function remove(root: string, args: string[]): void {
     }
   }
 
-  // Clear .dojorc if this was the active ryu
+  // Clear .dojorc if this was the active dojo
   try {
     const rc = readDojoRc(root);
-    if (rc.currentRyu === name) {
-      rc.currentRyu = "";
+    if (rc.currentDojo === name) {
+      rc.currentDojo = "";
       rc.currentKata = null;
       writeDojoRc(root, rc);
     }
@@ -55,5 +51,5 @@ export function remove(root: string, args: string[]): void {
     // .dojorc may not exist
   }
 
-  console.log(`Ryu "${name}" removed.`);
+  console.log(`Dojo "${name}" removed.`);
 }

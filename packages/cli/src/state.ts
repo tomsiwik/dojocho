@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
-import type { ResolvedKata } from "./config";
+import type { ResolvedKata, KataProgress } from "./config";
 
-export type KataState = "not-started" | "ongoing";
+export type KataState = "not-started" | "ongoing" | "completed";
 
-export function kataState(kata: ResolvedKata): KataState {
+export function kataState(kata: ResolvedKata, progress?: KataProgress): KataState {
+  if (progress?.completed.includes(kata.name)) return "completed";
   return existsSync(kata.workspacePath) ? "ongoing" : "not-started";
 }
 
@@ -19,22 +20,21 @@ export function findCurrentKata(
   return katas.find((k) => existsSync(k.workspacePath)) ?? null;
 }
 
-export function findNextKata(katas: ResolvedKata[]): ResolvedKata | null {
-  return katas.find((k) => !existsSync(k.workspacePath)) ?? null;
+export function findNextKata(katas: ResolvedKata[], progress?: KataProgress): ResolvedKata | null {
+  return katas.find((k) => {
+    if (progress?.completed.includes(k.name)) return false;
+    return !existsSync(k.workspacePath);
+  }) ?? null;
 }
 
 export function completedCount(
   katas: ResolvedKata[],
-  current: string | null,
+  progress?: KataProgress,
 ): number {
-  // Katas before the current one with workspace files are assumed finished
-  const currentIdx = katas.findIndex((k) => k.name === current);
-  if (currentIdx > 0) return currentIdx;
-  // Count contiguous completed from start
-  for (let i = 0; i < katas.length; i++) {
-    if (!existsSync(katas[i].workspacePath)) return i;
+  if (progress) {
+    return katas.filter((k) => progress.completed.includes(k.name)).length;
   }
-  return katas.length;
+  return 0;
 }
 
 export function findKataByIdOrName(

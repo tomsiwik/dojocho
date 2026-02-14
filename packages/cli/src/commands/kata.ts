@@ -8,7 +8,10 @@ import {
   readCatalog,
   readDojoMd,
   resolveAllKatas,
-  ryuDir,
+  dojoDir,
+  type DojoRc,
+  type KataProgress,
+  type ResolvedKata,
 } from "../config";
 import {
   findCurrentKata,
@@ -28,6 +31,20 @@ Flags:
   --list              List all katas with state
   --change <name>     Switch to a specific kata + scaffold
   --open              Open kata in editor`;
+
+function getProgress(rc: DojoRc): KataProgress | undefined {
+  return rc.progress?.[rc.currentDojo];
+}
+
+function recordCompletion(rc: DojoRc, kataName: string): void {
+  rc.progress ??= {};
+  rc.progress[rc.currentDojo] ??= { completed: [], lastActive: null };
+  const progress = rc.progress[rc.currentDojo];
+  if (!progress.completed.includes(kataName)) {
+    progress.completed.push(kataName);
+  }
+  progress.lastActive = kataName;
+}
 
 export function kata(root: string, args: string[]): void {
   const flag = args.find((a) => a.startsWith("--"));
@@ -50,10 +67,7 @@ export function kata(root: string, args: string[]): void {
       break;
     case "--change": {
       const name = args[args.indexOf("--change") + 1];
-      if (!name) {
-        console.log("Usage: dojo kata --change <name>");
-        process.exit(1);
-      }
+      if (!name) throw new Error("Usage: dojo kata --change <name>");
       change(root, name);
       break;
     }
@@ -65,21 +79,20 @@ export function kata(root: string, args: string[]): void {
       console.log(USAGE);
       break;
     default:
-      console.log(`Unknown flag: ${flag}\n\n${USAGE}`);
-      process.exit(1);
+      throw new Error(`Unknown flag: ${flag}\n\n${USAGE}`);
   }
 }
 
 function smart(root: string, args: string[]): void {
   const rc = readDojoRc(root);
 
-  // No ryu → root DOJO.md
-  if (!rc.currentRyu) {
+  // No dojo active → root DOJO.md
+  if (!rc.currentDojo) {
     const md = readDojoMd(root, "");
     if (md) {
       console.log(md);
     } else {
-      console.log(`No ryu active. Add one with:
+      console.log(`No dojo active. Add one with:
   ${CLI} add <source>`);
     }
     return;
@@ -87,19 +100,20 @@ function smart(root: string, args: string[]): void {
 
   let catalog;
   try {
-    catalog = readCatalog(root, rc.currentRyu);
+    catalog = readCatalog(root, rc.currentDojo);
   } catch {
-    // No katas in ryu → ryu's DOJO.md
-    const md = readDojoMd(root, rc.currentRyu);
+    // No katas → dojo's DOJO.md
+    const md = readDojoMd(root, rc.currentDojo);
     if (md) {
       console.log(md);
     } else {
-      console.log(`Ryu "${rc.currentRyu}" has no katas.json or DOJO.md.`);
+      console.log(`Dojo "${rc.currentDojo}" has no dojo.json or DOJO.md.`);
     }
     return;
   }
 
   const katas = resolveAllKatas(root, rc, catalog);
+  const progress = getProgress(rc);
 
   // Try query arg (positional, e.g. `dojo kata 005`)
   const query = args.find((a) => !a.startsWith("--"));
@@ -118,7 +132,7 @@ function smart(root: string, args: string[]): void {
   }
 
   // No kata active — ask the student what to do
-  const next = findNextKata(katas);
+  const next = findNextKata(katas, progress);
   if (next) {
     console.log(`No kata in progress.
 
@@ -127,7 +141,7 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
 - "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`);
   } else {
     // All done → DOJO.md
-    const md = readDojoMd(root, rc.currentRyu);
+    const md = readDojoMd(root, rc.currentDojo);
     if (md) console.log(md);
     else console.log("All katas complete. The dojo is finished.");
   }
@@ -136,37 +150,39 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
 function start(root: string): void {
   const rc = readDojoRc(root);
 
-  if (!rc.currentRyu) {
-    console.log(`No ryu active. Add one with:
+  if (!rc.currentDojo) {
+    console.log(`No dojo active. Add one with:
   ${CLI} add <source>`);
     return;
   }
 
-  const catalog = readCatalog(root, rc.currentRyu);
+  const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
-  const ryu = ryuDir(root, rc.currentRyu);
+  const dojoPath = dojoDir(root, rc.currentDojo);
+  const progress = getProgress(rc);
 
-  const target = findNextKata(katas);
+  const target = findNextKata(katas, progress);
   if (!target) {
     console.log("All katas are scaffolded. The dojo is complete.");
     return;
   }
 
-  scaffold(root, rc, ryu, target);
+  scaffold(root, rc, dojoPath, target);
 }
 
 function check(root: string, args: string[]): void {
   const rc = readDojoRc(root);
 
-  if (!rc.currentRyu) {
-    console.log(`No ryu active. Add one with:
+  if (!rc.currentDojo) {
+    console.log(`No dojo active. Add one with:
   ${CLI} add <source>`);
     return;
   }
 
-  const catalog = readCatalog(root, rc.currentRyu);
+  const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
-  const ryu = ryuDir(root, rc.currentRyu);
+  const dojoPath = dojoDir(root, rc.currentDojo);
+  const progress = getProgress(rc);
 
   const query = args.find((a) => !a.startsWith("--"));
   const target = query
@@ -174,7 +190,7 @@ function check(root: string, args: string[]): void {
     : findCurrentKata(katas, rc.currentKata);
 
   if (!target) {
-    const next = findNextKata(katas);
+    const next = findNextKata(katas, progress);
     if (next) {
       console.log(`No kata in progress.
 
@@ -187,18 +203,11 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
     return;
   }
 
-  const result = runTests(target, catalog, ryu);
+  const result = runTests(target, catalog, dojoPath);
   const workspaceRel = relative(root, target.workspacePath);
 
   if (result.error) {
-    console.log(`${target.name}: error
-
-${result.error}
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
-- "Help me fix this" → run: ${CLI} kata, then guide
-- "Keep working" → no action`);
-    process.exit(1);
+    throw new Error(`${target.name}: error\n\n${result.error}`);
   }
 
   const lines = result.tests.map(
@@ -206,6 +215,10 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
   );
 
   if (result.passed === result.total && result.total > 0) {
+    // Record completion
+    recordCompletion(rc, target.name);
+    writeDojoRc(root, rc);
+
     console.log(`${target.name}: ${result.total}/${result.total} — complete!
 
 ${lines.join("\n")}
@@ -230,49 +243,41 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
 function list(root: string): void {
   const rc = readDojoRc(root);
 
-  if (!rc.currentRyu) {
-    console.log(`No ryu active. Add one with:
+  if (!rc.currentDojo) {
+    console.log(`No dojo active. Add one with:
   ${CLI} add <source>`);
     return;
   }
 
-  const catalog = readCatalog(root, rc.currentRyu);
+  const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
-  const completed = completedCount(katas, rc.currentKata);
+  const progress = getProgress(rc);
+  const completed = completedCount(katas, progress);
 
   console.log(`Katas (${completed}/${katas.length} complete):\n`);
   for (const k of katas) {
-    const state = kataState(k);
-    let marker: string;
-    if (k.name === rc.currentKata && state === "ongoing") {
-      marker = "[~]";
-    } else if (state === "ongoing") {
-      marker = "[x]";
-    } else {
-      marker = "[ ]";
-    }
-    console.log(`  ${marker} ${k.name}`);
+    const state = kataState(k, progress);
+    const marker = state === "completed" ? "[x]" : state === "ongoing" ? "[~]" : "[ ]";
+    const current = k.name === rc.currentKata ? "    (current)" : "";
+    console.log(`  ${marker} ${k.name}${current}`);
   }
 }
 
 function change(root: string, name: string): void {
   const rc = readDojoRc(root);
 
-  if (!rc.currentRyu) {
-    console.log(`No ryu active. Add one with:
+  if (!rc.currentDojo) {
+    console.log(`No dojo active. Add one with:
   ${CLI} add <source>`);
     return;
   }
 
-  const catalog = readCatalog(root, rc.currentRyu);
+  const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
-  const ryu = ryuDir(root, rc.currentRyu);
+  const dojoPath = dojoDir(root, rc.currentDojo);
 
   const target = findKataByIdOrName(katas, name);
-  if (!target) {
-    console.log(`Kata not found: ${name}`);
-    process.exit(1);
-  }
+  if (!target) throw new Error(`Kata not found: ${name}`);
 
   // Already scaffolded? Just switch to it.
   if (existsSync(target.workspacePath)) {
@@ -288,18 +293,18 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
     return;
   }
 
-  scaffold(root, rc, ryu, target);
+  scaffold(root, rc, dojoPath, target);
 }
 
 function open(root: string): void {
   const rc = readDojoRc(root);
 
-  if (!rc.currentKata || !rc.currentRyu) {
+  if (!rc.currentKata || !rc.currentDojo) {
     console.log("No kata in progress.");
     return;
   }
 
-  const catalog = readCatalog(root, rc.currentRyu);
+  const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
   const target = findCurrentKata(katas, rc.currentKata);
 
@@ -320,14 +325,13 @@ function open(root: string): void {
 
 function scaffold(
   root: string,
-  rc: import("../config").DojoRc,
-  ryu: string,
-  target: import("../config").ResolvedKata,
+  rc: DojoRc,
+  dojoPath: string,
+  target: ResolvedKata,
 ): void {
-  const templateSrc = resolve(ryu, target.template);
+  const templateSrc = resolve(dojoPath, target.template);
   if (!existsSync(templateSrc)) {
-    console.log(`Template not found: ${target.template}`);
-    process.exit(1);
+    throw new Error(`Template not found: ${target.template}`);
   }
 
   mkdirSync(dirname(target.workspacePath), { recursive: true });

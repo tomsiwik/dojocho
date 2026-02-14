@@ -1,6 +1,6 @@
 # Dojocho
 
-Installable coding dojos that turn your AI agent into a sensei.
+Installable coding dojos that turn your AI agent into a mad sensei.
 
 ## Quick Start
 

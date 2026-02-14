@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dojocho.ai/schema/v1/dojo.json",
+  "title": "DojoManifest",
+  "description": "Manifest file for a dojocho dojo (training package). Defines metadata, test command, and kata entries.",
+  "type": "object",
+  "required": ["name", "version", "description", "test", "katas"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor support."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Package name of the dojo (e.g. \"@dojocho/effect-ts\").",
+      "examples": ["@dojocho/effect-ts"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+",
+      "description": "Semver version of the dojo.",
+      "examples": ["0.0.1", "1.0.0"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description of what this dojo teaches.",
+      "examples": ["Master Effect-TS through 40 hands-on katas"]
+    },
+    "test": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Shell command to run a kata's tests. Use {template} as placeholder for the kata file path.",
+      "examples": ["pnpm vitest run {template}"]
+    },
+    "runner": {
+      "$ref": "#/$defs/RunnerConfig"
+    },
+    "katas": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of katas in this dojo.",
+      "items": { "$ref": "#/$defs/KataEntry" }
+    },
+    "author": {
+      "type": "string",
+      "description": "Author of the dojo."
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the dojo's homepage or documentation."
+    },
+    "repository": {
+      "type": "string",
+      "description": "URL or path to the dojo's source repository."
+    }
+  },
+  "$defs": {
+    "RunnerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Configuration for the test runner adapter.",
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": ["vitest", "exit-code"],
+          "default": "vitest",
+          "description": "Test runner adapter. 'vitest' parses JSON output for per-test results. 'exit-code' uses exit code only (works with any test framework)."
+        }
+      }
+    },
+    "KataEntry": {
+      "type": "object",
+      "required": ["template"],
+      "additionalProperties": false,
+      "description": "A single kata entry defining the template file and optional metadata.",
+      "properties": {
+        "template": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the kata's template file, relative to the dojo root.",
+          "examples": ["katas/001-hello-effect/solution.ts"]
+        },
+        "test": {
+          "type": "string",
+          "description": "Optional test command override for this specific kata. Replaces the top-level test command."
+        },
+        "name": {
+          "type": "string",
+          "description": "Explicit kata name. Falls back to the directory name derived from template path."
+        },
+        "description": {
+          "type": "string",
+          "description": "One-line summary of what this kata teaches."
+        },
+        "difficulty": {
+          "type": "integer",
+          "enum": [1, 2, 3],
+          "description": "Difficulty level: 1 (beginner), 2 (intermediate), 3 (advanced)."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tags for filtering and discovery.",
+          "examples": [["error-handling", "streams"]]
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Kata names that should be completed before this one.",
+          "examples": [["001-hello-effect"]]
+        }
+      }
+    }
+  }
+}

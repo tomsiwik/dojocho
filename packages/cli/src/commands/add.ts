@@ -1,93 +1,242 @@
-import { existsSync, mkdirSync, cpSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, realpathSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { existsSync, mkdirSync, cpSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, realpathSync, rmSync } from "node:fs";
+import { execSync, execFileSync } from "node:child_process";
 import { resolve, basename, relative } from "node:path";
+import { tmpdir } from "node:os";
 import {
   DOJOS_DIR,
   readDojoRc,
   writeDojoRc,
-  ryuDir,
+  dojoDir,
   loadConfig,
+  parseManifest,
+  type RegistryItem,
 } from "../config";
+import { remove as removeDojo } from "./remove";
 
-export function add(root: string, args: string[]): void {
+export async function add(root: string, args: string[]): Promise<void> {
   const source = args.find((a) => !a.startsWith("--"));
+  const force = args.includes("--force");
   if (!source) {
-    console.log(`Usage: dojo add <source>
+    throw new Error(`Usage: dojo add <source>
 
 Source can be:
-  Local path:  dojo add ./path/to/ryu`);
-    process.exit(1);
+  Local path:   dojo add ./path/to/dojo
+  npm package:  dojo add @dojocho/effect-ts
+  Registry:     dojo add effect-ts
+  URL:          dojo add https://example.com/dojo.tgz
+
+Flags:
+  --force       Overwrite existing dojo`);
   }
 
-  // Resolve source path
+  const sourceType = classifySource(source);
+  switch (sourceType) {
+    case "local":    addLocal(root, source, force); break;
+    case "npm":      addNpm(root, source, force); break;
+    case "url":      addUrl(root, source, force); break;
+    case "registry": await addFromRegistry(root, source, force); break;
+  }
+}
+
+function classifySource(source: string): "local" | "npm" | "url" | "registry" {
+  if (source.startsWith(".") || source.startsWith("/")) return "local";
+  if (source.startsWith("https://") || source.startsWith("http://")) return "url";
+  if (source.startsWith("@") || source.includes("/")) return "npm";
+  return "registry";
+}
+
+function safeExtract(tarball: string, cwd: string): void {
+  const listing = execFileSync("tar", ["-tzf", tarball], { cwd, encoding: "utf8" });
+  const unsafe = listing.split("\n").some((e) => e.startsWith("/") || e.includes(".."));
+  if (unsafe) {
+    throw new Error("Refusing to extract: tarball contains unsafe paths (absolute or ../)");
+  }
+  execFileSync("tar", ["xzf", tarball], { cwd, stdio: "pipe" });
+}
+
+function handleExisting(root: string, name: string, force: boolean): void {
+  const targetPath = dojoDir(root, name);
+  if (!existsSync(targetPath)) return;
+  if (!force) {
+    throw new Error(`Dojo "${name}" already exists at ${DOJOS_DIR}/${name}
+
+To update:  dojo add ${name} --force
+To remove:  dojo remove ${name}`);
+  }
+  removeDojo(root, [name]);
+}
+
+function addLocal(root: string, source: string, force: boolean): void {
   const sourcePath = resolve(source);
   if (!existsSync(sourcePath)) {
-    console.log(`Source not found: ${sourcePath}`);
-    process.exit(1);
+    throw new Error(`Source not found: ${sourcePath}`);
   }
 
-  // Determine ryu name from directory
   const name = basename(sourcePath);
+  handleExisting(root, name, force);
+  const targetPath = dojoDir(root, name);
 
-  // Target location
-  const targetPath = ryuDir(root, name);
-  if (existsSync(targetPath)) {
-    console.log(`Ryu "${name}" already exists at ${DOJOS_DIR}/${name}`);
-    process.exit(1);
-  }
-
-  // Copy ryu into .dojos/<name>/
   mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
   cpSync(sourcePath, targetPath, {
     recursive: true,
     filter: (src) => !src.includes("node_modules"),
   });
 
-  // Install ryu dependencies
   const pkgPath = resolve(targetPath, "package.json");
   if (existsSync(pkgPath)) {
-    const linked = linkWorkspaceDeps(root, sourcePath, targetPath, pkgPath);
+    const linked = linkWorkspaceDeps(root, sourcePath, pkgPath);
     console.log(`Installing ${name} dependencies...`);
     execSync("pnpm install --ignore-workspace --silent", {
       cwd: targetPath,
       stdio: "pipe",
     });
-    // Link workspace deps into both ryu and root (for dojo.config.ts)
     for (const pkgDir of linked) {
       execSync(`pnpm link ${pkgDir}`, { cwd: targetPath, stdio: "pipe" });
       execSync(`pnpm link ${pkgDir}`, { cwd: root, stdio: "pipe" });
     }
   }
 
+  finalize(root, name, targetPath);
+}
+
+function installExtracted(root: string, extractedDir: string, source: string, force: boolean): void {
+  const dojoJsonPath = resolve(extractedDir, "dojo.json");
+  if (!existsSync(dojoJsonPath)) {
+    throw new Error(`${source} is not a dojo — missing dojo.json`);
+  }
+  const manifest = parseManifest(readFileSync(dojoJsonPath, "utf8"), dojoJsonPath);
+  const name = manifest.name.includes("/") ? manifest.name.split("/").pop()! : manifest.name;
+
+  handleExisting(root, name, force);
+  const targetPath = dojoDir(root, name);
+
+  mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
+  cpSync(extractedDir, targetPath, { recursive: true });
+
+  const pkgPath = resolve(targetPath, "package.json");
+  if (existsSync(pkgPath)) {
+    console.log(`Installing ${name} dependencies...`);
+    execSync("pnpm install --ignore-workspace --silent", { cwd: targetPath, stdio: "pipe" });
+  }
+
+  finalize(root, name, targetPath);
+}
+
+function addNpm(root: string, source: string, force: boolean): void {
+  const tmpDir = resolve(tmpdir(), `dojocho-${Date.now()}`);
+  mkdirSync(tmpDir, { recursive: true });
+
+  try {
+    console.log(`Fetching ${source}...`);
+    execSync(`npm pack ${source} --pack-destination .`, { cwd: tmpDir, stdio: "pipe" });
+
+    const tarballs = readdirSync(tmpDir).filter((f) => f.endsWith(".tgz"));
+    if (tarballs.length === 0) throw new Error(`Failed to download ${source}`);
+
+    safeExtract(tarballs[0], tmpDir);
+    installExtracted(root, resolve(tmpDir, "package"), source, force);
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+function validateRegistryItem(data: unknown): RegistryItem {
+  if (typeof data !== "object" || data === null) {
+    throw new Error("Invalid registry response: expected a JSON object");
+  }
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.name !== "string" || typeof obj.version !== "string" || typeof obj.description !== "string") {
+    throw new Error("Invalid registry item: missing name, version, or description");
+  }
+  if (typeof obj.source !== "object" || obj.source === null) {
+    throw new Error("Invalid registry item: missing source");
+  }
+  const src = obj.source as Record<string, unknown>;
+  if (src.type === "npm" && typeof src.package === "string") {
+    return obj as unknown as RegistryItem;
+  }
+  if (src.type === "tarball" && typeof src.url === "string") {
+    return obj as unknown as RegistryItem;
+  }
+  throw new Error(`Invalid registry item: source must be npm or tarball`);
+}
+
+async function addFromRegistry(root: string, name: string, force: boolean): Promise<void> {
+  const config = loadConfig(root, { command: "add" });
+
+  for (const [registryName, urlTemplate] of Object.entries(config.registries)) {
+    const url = urlTemplate.replace("{name}", name);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const item = validateRegistryItem(await res.json());
+      if (item.source.type === "npm") {
+        return addNpm(root, item.source.package, force);
+      }
+      return addUrl(root, item.source.url, force);
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith("Invalid registry")) throw err;
+      console.log(`Registry "${registryName}" unreachable: ${url}`);
+    }
+  }
+
+  throw new Error(`"${name}" not found in any registry.
+
+Try:
+  npm package:  dojo add @dojocho/${name}
+  Local path:   dojo add ./path/to/${name}`);
+}
+
+function addUrl(root: string, url: string, force: boolean): void {
+  const tmpDir = resolve(tmpdir(), `dojocho-${Date.now()}`);
+  mkdirSync(tmpDir, { recursive: true });
+
+  try {
+    console.log(`Fetching ${url}...`);
+    execFileSync("curl", ["-fsSL", "-o", "dojo.tgz", url], { cwd: tmpDir, stdio: "pipe" });
+    safeExtract("dojo.tgz", tmpDir);
+
+    // npm-packed tarballs extract to "package/", raw tarballs may not
+    const extractedDir = existsSync(resolve(tmpDir, "package", "dojo.json"))
+      ? resolve(tmpDir, "package")
+      : tmpDir;
+
+    installExtracted(root, extractedDir, url, force);
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+function finalize(root: string, name: string, targetPath: string): void {
   // Update .dojorc
   const rc = readDojoRc(root);
-  rc.currentRyu = name;
+  rc.currentDojo = name;
   writeDojoRc(root, rc);
 
-  // Add dependency paths to the ryu's tsconfig (resolved relative to ryu)
-  const ryuPkgPath = resolve(targetPath, "package.json");
-  const ryuTsconfigPath = resolve(targetPath, "tsconfig.json");
-  if (existsSync(ryuPkgPath) && existsSync(ryuTsconfigPath)) {
-    const ryuPkg = JSON.parse(readFileSync(ryuPkgPath, "utf8"));
-    const ryuTsconfig = JSON.parse(readFileSync(ryuTsconfigPath, "utf8"));
-    const deps = Object.keys(ryuPkg.dependencies ?? {});
+  // Add dependency paths to the dojo's tsconfig
+  const dojoPkgPath = resolve(targetPath, "package.json");
+  const dojoTsconfigPath = resolve(targetPath, "tsconfig.json");
+  if (existsSync(dojoPkgPath) && existsSync(dojoTsconfigPath)) {
+    const dojoPkg = JSON.parse(readFileSync(dojoPkgPath, "utf8"));
+    const dojoTsconfig = JSON.parse(readFileSync(dojoTsconfigPath, "utf8"));
+    const deps = Object.keys(dojoPkg.dependencies ?? {});
     if (deps.length > 0) {
-      ryuTsconfig.compilerOptions ??= {};
-      const paths = ryuTsconfig.compilerOptions.paths ?? {};
+      dojoTsconfig.compilerOptions ??= {};
+      const paths = dojoTsconfig.compilerOptions.paths ?? {};
       for (const dep of deps) {
         paths[dep] = [`./node_modules/${dep}`];
         paths[`${dep}/*`] = [`./node_modules/${dep}/*`];
       }
-      ryuTsconfig.compilerOptions.paths = paths;
-      writeFileSync(ryuTsconfigPath, JSON.stringify(ryuTsconfig, null, 2) + "\n");
+      dojoTsconfig.compilerOptions.paths = paths;
+      writeFileSync(dojoTsconfigPath, JSON.stringify(dojoTsconfig, null, 2) + "\n");
     }
   }
 
-  // Root tsconfig extends the ryu's — inherits compiler options + dep paths
+  // Root tsconfig extends the dojo's
   const dojo = loadConfig(root);
   const katasInclude = `${relative(root, dojo.katasPath)}/**/*.ts`;
   const tsconfigPath = resolve(root, "tsconfig.json");
-  const extendsPath = `./${relative(root, ryuTsconfigPath)}`;
+  const extendsPath = `./${relative(root, resolve(targetPath, "tsconfig.json"))}`;
   writeFileSync(
     tsconfigPath,
     JSON.stringify(
@@ -102,21 +251,16 @@ Source can be:
   );
 
   // Symlink commands/skills to agent directories
-  symlinkRyu(root, targetPath);
+  symlinkDojo(root, targetPath);
 
-  console.log(`Ryu "${name}" added.
+  console.log(`Dojo "${name}" added.
 
   Location:  ${DOJOS_DIR}/${name}
   Active:    ${name}
   Command:   /kata`);
 }
 
-function linkWorkspaceDeps(
-  root: string,
-  sourcePath: string,
-  _targetPath: string,
-  pkgPath: string,
-): string[] {
+function linkWorkspaceDeps(root: string, sourcePath: string, pkgPath: string): string[] {
   const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
   const linked: string[] = [];
 
@@ -146,41 +290,20 @@ function linkWorkspaceDeps(
   return linked;
 }
 
-function symlinkRyu(root: string, ryu: string): void {
-  const agentDirs = [".claude", ".opencode", ".codex"];
-  for (const dir of agentDirs) {
-    mkdirSync(resolve(root, dir, "commands"), { recursive: true });
-    mkdirSync(resolve(root, dir, "skills"), { recursive: true });
+function symlinkDir(sourceDir: string, targetDir: string, filter: (e: import("node:fs").Dirent) => boolean): void {
+  if (!existsSync(sourceDir)) return;
+  mkdirSync(targetDir, { recursive: true });
+  for (const entry of readdirSync(sourceDir, { withFileTypes: true })) {
+    if (!filter(entry)) continue;
+    const link = resolve(targetDir, entry.name);
+    if (existsSync(link)) unlinkSync(link);
+    symlinkSync(relative(targetDir, resolve(sourceDir, entry.name)), link);
+  }
+}
 
-    // Symlink commands (replace existing files from setup)
-    const cmdsDir = resolve(ryu, "commands");
-    if (existsSync(cmdsDir)) {
-      for (const file of readdirSync(cmdsDir)) {
-        if (!file.endsWith(".md")) continue;
-        const link = resolve(root, dir, "commands", file);
-        const target = relative(
-          resolve(root, dir, "commands"),
-          resolve(cmdsDir, file),
-        );
-        // Remove existing file/symlink so we can replace it
-        if (existsSync(link)) unlinkSync(link);
-        symlinkSync(target, link);
-      }
-    }
-
-    // Symlink skills
-    const skillsDir = resolve(ryu, "skills");
-    if (existsSync(skillsDir)) {
-      for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        const link = resolve(root, dir, "skills", entry.name);
-        const target = relative(
-          resolve(root, dir, "skills"),
-          resolve(skillsDir, entry.name),
-        );
-        if (existsSync(link)) unlinkSync(link);
-        symlinkSync(target, link);
-      }
-    }
+function symlinkDojo(root: string, dojoPath: string): void {
+  for (const dir of [".claude", ".opencode", ".codex"]) {
+    symlinkDir(resolve(dojoPath, "commands"), resolve(root, dir, "commands"), (e) => e.name.endsWith(".md"));
+    symlinkDir(resolve(dojoPath, "skills"), resolve(root, dir, "skills"), (e) => e.isDirectory());
   }
 }

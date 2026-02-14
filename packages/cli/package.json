@@ -2,7 +2,8 @@
   "name": "@dojocho/cli",
   "version": "0.0.1",
   "type": "module",
-  "private": true,
+  "publishConfig": { "access": "public" },
+  "files": ["dist"],
   "bin": {
     "dojo": "./dist/index.js"
   },

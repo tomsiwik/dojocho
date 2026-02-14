@@ -2,7 +2,8 @@
   "name": "@dojocho/config",
   "version": "0.0.1",
   "type": "module",
-  "private": true,
+  "publishConfig": { "access": "public" },
+  "files": ["dist"],
   "exports": {
     ".": {
       "import": "./dist/index.js",

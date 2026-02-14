@@ -2,10 +2,13 @@
   "name": "dojocho",
   "version": "0.0.1",
   "private": true,
+  "packageManager": "pnpm@10.28.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter @dojocho/config build && pnpm --filter @dojocho/cli build",
-    "test": "pnpm --filter @dojocho/effect-ts test"
+    "build": "turbo build",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -17,5 +20,9 @@
   },
   "dependencies": {
     "@dojocho/config": "link:packages/config"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "turbo": "^2.8.8"
   }
 }
