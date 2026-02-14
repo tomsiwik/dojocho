@@ -3,3 +3,5 @@ node_modules
 .turbo
 packages/cli/dist/
 packages/config/dist/
+apps/web/dist/
+apps/web/src/routeTree.gen.ts
