@@ -2,8 +2,18 @@
   "name": "@dojocho/effect-ts",
   "version": "0.0.1",
   "type": "module",
-  "publishConfig": { "access": "public" },
-  "files": ["katas", "skills", "commands", "DOJO.md", "dojo.json", "tsconfig.json", "vitest.config.ts"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "katas",
+    "skills",
+    "commands",
+    "DOJO.md",
+    "dojo.json",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest"
