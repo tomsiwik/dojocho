@@ -1,0 +1,21 @@
+{
+  "name": "dojocho",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter @dojocho/config build && pnpm --filter @dojocho/cli build",
+    "test": "pnpm --filter @dojocho/effect-ts test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "overrides": {
+      "@dojocho/config": "link:packages/config"
+    }
+  },
+  "dependencies": {
+    "@dojocho/config": "link:packages/config"
+  }
+}

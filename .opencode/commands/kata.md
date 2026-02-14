@@ -1,1 +1,0 @@
-../../.dojo/ryu/effect-ts/commands/kata.md

@@ -11,7 +11,7 @@ dojo setup
 # add your ryu/school you want to study
 dojo add effect-ts
 
-# run /kata and let you agent run you through some excercises
+# run /kata and let your agent run you through some excercises
 claude "/kata"
 ```
 
