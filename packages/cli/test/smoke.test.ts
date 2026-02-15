@@ -87,7 +87,7 @@ describe("setupAgents", () => {
     expect(existsSync(resolve(root, ".claude/commands"))).toBe(true);
     expect(existsSync(resolve(root, ".claude/skills"))).toBe(true);
     expect(existsSync(resolve(root, ".claude/commands/kata.md"))).toBe(true);
-    expect(readFileSync(resolve(root, ".claude/commands/kata.md"), "utf8")).toContain("dojo kata");
+    expect(readFileSync(resolve(root, ".claude/commands/kata.md"), "utf8")).toContain("dojo status");
   });
 
   it("writes settings.json only for claude", () => {
@@ -292,16 +292,16 @@ describe("dojo kata smart mode (intro tracking)", () => {
     katas: [{ template: "katas/001-basics/solution.ts", name: "001-basics" }],
   };
 
-  it("outputs !`dojo intro` when dojo not yet introduced", () => {
+  it("shows SENSEI.md directly when dojo not yet introduced", () => {
     writeRc(root, { currentDojo: "my-dojo", currentKata: "001-basics", editor: null });
     writeDojoJson(root, "my-dojo", MANIFEST);
     writeWorkspaceFile(root, "001-basics", "solution.ts");
 
     const output = captureLog(() => kata(root, []));
-    expect(output).toContain("!`dojo intro`");
+    expect(output).toContain("No SENSEI.md found for 001-basics.");
   });
 
-  it("outputs !`dojo kata intro` when dojo introduced but kata not", () => {
+  it("shows SENSEI.md directly when dojo introduced but kata not", () => {
     writeRc(root, {
       currentDojo: "my-dojo",
       currentKata: "001-basics",
@@ -313,7 +313,7 @@ describe("dojo kata smart mode (intro tracking)", () => {
     writeWorkspaceFile(root, "001-basics", "solution.ts");
 
     const output = captureLog(() => kata(root, []));
-    expect(output).toContain("!`dojo kata intro`");
+    expect(output).toContain("Sensei says hello");
   });
 
   it("shows SENSEI.md when both dojo and kata are introduced", () => {

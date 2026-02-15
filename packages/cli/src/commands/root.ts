@@ -20,6 +20,7 @@ Commands:
   (none)              Project-level actions (use flags below)
   kata                Kata-level actions (sensei, check, scaffold)
   intro               Show the active dojo's introduction
+  status              Show current dojo/kata state
   setup [--agent]     Set up a new dojo project and configure agents
   add <source>        Add a dojo (training pack)
   remove <name>       Remove a dojo

@@ -1,7 +1,5 @@
 # Effect-TS Kata Dojo
 
-!`dojo intro`
-
 Hands-on katas for learning Effect-TS. Use `/kata` to begin.
 
 ## Teaching Rules

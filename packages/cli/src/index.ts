@@ -5,6 +5,7 @@ import { intro } from "./commands/intro";
 import { setup } from "./commands/setup";
 import { add } from "./commands/add";
 import { remove } from "./commands/remove";
+import { status } from "./commands/status";
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -19,6 +20,8 @@ async function main() {
     await add(process.cwd(), args);
   } else if (command === "remove") {
     remove(findProjectRoot(), args);
+  } else if (command === "status") {
+    status(findProjectRoot(), args);
   } else {
     // Everything else is root-level flags
     root(process.cwd(), [command, ...args].filter(Boolean));

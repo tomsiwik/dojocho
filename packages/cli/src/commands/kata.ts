@@ -18,14 +18,6 @@ function getProgress(rc: DojoRc): KataProgress | undefined {
   return rc.progress?.[rc.currentDojo];
 }
 
-function isDojoIntroduced(rc: DojoRc): boolean {
-  return getProgress(rc)?.introduced === true;
-}
-
-function isKataIntroduced(rc: DojoRc, kataName: string): boolean {
-  return getProgress(rc)?.kataIntros?.includes(kataName) === true;
-}
-
 function recordKataIntro(rc: DojoRc, kataName: string): void {
   rc.progress ??= {};
   rc.progress[rc.currentDojo] ??= { completed: [], lastActive: null };
@@ -164,12 +156,6 @@ function smart(root: string, args: string[]): void {
     return;
   }
 
-  // Dojo not introduced yet → run intro first
-  if (!isDojoIntroduced(rc)) {
-    console.log(`!\`${CLI} intro\``);
-    return;
-  }
-
   const katas = resolveAllKatas(root, rc, catalog);
   const progress = getProgress(rc);
 
@@ -180,11 +166,6 @@ function smart(root: string, args: string[]): void {
     : findCurrentKata(katas, rc.currentKata);
 
   if (target) {
-    // Kata not introduced yet → run kata intro first
-    if (!isKataIntroduced(rc, target.name)) {
-      console.log(`!\`${CLI} kata intro\``);
-      return;
-    }
     // Show SENSEI.md
     if (existsSync(target.senseiPath)) {
       console.log(readFileSync(target.senseiPath, "utf8"));

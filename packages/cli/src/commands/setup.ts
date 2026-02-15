@@ -28,7 +28,9 @@ const CLAUDE_SETTINGS = {
   },
 };
 
-const DEFAULT_KATA_MD = `!\`dojo kata\`
+const DEFAULT_KATA_MD = `!\`dojo status\`
+
+If state is \`complete\`, congratulate the student. If state is \`no-dojo\`, tell them to run \`dojo add <source>\`. Otherwise run the command from the \`run:\` line above.
 `;
 
 const ROOT_DOJO_MD = `# Welcome to Dojocho
