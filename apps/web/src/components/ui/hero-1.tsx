@@ -11,7 +11,7 @@ export function HeroSection() {
 				<div className="absolute inset-0 -top-14 isolate -z-10 bg-[radial-gradient(35%_80%_at_49%_0%,--theme(--color-foreground/.08),transparent)] contain-strict" />
 			</div>
 
-			<div className="relative flex flex-col items-center justify-center gap-5 pt-32 pb-12">
+			<div className="relative flex flex-col items-center justify-center gap-5 pt-32 pb-6">
 				<div className="relative">
 					<span
 						aria-hidden="true"
@@ -31,6 +31,15 @@ export function HeroSection() {
 
 				<p className="fade-in slide-in-from-bottom-10 mx-auto max-w-md animate-in fill-mode-backwards text-center text-base text-foreground/80 tracking-wider delay-200 duration-500 ease-out sm:text-lg md:text-xl">
 					Practice katas in your own ai dojo.
+				</p>
+
+				<p className="fade-in slide-in-from-bottom-10 mx-auto max-w-lg animate-in fill-mode-backwards text-center text-sm text-foreground/60 leading-relaxed delay-300 duration-500 ease-out sm:text-base">
+					Coding katas, but you're not alone. You work through each
+					challenge while an AI agent follows along — it runs your
+					tests, spots where you're stuck, and asks questions to nudge
+					you in the right direction. Think pair programming with a
+					patient mentor who knows the material but lets you do the
+					typing.
 				</p>
 			</div>
 		</section>
