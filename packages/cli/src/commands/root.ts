@@ -13,6 +13,7 @@ import {
   loadConfig,
   type DojoRc,
 } from "../config";
+import { pmCommands } from "../pm";
 import { findCurrentKata, findNextKata, completedCount } from "../state";
 import type { KataProgress } from "../config";
 
@@ -165,16 +166,9 @@ function start(root: string): void {
     );
   }
 
+  const pm = pmCommands(root);
   console.log("Installing @dojocho/config...");
-  try {
-    execSync("pnpm add @dojocho/config", { cwd: root, stdio: "pipe" });
-  } catch {
-    console.log(
-      "  Could not install @dojocho/config from registry.\n" +
-        "  If not yet published, link it manually:\n" +
-        "    pnpm link <path-to-dojocho>/packages/config",
-    );
-  }
+  execSync(pm.add("@dojocho/config"), { cwd: root, stdio: "pipe" });
 
   const agentDirs = [".claude", ".opencode", ".codex"];
   for (const dir of agentDirs) {

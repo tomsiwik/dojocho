@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, cpSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, realpathSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, renameSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { execSync, execFileSync } from "node:child_process";
-import { resolve, basename, relative } from "node:path";
+import { resolve, relative } from "node:path";
 import { tmpdir } from "node:os";
 import {
   DOJOS_DIR,
@@ -12,6 +12,7 @@ import {
   type RegistryItem,
 } from "../config";
 import { remove as removeDojo } from "./remove";
+import { detectPackageManager, pmCommands } from "../pm";
 
 export async function add(root: string, args: string[]): Promise<void> {
   const source = args.find((a) => !a.startsWith("--"));
@@ -54,6 +55,14 @@ function safeExtract(tarball: string, cwd: string): void {
   execFileSync("tar", ["xzf", tarball], { cwd, stdio: "pipe" });
 }
 
+function moveDir(src: string, dest: string): void {
+  try {
+    renameSync(src, dest);
+  } catch {
+    cpSync(src, dest, { recursive: true });
+  }
+}
+
 function handleExisting(root: string, name: string, force: boolean): void {
   const targetPath = dojoDir(root, name);
   if (!existsSync(targetPath)) return;
@@ -72,31 +81,22 @@ function addLocal(root: string, source: string, force: boolean): void {
     throw new Error(`Source not found: ${sourcePath}`);
   }
 
-  const name = basename(sourcePath);
-  handleExisting(root, name, force);
-  const targetPath = dojoDir(root, name);
+  const tmpDir = resolve(tmpdir(), `dojocho-${Date.now()}`);
+  mkdirSync(tmpDir, { recursive: true });
 
-  mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
-  cpSync(sourcePath, targetPath, {
-    recursive: true,
-    filter: (src) => !src.includes("node_modules"),
-  });
+  try {
+    // Pack the source dojo using its own PM (resolves workspace:* if pnpm/yarn)
+    const sourcePm = detectPackageManager(sourcePath);
+    execSync(`${sourcePm} pack --pack-destination ${tmpDir}`, { cwd: sourcePath, stdio: "pipe" });
 
-  const pkgPath = resolve(targetPath, "package.json");
-  if (existsSync(pkgPath)) {
-    const linked = linkWorkspaceDeps(root, sourcePath, pkgPath);
-    console.log(`Installing ${name} dependencies...`);
-    execSync("pnpm install --ignore-workspace --silent", {
-      cwd: targetPath,
-      stdio: "pipe",
-    });
-    for (const pkgDir of linked) {
-      execSync(`pnpm link ${pkgDir}`, { cwd: targetPath, stdio: "pipe" });
-      execSync(`pnpm link ${pkgDir}`, { cwd: root, stdio: "pipe" });
-    }
+    const tarballs = readdirSync(tmpDir).filter((f) => f.endsWith(".tgz"));
+    if (tarballs.length === 0) throw new Error(`Failed to pack ${sourcePath}`);
+
+    safeExtract(tarballs[0], tmpDir);
+    installExtracted(root, resolve(tmpDir, "package"), source, force);
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
   }
-
-  finalize(root, name, targetPath);
 }
 
 function installExtracted(root: string, extractedDir: string, source: string, force: boolean): void {
@@ -107,17 +107,19 @@ function installExtracted(root: string, extractedDir: string, source: string, fo
   const manifest = parseManifest(readFileSync(dojoJsonPath, "utf8"), dojoJsonPath);
   const name = manifest.name.includes("/") ? manifest.name.split("/").pop()! : manifest.name;
 
-  handleExisting(root, name, force);
-  const targetPath = dojoDir(root, name);
-
-  mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
-  cpSync(extractedDir, targetPath, { recursive: true });
-
-  const pkgPath = resolve(targetPath, "package.json");
+  // Install deps in staging dir (still in tmpDir)
+  const pm = pmCommands(root);
+  const pkgPath = resolve(extractedDir, "package.json");
   if (existsSync(pkgPath)) {
     console.log(`Installing ${name} dependencies...`);
-    execSync("pnpm install --ignore-workspace --silent", { cwd: targetPath, stdio: "pipe" });
+    execSync(pm.installSilent, { cwd: extractedDir, stdio: "pipe" });
   }
+
+  // Move to final location
+  handleExisting(root, name, force);
+  const targetPath = dojoDir(root, name);
+  mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
+  moveDir(extractedDir, targetPath);
 
   finalize(root, name, targetPath);
 }
@@ -260,35 +262,6 @@ function finalize(root: string, name: string, targetPath: string): void {
   Command:   /kata`);
 }
 
-function linkWorkspaceDeps(root: string, sourcePath: string, pkgPath: string): string[] {
-  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-  const linked: string[] = [];
-
-  for (const field of ["dependencies", "devDependencies", "peerDependencies"] as const) {
-    if (!pkg[field]) continue;
-    for (const [name, version] of Object.entries(pkg[field])) {
-      if (typeof version !== "string" || !version.startsWith("workspace:")) continue;
-
-      // Resolve the real path of the workspace package
-      const srcPkg = resolve(sourcePath, "node_modules", ...name.split("/"));
-      if (existsSync(srcPkg)) {
-        linked.push(realpathSync(srcPkg));
-      }
-
-      delete pkg[field][name];
-    }
-    if (Object.keys(pkg[field]).length === 0) delete pkg[field];
-  }
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
-
-  // Ensure root has a package.json for pnpm link
-  const rootPkgPath = resolve(root, "package.json");
-  if (!existsSync(rootPkgPath)) {
-    writeFileSync(rootPkgPath, JSON.stringify({ type: "module", private: true }, null, 2) + "\n");
-  }
-
-  return linked;
-}
 
 function symlinkDir(sourceDir: string, targetDir: string, filter: (e: import("node:fs").Dirent) => boolean): void {
   if (!existsSync(sourceDir)) return;
