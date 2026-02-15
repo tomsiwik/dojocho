@@ -57,6 +57,8 @@ export function resolveConfig(userConfig: DojoUserConfig, root: string): Resolve
 export interface KataProgress {
   completed: string[];
   lastActive: string | null;
+  introduced?: boolean;
+  kataIntros?: string[];
 }
 
 export interface DojoRc {
@@ -77,6 +79,10 @@ export function validateDojoRc(data: unknown): DojoRc {
         progress[key] = {
           completed: (v.completed as unknown[]).filter((s): s is string => typeof s === "string"),
           lastActive: typeof v.lastActive === "string" ? v.lastActive : null,
+          introduced: typeof v.introduced === "boolean" ? v.introduced : undefined,
+          kataIntros: Array.isArray(v.kataIntros)
+            ? (v.kataIntros as unknown[]).filter((s): s is string => typeof s === "string")
+            : undefined,
         };
       }
     }

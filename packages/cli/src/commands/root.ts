@@ -1,5 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { existsSync, writeFileSync } from "node:fs";
 import { resolve, relative } from "node:path";
 import {
   CLI,
@@ -11,9 +10,7 @@ import {
   resolveAllKatas,
   listDojos,
   loadConfig,
-  type DojoRc,
 } from "../config";
-import { pmCommands } from "../pm";
 import { findCurrentKata, findNextKata, completedCount } from "../state";
 import type { KataProgress } from "../config";
 
@@ -22,65 +19,16 @@ const USAGE = `Usage: ${CLI} <command> [flags]
 Commands:
   (none)              Project-level actions (use flags below)
   kata                Kata-level actions (sensei, check, scaffold)
+  intro               Show the active dojo's introduction
+  setup [--agent]     Set up a new dojo project and configure agents
   add <source>        Add a dojo (training pack)
   remove <name>       Remove a dojo
 
 Flags:
-  --start             Initialize a new dojo project
   --test/--check      Show overall progress
   --list              List installed dojos
   --open              Print the active DOJO.md
   --change <dojo>     Switch active dojo`;
-
-const ROOT_DOJO_MD = `# Welcome to Dojocho
-
-Your dojo is set up and ready. You just need a dojo (training pack) to start practicing.
-
-## Add a dojo
-
-\`\`\`bash
-dojo add <source>
-\`\`\`
-
-Source can be:
-- A local path: \`dojo add ./path/to/dojo\`
-- A git repo: \`dojo add org/repo\`
-- Official dojos: \`dojo add effect-ts\`
-
-## Start practicing
-
-Once a dojo is added, use \`/kata\` in your coding agent to begin.
-`;
-
-const DOJO_CONFIG = `import { defineConfig } from "@dojocho/config"
-
-export default defineConfig()
-`;
-
-const CLAUDE_SETTINGS = {
-  permissions: {
-    allow: [
-      "Bash(dojo *)",
-      "Bash(dojo)",
-      "AskUserQuestion",
-    ],
-    deny: [
-      "Read(.dojos/**)",
-      "Glob(.dojos/**)",
-      "Grep(.dojos/**)",
-    ],
-  },
-};
-
-const DEFAULT_KATA_MD = `!\`dojo kata\`
-`;
-
-const DEFAULT_RC: DojoRc = {
-  currentDojo: "",
-  currentKata: null,
-  editor: "code",
-  progress: {},
-};
 
 export function root(rootDir: string, args: string[]): void {
   const flag = args.find((a) => a.startsWith("--"));
@@ -91,9 +39,6 @@ export function root(rootDir: string, args: string[]): void {
   }
 
   switch (flag) {
-    case "--start":
-      start(rootDir);
-      break;
     case "--check":
     case "--test":
       check(rootDir);
@@ -117,80 +62,6 @@ export function root(rootDir: string, args: string[]): void {
     default:
       throw new Error(`Unknown flag: ${flag}\n\n${USAGE}`);
   }
-}
-
-function start(root: string): void {
-  const rcPath = resolve(root, ".dojorc");
-  if (!existsSync(rcPath)) {
-    writeDojoRc(root, DEFAULT_RC);
-  }
-
-  mkdirSync(resolve(root, DOJOS_DIR), { recursive: true });
-
-  const dojoMdPath = resolve(root, DOJOS_DIR, "DOJO.md");
-  if (!existsSync(dojoMdPath)) {
-    writeFileSync(dojoMdPath, ROOT_DOJO_MD);
-  }
-
-  const configPath = resolve(root, "dojo.config.ts");
-  if (!existsSync(configPath)) {
-    writeFileSync(configPath, DOJO_CONFIG);
-  }
-
-  const tsconfigPath = resolve(root, "tsconfig.json");
-  if (!existsSync(tsconfigPath)) {
-    writeFileSync(
-      tsconfigPath,
-      JSON.stringify(
-        {
-          compilerOptions: {
-            target: "ES2022",
-            module: "ES2022",
-            moduleResolution: "bundler",
-            strict: true,
-            noEmit: true,
-          },
-          include: ["katas/**/*.ts"],
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-  }
-
-  const pkgPath = resolve(root, "package.json");
-  if (!existsSync(pkgPath)) {
-    writeFileSync(
-      pkgPath,
-      JSON.stringify({ type: "module", private: true }, null, 2) + "\n",
-    );
-  }
-
-  const pm = pmCommands(root);
-  console.log("Installing @dojocho/config...");
-  execSync(pm.add("@dojocho/config"), { cwd: root, stdio: "pipe" });
-
-  const agentDirs = [".claude", ".opencode", ".codex"];
-  for (const dir of agentDirs) {
-    mkdirSync(resolve(root, dir, "commands"), { recursive: true });
-    mkdirSync(resolve(root, dir, "skills"), { recursive: true });
-
-    const kataMd = resolve(root, dir, "commands", "kata.md");
-    try { if (lstatSync(kataMd).isSymbolicLink()) unlinkSync(kataMd); } catch {}
-    if (!existsSync(kataMd)) {
-      writeFileSync(kataMd, DEFAULT_KATA_MD);
-    }
-
-    if (dir === ".claude") {
-      const settingsPath = resolve(root, dir, "settings.json");
-      writeFileSync(settingsPath, JSON.stringify(CLAUDE_SETTINGS, null, 2) + "\n");
-    }
-  }
-
-  console.log(`Dojo ready.
-
-  Add a dojo with: dojo add <source>
-  Then use:        /kata`);
 }
 
 function check(root: string): void {
@@ -257,7 +128,7 @@ function open(root: string): void {
   if (md) {
     console.log(md);
   } else {
-    console.log("No DOJO.md found. Run `dojo --start` first.");
+    console.log("No DOJO.md found. Run `dojo setup` first.");
   }
 }
 

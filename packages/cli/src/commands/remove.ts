@@ -5,6 +5,7 @@ import {
   readDojoRc,
   writeDojoRc,
 } from "../config";
+import { configuredAgents, AGENTS } from "./setup";
 
 export function remove(root: string, args: string[]): void {
   const name = args.find((a) => !a.startsWith("--"));
@@ -19,8 +20,8 @@ export function remove(root: string, args: string[]): void {
   rmSync(dojoPath, { recursive: true, force: true });
 
   // Clean symlinks that pointed into the removed dojo
-  const agentDirs = [".claude", ".opencode", ".codex"];
-  for (const dir of agentDirs) {
+  for (const agent of configuredAgents(root)) {
+    const dir = AGENTS[agent].dir;
     for (const sub of ["commands", "skills"]) {
       const subDir = resolve(root, dir, sub);
       if (!existsSync(subDir)) continue;

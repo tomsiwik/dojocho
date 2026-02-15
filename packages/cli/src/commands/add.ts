@@ -13,6 +13,7 @@ import {
 } from "../config";
 import { remove as removeDojo } from "./remove";
 import { detectPackageManager, pmCommands } from "../pm";
+import { configuredAgents, AGENTS } from "./setup";
 
 export async function add(root: string, args: string[]): Promise<void> {
   const source = args.find((a) => !a.startsWith("--"));
@@ -275,7 +276,8 @@ function symlinkDir(sourceDir: string, targetDir: string, filter: (e: import("no
 }
 
 function symlinkDojo(root: string, dojoPath: string): void {
-  for (const dir of [".claude", ".opencode", ".codex"]) {
+  for (const agent of configuredAgents(root)) {
+    const dir = AGENTS[agent].dir;
     symlinkDir(resolve(dojoPath, "commands"), resolve(root, dir, "commands"), (e) => e.name.endsWith(".md"));
     symlinkDir(resolve(dojoPath, "skills"), resolve(root, dir, "skills"), (e) => e.isDirectory());
   }

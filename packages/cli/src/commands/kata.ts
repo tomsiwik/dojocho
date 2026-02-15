@@ -13,6 +13,28 @@ import {
   type KataProgress,
   type ResolvedKata,
 } from "../config";
+
+function getProgress(rc: DojoRc): KataProgress | undefined {
+  return rc.progress?.[rc.currentDojo];
+}
+
+function isDojoIntroduced(rc: DojoRc): boolean {
+  return getProgress(rc)?.introduced === true;
+}
+
+function isKataIntroduced(rc: DojoRc, kataName: string): boolean {
+  return getProgress(rc)?.kataIntros?.includes(kataName) === true;
+}
+
+function recordKataIntro(rc: DojoRc, kataName: string): void {
+  rc.progress ??= {};
+  rc.progress[rc.currentDojo] ??= { completed: [], lastActive: null };
+  const progress = rc.progress[rc.currentDojo];
+  progress.kataIntros ??= [];
+  if (!progress.kataIntros.includes(kataName)) {
+    progress.kataIntros.push(kataName);
+  }
+}
 import {
   findCurrentKata,
   findNextKata,
@@ -26,15 +48,12 @@ const USAGE = `Usage: ${CLI} kata [flags]
 
 Flags:
   (none)              Show SENSEI.md for current kata (smart fallback)
+  intro               Show current kata's SENSEI.md briefing
   --start             Scaffold next kata
   --test/--check      Run tests for current kata
   --list              List all katas with state
   --change <name>     Switch to a specific kata + scaffold
   --open              Open kata in editor`;
-
-function getProgress(rc: DojoRc): KataProgress | undefined {
-  return rc.progress?.[rc.currentDojo];
-}
 
 function recordCompletion(rc: DojoRc, kataName: string): void {
   rc.progress ??= {};
@@ -50,6 +69,11 @@ export function kata(root: string, args: string[]): void {
   const flag = args.find((a) => a.startsWith("--"));
 
   if (!flag) {
+    const sub = args.find((a) => !a.startsWith("--"));
+    if (sub === "intro") {
+      kataIntro(root);
+      return;
+    }
     smart(root, args);
     return;
   }
@@ -83,6 +107,34 @@ export function kata(root: string, args: string[]): void {
   }
 }
 
+function kataIntro(root: string): void {
+  const rc = readDojoRc(root);
+  if (!rc.currentDojo) {
+    console.log(`No dojo active. Add one with:\n  ${CLI} add <source>`);
+    return;
+  }
+  if (!rc.currentKata) {
+    console.log(`No kata in progress.\n\nrun: ${CLI} kata --start`);
+    return;
+  }
+  const catalog = readCatalog(root, rc.currentDojo);
+  const katas = resolveAllKatas(root, rc, catalog);
+  const target = findCurrentKata(katas, rc.currentKata);
+  if (!target) {
+    console.log(`Kata "${rc.currentKata}" not found.`);
+    return;
+  }
+  if (existsSync(target.senseiPath)) {
+    console.log(readFileSync(target.senseiPath, "utf8"));
+  } else {
+    console.log(`No SENSEI.md found for ${target.name}.`);
+  }
+
+  // Mark kata as introduced
+  recordKataIntro(rc, target.name);
+  writeDojoRc(root, rc);
+}
+
 function smart(root: string, args: string[]): void {
   const rc = readDojoRc(root);
 
@@ -112,6 +164,12 @@ function smart(root: string, args: string[]): void {
     return;
   }
 
+  // Dojo not introduced yet → run intro first
+  if (!isDojoIntroduced(rc)) {
+    console.log(`!\`${CLI} intro\``);
+    return;
+  }
+
   const katas = resolveAllKatas(root, rc, catalog);
   const progress = getProgress(rc);
 
@@ -122,6 +180,11 @@ function smart(root: string, args: string[]): void {
     : findCurrentKata(katas, rc.currentKata);
 
   if (target) {
+    // Kata not introduced yet → run kata intro first
+    if (!isKataIntroduced(rc, target.name)) {
+      console.log(`!\`${CLI} kata intro\``);
+      return;
+    }
     // Show SENSEI.md
     if (existsSync(target.senseiPath)) {
       console.log(readFileSync(target.senseiPath, "utf8"));
