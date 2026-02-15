@@ -2,6 +2,11 @@
   "name": "@dojocho/cli",
   "version": "0.1.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomsiwik/dojocho",
+    "directory": "packages/cli"
+  },
   "publishConfig": {
     "access": "public"
   },
