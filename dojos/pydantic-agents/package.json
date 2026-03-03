@@ -1,0 +1,27 @@
+{
+  "name": "@dojocho/pydantic-agents",
+  "version": "0.0.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomsiwik/dojocho",
+    "directory": "dojos/pydantic-agents"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "katas",
+    "DOJO.md",
+    "dojo.json",
+    "conftest.py",
+    "pyproject.toml",
+    ".editorconfig",
+    "prepare.sh",
+    "teardown.sh"
+  ],
+  "peerDependencies": {
+    "@dojocho/config": "workspace:*"
+  }
+}

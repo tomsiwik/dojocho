@@ -13,6 +13,7 @@ import {
 } from "../config";
 import { findCurrentKata, findNextKata, completedCount } from "../state";
 import type { KataProgress } from "../config";
+import { prompt, invokeAsk } from "../format";
 
 const USAGE = `Usage: ${CLI} <command> [flags]
 
@@ -84,11 +85,10 @@ function check(root: string): void {
   if (!current) {
     const next = findNextKata(katas, progress);
     if (next) {
-      console.log(`${completed}/${total} katas complete. No kata in progress.
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+      console.log(`${completed}/${total} katas complete. No kata in progress.`);
+      console.log(prompt(`${invokeAsk()} to ask the student:
 - "Start next kata" (Begin the next kata in sequence) → run: ${CLI} kata --start
-- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`);
+- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`));
     } else {
       console.log(`All ${total} katas complete. The dojo is finished.`);
     }
@@ -97,13 +97,11 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
 
   const workspaceRel = relative(root, current.workspacePath);
 
-  console.log(`Kata: ${current.name} (in progress)
-${completed}/${total} complete | Workspace: ${workspaceRel}
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+  console.log(`Kata: ${current.name} (in progress)\n${completed}/${total} complete | Workspace: ${workspaceRel}`);
+  console.log(prompt(`${invokeAsk()} to ask the student:
 - "Check progress" → run: ${CLI} kata --check
 - "Keep working" → encourage them
-- "Switch kata" → run: ${CLI} kata --list`);
+- "Switch kata" → run: ${CLI} kata --list`));
 }
 
 function list(root: string): void {

@@ -35,6 +35,8 @@ import {
   completedCount,
 } from "../state";
 import { runTests } from "../runner";
+import { sensei, prompt, invokeAsk, learnings } from "../format";
+import { appendNote, readLearnings } from "../journal";
 
 const USAGE = `Usage: ${CLI} kata [flags]
 
@@ -45,7 +47,8 @@ Flags:
   --test/--check      Run tests for current kata
   --list              List all katas with state
   --change <name>     Switch to a specific kata + scaffold
-  --open              Open kata in editor`;
+  --open              Open kata in editor
+  --note "text"       Record a learning observation`;
 
 function recordCompletion(rc: DojoRc, kataName: string): void {
   rc.progress ??= {};
@@ -58,14 +61,17 @@ function recordCompletion(rc: DojoRc, kataName: string): void {
 }
 
 export function kata(root: string, args: string[]): void {
+  // Check for "intro" subcommand first (before flag parsing)
+  // so "dojo kata intro --done" works
+  const sub = args.find((a) => !a.startsWith("--"));
+  if (sub === "intro") {
+    kataIntro(root, args);
+    return;
+  }
+
   const flag = args.find((a) => a.startsWith("--"));
 
   if (!flag) {
-    const sub = args.find((a) => !a.startsWith("--"));
-    if (sub === "intro") {
-      kataIntro(root);
-      return;
-    }
     smart(root, args);
     return;
   }
@@ -87,6 +93,12 @@ export function kata(root: string, args: string[]): void {
       change(root, name);
       break;
     }
+    case "--note": {
+      const text = args[args.indexOf("--note") + 1];
+      if (!text) throw new Error('Usage: dojo kata --note "observation text"');
+      note(root, text);
+      break;
+    }
     case "--open":
       open(root);
       break;
@@ -99,7 +111,27 @@ export function kata(root: string, args: string[]): void {
   }
 }
 
-function kataIntro(root: string): void {
+function note(root: string, text: string): void {
+  const rc = readDojoRc(root);
+  if (!rc.currentDojo) throw new Error("No dojo active.");
+  if (!rc.currentKata) throw new Error("No kata in progress.");
+  appendNote(root, rc.currentDojo, rc.currentKata, text);
+  console.log(`Noted for ${rc.currentKata}.`);
+}
+
+function emitLearnings(root: string, dojo: string): void {
+  const content = readLearnings(root, dojo);
+  if (content) {
+    console.log(learnings(content));
+  }
+}
+
+function kataIntro(root: string, args: string[]): void {
+  if (args.includes("--done")) {
+    kataIntroDone(root);
+    return;
+  }
+
   const rc = readDojoRc(root);
   if (!rc.currentDojo) {
     console.log(`No dojo active. Add one with:\n  ${CLI} add <source>`);
@@ -117,14 +149,42 @@ function kataIntro(root: string): void {
     return;
   }
   if (existsSync(target.senseiPath)) {
-    console.log(readFileSync(target.senseiPath, "utf8"));
+    console.log(sensei(readFileSync(target.senseiPath, "utf8")));
   } else {
     console.log(`No SENSEI.md found for ${target.name}.`);
   }
+  emitLearnings(root, rc.currentDojo);
 
-  // Mark kata as introduced
-  recordKataIntro(rc, target.name);
+  console.log(prompt(`Present the kata briefing to the student using the <dojo:sensei> content above.
+Explain the goal, what they'll practice, and any key concepts — in your own words, do NOT paste sensei content verbatim.
+
+Then ${invokeAsk()} to ask the student:
+- "Let's code" (Ready to start) → run: ${CLI} kata intro --done
+- "Tell me more" (Ask questions first) → answer using the sensei content, then ask again`));
+}
+
+function kataIntroDone(root: string): void {
+  const rc = readDojoRc(root);
+  if (!rc.currentDojo || !rc.currentKata) {
+    console.log("No kata in progress.");
+    return;
+  }
+
+  const catalog = readCatalog(root, rc.currentDojo);
+  const katas = resolveAllKatas(root, rc, catalog);
+  const target = findCurrentKata(katas, rc.currentKata);
+
+  recordKataIntro(rc, rc.currentKata);
   writeDojoRc(root, rc);
+
+  console.log(`Kata "${rc.currentKata}" introduction complete.`);
+
+  if (target) {
+    const workspaceRel = relative(root, target.workspacePath);
+    console.log(prompt(`run: ${CLI} kata --open
+
+Do NOT read ${workspaceRel} until the student runs /kata again — let them write the code first.`));
+  }
 }
 
 function smart(root: string, args: string[]): void {
@@ -168,21 +228,21 @@ function smart(root: string, args: string[]): void {
   if (target) {
     // Show SENSEI.md
     if (existsSync(target.senseiPath)) {
-      console.log(readFileSync(target.senseiPath, "utf8"));
+      console.log(sensei(readFileSync(target.senseiPath, "utf8")));
     } else {
       console.log(`No SENSEI.md found for ${target.name}.`);
     }
+    emitLearnings(root, rc.currentDojo);
     return;
   }
 
   // No kata active — ask the student what to do
   const next = findNextKata(katas, progress);
   if (next) {
-    console.log(`No kata in progress.
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+    console.log("No kata in progress.");
+    console.log(prompt(`${invokeAsk()} to ask the student:
 - "Start next kata" (Begin the next kata in sequence) → run: ${CLI} kata --start
-- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`);
+- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`));
   } else {
     // All done → DOJO.md
     const md = readDojoMd(root, rc.currentDojo);
@@ -236,11 +296,10 @@ function check(root: string, args: string[]): void {
   if (!target) {
     const next = findNextKata(katas, progress);
     if (next) {
-      console.log(`No kata in progress.
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+      console.log("No kata in progress.");
+      console.log(prompt(`${invokeAsk()} to ask the student:
 - "Start next kata" (Begin the next kata in sequence) → run: ${CLI} kata --start
-- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`);
+- "Pick a kata" (Browse and choose a specific kata) → run: ${CLI} kata --list`));
     } else {
       console.log(`All ${katas.length} katas complete. The dojo is finished.`);
     }
@@ -263,25 +322,21 @@ Invoke AskUserQuestion (or similar tool) to ask the student:
     recordCompletion(rc, target.name);
     writeDojoRc(root, rc);
 
-    console.log(`${target.name}: ${result.total}/${result.total} — complete!
+    console.log(`${target.name}: ${result.total}/${result.total} — complete!\n\n${lines.join("\n")}`);
+    console.log(prompt(`Congratulate the student! All tests are passing. Celebrate their achievement before presenting options.
 
-${lines.join("\n")}
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+Then ${invokeAsk()} to ask the student:
 - "Review" (Get feedback on idiomatic patterns and potential improvements) → read ${workspaceRel} and run: ${CLI} kata, suggest improvements (Socratic only)
 - "Move on" (Wrap up with key insight, then start next kata) → run: ${CLI} kata, follow On Completion (insight + bridge), then run: ${CLI} kata --start
-- "Pause" (Take a break, come back anytime) → give a friendly sign-off and remind them to run /kata when ready to continue`);
+- "Pause" (Take a break, come back anytime) → give a friendly sign-off and remind them to run /kata when ready to continue`));
     return;
   }
 
-  console.log(`${target.name}: ${result.passed}/${result.total} passing
-
-${lines.join("\n")}
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+  console.log(`${target.name}: ${result.passed}/${result.total} passing\n\n${lines.join("\n")}`);
+  console.log(prompt(`${invokeAsk()} to ask the student:
 - "Help me" (Get hints based on failing tests) → run: ${CLI} kata, use the Test Map
 - "Keep working" (Continue on your own) → encourage them
-- "Pause" (Take a break, come back anytime) → give a friendly sign-off and remind them to run /kata when ready to continue`);
+- "Pause" (Take a break, come back anytime) → give a friendly sign-off and remind them to run /kata when ready to continue`));
 }
 
 function list(root: string): void {
@@ -328,12 +383,10 @@ function change(root: string, name: string): void {
     rc.currentKata = target.name;
     writeDojoRc(root, rc);
     const workspaceRel = relative(root, target.workspacePath);
-    console.log(`Switched to ${target.name}.
-Workspace: ${workspaceRel}
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
+    console.log(`Switched to ${target.name}.\nWorkspace: ${workspaceRel}`);
+    console.log(prompt(`${invokeAsk()} to ask the student:
 - "Check progress" → run: ${CLI} kata --check
-- "Keep working" → encourage them`);
+- "Keep working" → encourage them`));
     return;
   }
 
@@ -387,21 +440,12 @@ function scaffold(
   const workspaceRel = relative(root, target.workspacePath);
   const absPath = target.workspacePath;
 
-  let output = `Kata ${target.name} scaffolded.
-Workspace: ${workspaceRel}`;
-
+  let plain = `Kata ${target.name} scaffolded.\nWorkspace: ${workspaceRel}`;
   if (rc.editor) {
-    output += `\nOpen command: ${rc.editor} ${absPath}`;
+    plain += `\nOpen command: ${rc.editor} ${absPath}`;
   }
+  console.log(plain);
 
-  output += `
-
-run: ${CLI} kata
-Present the briefing from SENSEI.
-
-Invoke AskUserQuestion (or similar tool) to ask the student:
-- "Open the file" → run: ${CLI} kata --open
-- "I have questions" → answer using SENSEI guidance`;
-
-  console.log(output);
+  console.log(prompt(`run: ${CLI} kata intro
+Present the kata briefing, then follow the instructions from that command.`));
 }

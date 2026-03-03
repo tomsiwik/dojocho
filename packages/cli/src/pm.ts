@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
 
@@ -9,9 +9,9 @@ export interface PmCommands {
   add(pkg: string): string;
 }
 
-export function detectPackageManager(root: string): PackageManager {
-  // 1. Check package.json "packageManager" field
-  const pkgPath = resolve(root, "package.json");
+function detectAt(dir: string): PackageManager | null {
+  // Check package.json "packageManager" field
+  const pkgPath = resolve(dir, "package.json");
   if (existsSync(pkgPath)) {
     try {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
@@ -24,13 +24,26 @@ export function detectPackageManager(root: string): PackageManager {
     } catch {}
   }
 
-  // 2. Check lockfiles
-  if (existsSync(resolve(root, "pnpm-lock.yaml"))) return "pnpm";
-  if (existsSync(resolve(root, "yarn.lock"))) return "yarn";
-  if (existsSync(resolve(root, "bun.lockb")) || existsSync(resolve(root, "bun.lock"))) return "bun";
-  if (existsSync(resolve(root, "package-lock.json"))) return "npm";
+  // Check lockfiles
+  if (existsSync(resolve(dir, "pnpm-lock.yaml"))) return "pnpm";
+  if (existsSync(resolve(dir, "yarn.lock"))) return "yarn";
+  if (existsSync(resolve(dir, "bun.lockb")) || existsSync(resolve(dir, "bun.lock"))) return "bun";
+  if (existsSync(resolve(dir, "package-lock.json"))) return "npm";
 
-  // 3. Default
+  return null;
+}
+
+export function detectPackageManager(root: string): PackageManager {
+  // Walk up from root to find the nearest PM indicator (handles monorepo subdirs)
+  let dir = resolve(root);
+  const fsRoot = dirname(dir) === dir ? dir : undefined;
+  while (true) {
+    const found = detectAt(dir);
+    if (found) return found;
+    const parent = dirname(dir);
+    if (parent === dir || parent === fsRoot) break;
+    dir = parent;
+  }
   return "npm";
 }
 

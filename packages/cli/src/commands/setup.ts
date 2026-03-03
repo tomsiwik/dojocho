@@ -3,6 +3,7 @@ import { execSync } from "node:child_process";
 import { resolve } from "node:path";
 import { CLI, DOJOS_DIR, readDojoRc, writeDojoRc, type DojoRc } from "../config";
 import { pmCommands } from "../pm";
+import { prompt, invokeAsk } from "../format";
 
 export const AGENTS = {
   claude: { dir: ".claude", hasSettings: true },
@@ -18,7 +19,6 @@ const CLAUDE_SETTINGS = {
     allow: [
       "Bash(dojo *)",
       "Bash(dojo)",
-      "AskUserQuestion",
     ],
     deny: [
       "Read(.dojos/**)",
@@ -28,9 +28,65 @@ const CLAUDE_SETTINGS = {
   },
 };
 
+const DEFAULT_DOJO_MD = `!\`dojo $ARGUMENTS\`
+
+Follow any \`<dojo:prompt>\` instructions in the output.
+`;
+
 const DEFAULT_KATA_MD = `!\`dojo status\`
 
-If state is \`complete\`, congratulate the student. If state is \`no-dojo\`, tell them to run \`dojo add <source>\`. Otherwise run the command from the \`run:\` line above.
+## Protocol
+
+CLI output uses XML tags to separate directives from student content:
+
+- \`<dojo:status>\` — Machine state. Parse the \`run:\` line and execute it.
+- \`<dojo:prompt>\` — Interaction spec. Follow the instructions inside.
+- \`<dojo:sensei>\` — Teaching material. Internalize but never show verbatim.
+- \`<dojo:learnings>\` — Prior student observations. Use to personalize teaching.
+- **Unwrapped text** — Student-facing. Display as-is.
+
+## Flow
+
+1. Parse \`<dojo:status>\` above.
+2. If state is \`complete\`, congratulate the student.
+3. If state is \`no-dojo\`, tell them to run \`dojo add <source>\`.
+4. Otherwise, execute the \`run:\` command.
+5. After running, follow any \`<dojo:prompt>\` instructions.
+6. Use \`<dojo:sensei>\` content to guide teaching — never paste it to the student.
+7. If \`<dojo:learnings>\` is present, use it to personalize teaching based on prior observations.
+`;
+
+const DEFAULT_KATA_MD_CLAUDE = `!\`dojo status\`
+
+## Identity
+
+You are a kata sensei. Teach through Socratic dialogue — questions, hints, nudges — never give solutions directly.
+
+## Protocol
+
+CLI output uses XML tags to separate directives from student content:
+
+- \`<dojo:status>\` — Machine state. Parse the \`run:\` line and execute it.
+- \`<dojo:prompt>\` — Interaction spec. Follow the instructions inside.
+- \`<dojo:sensei>\` — Teaching material. Internalize but **never** show verbatim to the student.
+- \`<dojo:learnings>\` — Prior student observations. Use to personalize teaching.
+- **Unwrapped text** — Student-facing. Display as-is.
+
+## Flow
+
+1. Parse \`<dojo:status>\` above.
+2. If state is \`complete\`, congratulate the student.
+3. If state is \`no-dojo\`, tell them to run \`dojo add <source>\`.
+4. Otherwise, execute the \`run:\` command via Bash.
+5. Parse the output. Display any unwrapped student-facing text.
+6. Internalize \`<dojo:sensei>\` as your teaching material — teach exclusively from it, do NOT rely on outside knowledge.
+7. If \`<dojo:learnings>\` is present, personalize: build on what the student knows, skip mastered concepts, address past struggles.
+8. Follow \`<dojo:prompt>\` instructions. If there is no \`<dojo:prompt>\`, present the content and ask what the student would like to do.
+9. **Use AskUserQuestion** for ALL student interactions — present choices, ask questions, gather responses. Never list numbered options as plain text.
+10. When the task or student responses require CLI commands (\`dojo kata --check\`, \`dojo kata intro --done\`, \`dojo kata --open\`, etc.), run them via Bash.
+11. If the teaching material contains Reference URLs, surface them to the student.
+12. Before finishing, record 1–3 key observations about the student by running \`dojo kata --note "observation"\` for each.
+13. Drive the full session: AskUserQuestion → process response → run commands if needed → AskUserQuestion again. Do not stop after one exchange.
 `;
 
 const ROOT_DOJO_MD = `# Welcome to Dojocho
@@ -78,10 +134,11 @@ export function setup(root: string, args: string[]): void {
   scaffold(root);
   setupAgents(root, explicit);
 
+  const kataCmd = explicit.length === 1 ? `${explicit[0]} "/kata"` : "/kata in your agent prompt";
   console.log(`Dojo ready.
 
   Add a dojo with: ${CLI} add <source>
-  Then use:        /kata`);
+  Then use:        ${kataCmd}`);
 }
 
 function promptAgents(): void {
@@ -92,11 +149,11 @@ function promptAgents(): void {
     `- "Gemini CLI" → --gemini`,
   ].join("\n");
 
-  console.log(`Invoke AskUserQuestion (multiSelect) to ask the student:
+  console.log(prompt(`${invokeAsk("multiSelect")} to ask the student:
 Which coding agents do you use?
 ${options}
 
-Then run: ${CLI} setup --<agent1> --<agent2> ...`);
+Then run: ${CLI} setup --<agent1> --<agent2> ...`));
 }
 
 function scaffold(root: string): void {
@@ -157,10 +214,17 @@ export function setupAgents(root: string, agents: AgentName[]): void {
     mkdirSync(resolve(root, dir, "commands"), { recursive: true });
     mkdirSync(resolve(root, dir, "skills"), { recursive: true });
 
+    const dojoMd = resolve(root, dir, "commands", "dojo.md");
+    try { if (lstatSync(dojoMd).isSymbolicLink()) unlinkSync(dojoMd); } catch {}
+    if (!existsSync(dojoMd)) {
+      writeFileSync(dojoMd, DEFAULT_DOJO_MD);
+    }
+
+    const kataMdContent = agent === "claude" ? DEFAULT_KATA_MD_CLAUDE : DEFAULT_KATA_MD;
     const kataMd = resolve(root, dir, "commands", "kata.md");
     try { if (lstatSync(kataMd).isSymbolicLink()) unlinkSync(kataMd); } catch {}
     if (!existsSync(kataMd)) {
-      writeFileSync(kataMd, DEFAULT_KATA_MD);
+      writeFileSync(kataMd, kataMdContent);
     }
 
     if (AGENTS[agent].hasSettings) {

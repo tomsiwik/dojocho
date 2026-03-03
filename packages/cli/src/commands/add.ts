@@ -12,6 +12,7 @@ import {
   type RegistryItem,
 } from "../config";
 import { remove as removeDojo } from "./remove";
+import { configuredAgents } from "./setup";
 import { detectPackageManager, pmCommands } from "../pm";
 import { configuredAgents, AGENTS } from "./setup";
 
@@ -256,11 +257,16 @@ function finalize(root: string, name: string, targetPath: string): void {
   // Symlink commands/skills to agent directories
   symlinkDojo(root, targetPath);
 
+  const agents = configuredAgents(root);
+  const kataCmd = agents.length === 1 ? `${agents[0]} "/kata"` : "/kata";
+
   console.log(`Dojo "${name}" added.
 
   Location:  ${DOJOS_DIR}/${name}
   Active:    ${name}
-  Command:   /kata`);
+  Command:   ${kataCmd}`);
+
+  runLifecycleScript(root, targetPath, "prepare.sh");
 }
 
 
@@ -272,6 +278,20 @@ function symlinkDir(sourceDir: string, targetDir: string, filter: (e: import("no
     const link = resolve(targetDir, entry.name);
     if (existsSync(link)) unlinkSync(link);
     symlinkSync(relative(targetDir, resolve(sourceDir, entry.name)), link);
+  }
+}
+
+export function runLifecycleScript(root: string, dojoPath: string, script: string): void {
+  const scriptPath = resolve(dojoPath, script);
+  if (!existsSync(scriptPath)) return;
+  try {
+    execSync(`bash ${scriptPath}`, {
+      cwd: dojoPath,
+      stdio: "inherit",
+      env: { ...process.env, PROJECT_ROOT: root },
+    });
+  } catch {
+    console.log(`Warning: ${script} exited with errors.`);
   }
 }
 

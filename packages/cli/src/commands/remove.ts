@@ -6,6 +6,7 @@ import {
   writeDojoRc,
 } from "../config";
 import { configuredAgents, AGENTS } from "./setup";
+import { runLifecycleScript } from "./add";
 
 export function remove(root: string, args: string[]): void {
   const name = args.find((a) => !a.startsWith("--"));
@@ -15,6 +16,9 @@ export function remove(root: string, args: string[]): void {
   if (!existsSync(dojoPath)) {
     throw new Error(`Dojo "${name}" not found at ${DOJOS_DIR}/${name}`);
   }
+
+  // Run teardown script before removal
+  runLifecycleScript(root, dojoPath, "teardown.sh");
 
   // Remove the dojo directory
   rmSync(dojoPath, { recursive: true, force: true });
