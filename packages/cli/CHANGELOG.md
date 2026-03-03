@@ -1,5 +1,17 @@
 # @dojocho/cli
 
+## 0.1.1
+
+### Patch Changes
+
+- b94c97f: Deeper cli + agent connection, example cross-language pydantic project and hooks implementation
+- 03a4b17: Add `dojo status` command and move orchestration to command files
+
+  - `dojo status` outputs structured state (`no-dojo`, `intro`, `no-kata`, `kata-intro`, `practicing`, `complete`) with dojo, kata, progress, and a `run:` directive for the next command
+  - `kata.md` command file reads `dojo status` and follows the `run:` line — replaces verbose routing table with a 3-line file
+  - Remove prompt injection logic (`!`dojo intro`` , `!`dojo kata intro ``) from `kata.ts` smart mode — CLI is now pure data
+  - Remove `!`dojo intro``from`dojos/effect-ts/DOJO.md` — content files are pure content
+
 ## 0.1.0
 
 ### Minor Changes
