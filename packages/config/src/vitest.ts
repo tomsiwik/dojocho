@@ -1,11 +1,14 @@
 import { loadConfig } from "./index";
-import { defineConfig as vitestDefineConfig, mergeConfig } from "vitest/config";
-import type { UserConfig } from "vitest/config";
+import {
+  defineConfig as vitestDefineConfig,
+  mergeConfig,
+  type ViteUserConfig,
+} from "vitest/config";
 
 export { mergeConfig } from "vitest/config";
 
 export function defineConfig(
-  overrides: UserConfig = {},
+  overrides: ViteUserConfig = {},
 ): ReturnType<typeof vitestDefineConfig> {
   const dojo = loadConfig();
   const defaults = vitestDefineConfig({
