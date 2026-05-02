@@ -1,1 +1,0 @@
-import{resolve as e}from"node:path";import{readFile as t}from"node:fs/promises";var n=null;async function r(){return n||(n=`data:image/png;base64,${(await t(e(process.cwd(),`public/og-bg.png`))).toString(`base64`)}`,n)}export{r as t};
