@@ -1,20 +1,40 @@
-# Dojocho
+<p align="center">
+  <img src="assets/dojocho.svg" alt="dojocho" width="360" />
+</p>
 
-Installable coding dojos that turn your AI agent into a mad sensei.
+<p align="center">
+  Installable coding dojos that turn your AI agent into a sensei.
+</p>
 
-## Quick Start
+<p align="center">
+  <a href="https://www.npmjs.com/package/dojocho"><img src="https://img.shields.io/npm/v/dojocho?style=flat-square&color=ff0056" alt="npm" /></a>
+  <a href="https://github.com/tomsiwik/dojocho/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT" /></a>
+</p>
 
-```bash
-# pick repo for persistence + setup your favorite coding agent & editor
-dojo setup
+<p align="center">
+  <a href="https://dojocho.ai/docs">Documentation</a> &middot; <a href="https://dojocho.ai/dojos">Dojos</a>
+</p>
 
-# add your ryu/school you want to study
-dojo add effect-ts
+---
 
-# run /kata and let your agent run you through some excercises
-claude "/kata"
+Reading tutorials feels like progress. It isn't. You only learn a stack by writing it badly, getting stuck, and figuring out why. dojocho gives your AI agent the role of a patient sensei: it runs your tests, points at the symptoms when you're stuck, and asks the kind of questions a teacher would — but it never types for you.
+
+## What it does
+
+dojocho is a CLI you install once and a set of dojos you bolt onto any project. A dojo is a curated set of katas (small exercises) for a specific stack — Effect-TS, pydantic-agents, etc. Run `dojo setup` to wire your agent into a repo, `dojo add <dojo>` to install a training pack, then ask your agent for a kata.
+
+```sh
+npm install -g dojocho
+
+dojo setup --claude          # one-time: pick the agent + repo for persistence
+dojo add effect-ts           # add a ryū (training pack) you want to study
+claude /kata                 # let the agent walk you through an exercise
 ```
 
-## Special thanks to
+The agent reads the kata's `SENSEI.md`, runs your tests, and reacts to what you wrote. It won't auto-solve the kata. You do the typing.
 
-[PaulJPhilp/EffectPatterns](https://github.com/PaulJPhilp/EffectPatterns) contains 700+ Effect-TS patterns - highly useful on it's own but this guy also added skills which allowed me to create this in the first place
+See the [docs](https://dojocho.ai/docs) for installation details, the full command reference, and how to author your own dojo.
+
+## Special thanks
+
+[PaulJPhilp/EffectPatterns](https://github.com/PaulJPhilp/EffectPatterns) — 700+ Effect-TS patterns, useful on its own. Paul's skills work also unblocked the kata authoring loop that made dojocho possible in the first place.
