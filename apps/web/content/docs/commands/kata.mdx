@@ -1,0 +1,35 @@
+---
+title: /kata
+description: The slash command your agent uses to run the next kata.
+---
+
+`/kata` is a *slash command*, not a CLI command. You invoke it from inside your
+agent (Claude Code, Cursor, etc.) once `dojo setup` has registered it.
+
+## What it does
+
+When you type `/kata`, your agent:
+
+1. Reads `dojocho.json` to find which dojo is active.
+2. Picks the next kata in the dojo's order — the first one whose tests don't
+   pass.
+3. Reads that kata's `SENSEI.md` for teaching guidance.
+4. Asks you questions, points you at type signatures or docs, and refuses to
+   write the solution for you.
+5. Runs the kata's test command after each change.
+
+When the test goes green, `/kata` declares victory and you can run it again to
+move on.
+
+## Arguments
+
+`/kata` is intentionally argument-free. The state lives in the workspace —
+which tests pass, which dojo is active. If you want to skip a kata, just edit
+its solution to be trivial; the next `/kata` will move past it.
+
+## Sensei rules
+
+Every dojo ships a `DOJO.md` with project-wide teaching rules and a
+`SENSEI.md` per kata with kata-specific guidance. The agent treats these as
+the source of truth — they override any default tendency to "just write the
+code".

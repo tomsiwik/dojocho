@@ -1,0 +1,52 @@
+---
+title: Quickstart
+description: From zero to your first green kata in three commands.
+---
+
+This guide assumes you've installed the [CLI](/installation) and have
+[Claude Code](https://docs.anthropic.com/claude/docs/claude-code) (or another
+supported agent) set up.
+
+## 1. Wire up your project
+
+Run `dojo setup` once per project. It registers the `/kata` slash command,
+writes the agent rules that tell your sensei how to behave, and sets up the
+expected directory layout.
+
+```sh
+dojo setup
+```
+
+## 2. Add a dojo
+
+Install the dojo you want to train on. Each dojo is a normal npm package — the
+CLI just knows where to wire it.
+
+```sh
+dojo add effect-ts
+```
+
+Replace `effect-ts` with any dojo from the [catalog](/dojos), e.g.
+`pydantic-agents`.
+
+## 3. Start training
+
+In Claude Code (or your agent of choice), run:
+
+```
+/kata
+```
+
+Your sensei opens the next kata, reads its `SENSEI.md`, and starts asking
+questions instead of writing code for you. When the kata's test goes green,
+`/kata` advances to the next one.
+
+<Callout type="info">
+  Stuck? Ask your sensei for a hint. Refuse to be told the answer — the point
+  is to *earn* the green test.
+</Callout>
+
+## What's next
+
+- Skim the [commands reference](/commands) to learn `dojo` end-to-end.
+- Browse the [dojo catalog](/dojos) to pick your next discipline.

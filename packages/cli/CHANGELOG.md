@@ -1,4 +1,10 @@
-# @dojocho/cli
+# dojocho
+
+## 1.0.0
+
+### Major Changes
+
+- Renamed package from `@dojocho/cli` to `dojocho`. The binary command is unchanged (still `dojo`). To migrate: `npm uninstall -g @dojocho/cli && npm install -g dojocho`.
 
 ## 0.1.1
 

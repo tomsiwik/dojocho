@@ -1,0 +1,1 @@
+import{a as e,i as t,n,o as r,t as i}from"./kata-B4j2CKW2.mjs";export{t as _markdown,r as default,i as frontmatter,e as structuredData,n as toc};

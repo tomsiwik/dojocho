@@ -1,0 +1,70 @@
+---
+title: Pydantic Agents
+description: Learn Pydantic models, validation, and pydantic-ai agents through hands-on katas.
+---
+
+The **`@dojocho/pydantic-agents`** dojo teaches
+[Pydantic](https://docs.pydantic.dev) and
+[pydantic-ai](https://ai.pydantic.dev) the same way the rest of Dojocho does:
+one failing test at a time, with a Socratic sensei refusing to write the
+answer for you.
+
+## Install
+
+```sh
+dojo setup
+dojo add pydantic-agents
+```
+
+Then in your agent:
+
+```
+/kata
+```
+
+## Katas
+
+The current set covers the fundamentals:
+
+| Kata | Focus |
+| --- | --- |
+| **001 — basic-model** | Defining your first `BaseModel`, fields, types |
+| **002 — validation** | Validators, constraints, error handling |
+| **003 — simple-agent** | Building a `pydantic-ai` agent backed by your models |
+
+More katas (tools, structured outputs, RAG patterns) are on the roadmap.
+
+## Test runner
+
+The dojo uses `pytest` driven by [`uv`](https://docs.astral.sh/uv/):
+
+```sh
+uv run pytest katas/001-basic-model/test_solution.py -v
+```
+
+Each kata has its own `test_solution.py`. The runner adapter is
+`exit-code` — green when pytest exits 0, red otherwise. Your sensei runs
+these for you after each change.
+
+## Teaching contract
+
+Lifted from the dojo's `DOJO.md`:
+
+> **Never give solutions.** Your role is Socratic guide.
+> - Ask questions that steer toward the answer
+> - Point to Pydantic docs or class/method names
+> - Narrow scope: "Focus on the first failing test"
+> - Never write or show solution code
+
+Test-only utilities (fixtures, assertions) belong to the harness — the sensei
+won't attribute them to you.
+
+## Requirements
+
+- Python 3.11+
+- [`uv`](https://docs.astral.sh/uv/) for the test runner.
+- The dojo's `prepare.sh` installs Python deps the first time you run it.
+
+## Source
+
+The dojo source lives in the [Dojocho monorepo](https://github.com/tomsiwik/dojocho/tree/main/dojos/pydantic-agents).

@@ -1,0 +1,42 @@
+---
+title: dojo add
+description: Install a dojo from the catalog into the current project.
+---
+
+## Usage
+
+```sh
+dojo add <name>
+```
+
+Examples:
+
+```sh
+dojo add effect-ts
+dojo add pydantic-agents
+```
+
+Each dojo is published as an npm package under the `@dojocho/*` scope. `dojo
+add` is a thin wrapper that:
+
+- Installs the package with your project's package manager.
+- Registers the dojo with your project's `dojocho.json` so `/kata` can find it.
+- Runs any per-dojo `prepare` script (e.g. installing Python deps via `uv`).
+
+## Listing installed dojos
+
+```sh
+dojo add --list
+```
+
+prints the dojos currently registered in this project.
+
+## Removing a dojo
+
+Use your package manager:
+
+```sh
+pnpm remove @dojocho/effect-ts
+```
+
+Then run `dojo setup` to refresh the registration.

@@ -1,0 +1,1 @@
+import{i as e,n as t}from"../_libs/h3+rou3+srvx.mjs";function n(n,r,i){let a=(globalThis.__nitro_vite_envs__||{})[n];if(!a)throw t.status(404);return Promise.resolve(a.fetch(e(r,i)))}function r({req:e}){return n(`ssr`,e)}export{r as default};

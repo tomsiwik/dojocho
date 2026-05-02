@@ -1,0 +1,14 @@
+{
+  "name": "traced-node-modules",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@takumi-rs/core": "1.1.2",
+    "@takumi-rs/core-darwin-arm64": "1.1.2",
+    "@takumi-rs/core-linux-arm64-gnu": "1.1.2",
+    "@takumi-rs/core-linux-x64-gnu": "1.1.2",
+    "@takumi-rs/helpers": "1.1.2",
+    "tslib": "2.8.1"
+  }
+}

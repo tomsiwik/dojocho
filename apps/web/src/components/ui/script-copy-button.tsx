@@ -44,7 +44,7 @@ export function ScriptCopyBtn({
                       <div className="h-4 w-px bg-border" aria-hidden="true" />
                     )}
                     <Button
-                      variant="ghost"
+                      color="ghost"
                       size="sm"
                       className={`relative rounded-none bg-background px-2 py-1 hover:bg-background ${
                         packageManager === pm
@@ -80,7 +80,7 @@ export function ScriptCopyBtn({
             </pre>
           </div>
           <Button
-            variant="outline"
+            color="outline"
             size="icon"
             className="relative ml-2 rounded-md"
             onClick={copyToClipboard}

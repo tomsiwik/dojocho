@@ -1,0 +1,26 @@
+---
+title: dojo setup
+description: One-time wiring of a project so your agent can run katas.
+---
+
+## Usage
+
+```sh
+dojo setup
+```
+
+`dojo setup` prepares the current directory to host one or more dojos. It is
+idempotent — running it twice is harmless.
+
+## What it does
+
+- Registers the `/kata` slash command with your agent (Claude Code by default).
+- Writes the sensei rules — the agent-side instructions that enforce Socratic
+  teaching: ask questions, never spoil solutions, narrow scope to the next
+  failing test.
+- Creates the expected workspace layout so installed dojos drop in cleanly.
+
+## Re-running setup
+
+Re-run `dojo setup` if you've upgraded the CLI, switched agents, or want to
+reset the agent rules to defaults. Your code is untouched.

@@ -1,0 +1,10 @@
+{
+  "title": "Dojos",
+  "root": true,
+  "pages": [
+    "index",
+    "---Languages---",
+    "effect-ts",
+    "pydantic-agents"
+  ]
+}

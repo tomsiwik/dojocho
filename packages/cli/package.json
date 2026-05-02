@@ -1,17 +1,37 @@
 {
-  "name": "@dojocho/cli",
-  "version": "0.1.1",
-  "type": "module",
+  "name": "dojocho",
+  "version": "1.0.0",
+  "description": "Installable coding dojos that turn your AI agent into a sensei.",
+  "keywords": [
+    "cli",
+    "dojo",
+    "kata",
+    "ai-agent",
+    "claude",
+    "claude-code",
+    "coding-practice",
+    "pair-programming"
+  ],
+  "license": "MIT",
+  "author": "Tomas Sivicki <tomas.sivicki@gmail.com>",
+  "homepage": "https://dojocho.ai",
+  "bugs": {
+    "url": "https://github.com/tomsiwik/dojocho/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tomsiwik/dojocho",
+    "url": "https://github.com/tomsiwik/dojocho.git",
     "directory": "packages/cli"
   },
+  "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "bin": {
     "dojo": "./dist/index.js"
@@ -19,7 +39,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@dojocho/config": "workspace:*"

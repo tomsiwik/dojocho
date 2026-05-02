@@ -1,0 +1,1 @@
+var e=[],t=!1;export{t as hasPluginAdapters,e as pluginSerializationAdapters};

@@ -1,0 +1,26 @@
+---
+title: Documentation
+description: Installable coding dojos that turn your AI agent into a sensei. You do the typing, the agent runs tests and asks Socratic questions.
+---
+
+## What's dojocho?
+
+dojocho is a kata-driven training framework for AI coding agents. You install a dojo — a curated set of failing tests with teaching prompts — and your agent guides you through them like a Socratic sensei. No solutions handed out. Just questions, hints, and the next failing test.
+
+You do the typing. The agent runs the tests, watches what you wrote, and asks the next question. Each dojo is a curated set of katas, and each language gets its own pluggable ryu (style/school) so the prompts stay idiomatic.
+
+## Quickstart
+
+```sh
+dojo setup --claude
+dojo add effect-ts
+claude /kata
+```
+
+`setup` wires the `/kata` slash command into Claude Code, `add` pulls in a dojo, and `/kata` puts you in front of your first failing test with the sensei watching.
+
+## Where to go next
+
+- **Getting Started** — install the CLI, scaffold your first dojo project.
+- **Commands** — the `dojo` CLI surface: `setup`, `add`, `kata`.
+- **Dojos** — the installable catalog (`effect-ts`, `pydantic-agents`, more on the way).

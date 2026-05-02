@@ -1,0 +1,1 @@
+import{n as e}from"./@tanstack/react-router+[...].mjs";export default e();export{};

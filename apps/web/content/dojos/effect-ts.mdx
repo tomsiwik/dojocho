@@ -1,0 +1,71 @@
+---
+title: Effect-TS
+description: Master Effect-TS through 40 hands-on katas, from Effect.succeed to managed runtimes.
+---
+
+The **`@dojocho/effect-ts`** dojo is a 40-kata curriculum for
+[Effect-TS](https://effect.website). You build up from the smallest unit
+(`Effect.succeed`) all the way to layered services, fibers, streams, and a
+managed runtime — one failing test at a time.
+
+## Install
+
+```sh
+dojo setup
+dojo add effect-ts
+```
+
+Then in your agent:
+
+```
+/kata
+```
+
+## What you'll learn
+
+The dojo is organised into areas. Each area starts with a skill the sensei
+loads before the first kata, then walks through the APIs hands-on:
+
+| Area | Katas | Topics |
+| --- | --- | --- |
+| **Foundations** | 001 – 005 | `Effect.succeed`, `map`, generators, `flatMap`, `pipe` composition |
+| **Errors** | 006 – 008 | `Effect.fail`, tagged errors, error channels, recovery patterns |
+| **Modelling** | 009 – 010 | `Option`, `Either`, `Exit` |
+| **Services & Layers** | 011 – 013 | `Context.Tag`, `Layer`, testing with mocks |
+| **Schema** | 014 – 015 | `Schema.Struct`, refinements, domain modelling |
+| **Concurrency** | 016 – 020 | `retry`, schedules, parallelism, `race`, `Ref`, fibers |
+| **Resources** | 021 – 023 | `acquireRelease`, scoped layers, resource patterns |
+| **Streams** | 024 – 027 | `Stream` basics, operations, combinators, data pipelines |
+| **Observability** | 028 | logging, spans |
+| **HTTP** | 029 | typed HTTP client |
+| **Capstone** | 030 | end-to-end, all areas combined |
+| **Advanced** | 031 – 040 | config, causes, pattern matching, queues, metrics, managed runtime, request batching |
+
+Each kata is a single failing Vitest test. Your sensei reads the test and the
+`SENSEI.md`, then asks you targeted questions until you make it green.
+
+## Teaching contract
+
+Quoting the dojo's own `DOJO.md`:
+
+> **Never give solutions.** Your role is Socratic guide.
+> - Ask questions that steer toward the answer
+> - Point to type signatures or API names
+> - Narrow scope: "Focus on the first failing test"
+> - Never write or show solution code
+
+That contract is enforced kata-by-kata via per-kata `SENSEI.md` files, which
+also flag which APIs belong to *you* (the student) versus the test harness
+(`runSync`, `runSyncExit`) — a small but important detail Effect-TS beginners
+often get backwards.
+
+## Requirements
+
+- Node.js 20+
+- A package manager that supports workspaces — `pnpm` is recommended.
+- The `effect` runtime is installed as a dependency of the dojo; the test
+  runner is Vitest.
+
+## Source
+
+The dojo source lives in the [Dojocho monorepo](https://github.com/tomsiwik/dojocho/tree/main/dojos/effect-ts).

@@ -1,0 +1,14 @@
+{
+  "title": "Docs",
+  "root": true,
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "installation",
+    "quickstart",
+    "---Commands---",
+    "commands/setup",
+    "commands/add",
+    "commands/kata"
+  ]
+}

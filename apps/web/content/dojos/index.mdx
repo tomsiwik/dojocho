@@ -1,0 +1,28 @@
+---
+title: Dojos
+description: Curated kata packs you install per language or framework. Each dojo ships exercises, the AI sensei prompts that grade them, and the rules that keep the agent in mentor mode.
+---
+
+## What's a dojo?
+
+A dojo is an installable training pack for a specific stack. It bundles:
+
+- **Katas** — small, ordered exercises that teach one idea each.
+- **Sensei prompts** — the system instructions that make your agent behave like a coach instead of an autocompleter.
+- **Tests** — the agent runs them so you don't have to remember to.
+- **Rules** — guardrails that keep the agent from solving the kata for you.
+
+```sh
+dojo add effect-ts            # install a dojo into the current repo
+dojo add pydantic-agents      # multiple dojos coexist
+claude /kata                  # start practicing
+```
+
+Each dojo is a workspace package under `dojos/` in the [main repo](https://github.com/tomsiwik/dojocho), so it's easy to see exactly what your agent is being told.
+
+## Available dojos
+
+- **[effect-ts](/dojos/effect-ts)** — 700+ Effect-TS patterns, structured around the official patterns repo.
+- **[pydantic-agents](/dojos/pydantic-agents)** — building agentic tools with Pydantic AI.
+
+More dojos are easy to add — see the source of any existing one for the layout.
