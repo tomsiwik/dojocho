@@ -1,1 +1,0 @@
-import{o as e}from"../_runtime.mjs";import{u as t}from"./@floating-ui/react-dom+[...].mjs";import{s as n}from"./@radix-ui/react-arrow+[...].mjs";var r=e(t(),1);n();var i=r.createContext(void 0);function a(e){let t=r.useContext(i);return e||t||`ltr`}export{a as t};

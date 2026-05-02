@@ -1,1 +1,0 @@
-import{i as e}from"./@takumi-rs/wasm.mjs";export{e as default};
