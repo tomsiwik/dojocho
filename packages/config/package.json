@@ -35,7 +35,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "jiti": "^2.6.1"
+    "jiti": "^2.7.0"
   },
   "devDependencies": {
     "@types/node": "^25.3.3",
