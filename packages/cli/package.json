@@ -1,6 +1,6 @@
 {
   "name": "dojocho",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Installable coding dojos that turn your AI agent into a sensei.",
   "keywords": [
     "cli",
