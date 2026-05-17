@@ -26,7 +26,7 @@ dojocho is a CLI you install once and a set of dojos you bolt onto any project. 
 ```sh
 npm install -g dojocho
 
-dojo setup --claude          # one-time: pick the agent + repo for persistence
+dojo setup                   # one-time: auto-detects your agent via env vars
 dojo add effect-ts           # add a ryū (training pack) you want to study
 claude /kata                 # let the agent walk you through an exercise
 ```

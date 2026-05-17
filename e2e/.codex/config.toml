@@ -1,0 +1,15 @@
+model = "openai/gpt-oss-120b"
+model_provider = "groq-via-proxy"
+model_reasoning_effort = "minimal"
+model_reasoning_summary = "none"
+model_verbosity = "low"
+hide_agent_reasoning = true
+sandbox_mode = "workspace-write"
+web_search = "disabled"
+service_tier = "flex"
+
+[model_providers.groq-via-proxy]
+name = "Groq (proxy strips codex's client_metadata field)"
+base_url = "http://127.0.0.1:4000/v1"
+env_key = "GROQ_API_KEY"
+wire_api = "responses"

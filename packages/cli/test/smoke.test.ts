@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync, lstatSync, readlinkSync } from "node:fs";
 import { rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { setup, setupAgents, configuredAgents, AGENTS } from "../src/commands/setup";
+import { setup, setupAgents, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
 import { intro } from "../src/commands/intro";
 import { kata } from "../src/commands/kata";
 import { journalPath, appendNote, readLearnings } from "../src/journal";
@@ -69,12 +69,20 @@ describe("dojo setup", () => {
   beforeEach(() => { root = makeTmpDir(); });
   afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
-  it("outputs AskUserQuestion prompt when no flags given", () => {
-    const output = captureLog(() => setup(root, []));
+  it("outputs AskUserQuestion prompt when no flags given and no agent env var present", () => {
+    // Clear any agent-identifying env vars so detection falls back to the prompt
+    const envKeys = Object.values(AGENTS).flatMap((cfg) => cfg.envVars);
+    for (const key of envKeys) vi.stubEnv(key, "");
 
-    expect(output).toContain("AskUserQuestion");
-    expect(output).toContain("Claude Code");
-    expect(output).toContain("Gemini CLI");
+    try {
+      const output = captureLog(() => setup(root, []));
+      expect(output).toContain("AskUserQuestion");
+      expect(output).toContain("Claude Code");
+      expect(output).toContain("Gemini CLI");
+      expect(output).toContain("Pi");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 
@@ -84,66 +92,61 @@ describe("setupAgents", () => {
   beforeEach(() => { root = makeTmpDir(); });
   afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
-  it("creates agent dirs and kata.md", () => {
-    setupAgents(root, ["claude"]);
+  const allAgents = Object.keys(AGENTS) as AgentName[];
 
-    expect(existsSync(resolve(root, ".claude/commands"))).toBe(true);
-    expect(existsSync(resolve(root, ".claude/skills"))).toBe(true);
-    expect(existsSync(resolve(root, ".claude/commands/kata.md"))).toBe(true);
-    expect(readFileSync(resolve(root, ".claude/commands/kata.md"), "utf8")).toContain("dojo status");
-  });
+  it.each(allAgents)("%s: layout, symlinks, and settings match AGENTS config", (agent) => {
+    setupAgents(root, [agent]);
+    const cfg = AGENTS[agent];
 
-  it("writes settings.json only for claude", () => {
-    setupAgents(root, ["claude", "gemini"]);
+    // Per-agent directories
+    expect(existsSync(resolve(root, cfg.dir, cfg.commandsDir))).toBe(true);
+    expect(existsSync(resolve(root, cfg.dir, "skills"))).toBe(true);
 
-    expect(existsSync(resolve(root, ".claude/settings.json"))).toBe(true);
-    expect(existsSync(resolve(root, ".gemini/settings.json"))).toBe(false);
-    expect(existsSync(resolve(root, ".gemini/commands/kata.md"))).toBe(true);
-  });
+    // settings.json presence tracks hasSettings
+    expect(existsSync(resolve(root, cfg.dir, "settings.json"))).toBe(cfg.hasSettings);
 
-  it("writes interactive kata.md for claude and default for others", () => {
-    setupAgents(root, ["claude", "gemini"]);
+    // Each command is a symlink → canonical .agents/commands/<name>.md
+    for (const name of ["dojo", "kata"] as const) {
+      const link = resolve(root, cfg.dir, cfg.commandsDir, `${name}.md`);
+      const canonical = resolve(root, ".agents/commands", `${name}.md`);
 
-    const claudeKata = readFileSync(resolve(root, ".claude/commands/kata.md"), "utf8");
-    const geminiKata = readFileSync(resolve(root, ".gemini/commands/kata.md"), "utf8");
-
-    expect(claudeKata).toContain("AskUserQuestion");
-    expect(claudeKata).toContain("kata sensei");
-    expect(claudeKata).not.toContain("Teaching Subagent");
-    expect(claudeKata).not.toContain("subagent_type");
-    expect(geminiKata).not.toContain("AskUserQuestion");
-    expect(geminiKata).toContain("Internalize but never show verbatim");
-  });
-
-  it("does not create .claude/agents/ directory", () => {
-    setupAgents(root, ["claude"]);
-
-    expect(existsSync(resolve(root, ".claude/agents"))).toBe(false);
-  });
-
-  it("settings.json does not include Agent permissions", () => {
-    setupAgents(root, ["claude"]);
-
-    const settings = JSON.parse(readFileSync(resolve(root, ".claude/settings.json"), "utf8"));
-    expect(settings.permissions.allow).not.toContain("Agent(sensei)");
-  });
-
-  it("sets up multiple agents", () => {
-    setupAgents(root, ["claude", "opencode", "codex", "gemini"]);
-
-    for (const agent of Object.keys(AGENTS) as (keyof typeof AGENTS)[]) {
-      const dir = AGENTS[agent].dir;
-      expect(existsSync(resolve(root, dir, "commands"))).toBe(true);
-      expect(existsSync(resolve(root, dir, "skills"))).toBe(true);
+      expect(lstatSync(link).isSymbolicLink()).toBe(true);
+      expect(resolve(resolve(root, cfg.dir, cfg.commandsDir), readlinkSync(link))).toBe(canonical);
+      expect(existsSync(canonical)).toBe(true);
     }
   });
 
-  it("only sets up specified agents", () => {
+  it("writes canonical commands once at .agents/commands/", () => {
+    setupAgents(root, ["claude"]);
+    expect(existsSync(resolve(root, ".agents/commands/dojo.md"))).toBe(true);
+    expect(existsSync(resolve(root, ".agents/commands/kata.md"))).toBe(true);
+    expect(readFileSync(resolve(root, ".agents/commands/kata.md"), "utf8")).toContain("dojo status");
+  });
+
+  it("all configured agents serve identical kata content via symlink", () => {
+    setupAgents(root, allAgents);
+
+    const contents = allAgents.map((a) => {
+      const cfg = AGENTS[a];
+      return readFileSync(resolve(root, cfg.dir, cfg.commandsDir, "kata.md"), "utf8");
+    });
+
+    expect(new Set(contents).size).toBe(1);
+  });
+
+  it("only configures specified agents", () => {
     setupAgents(root, ["opencode", "codex"]);
 
     expect(existsSync(resolve(root, ".opencode/commands"))).toBe(true);
     expect(existsSync(resolve(root, ".codex/commands"))).toBe(true);
-    expect(existsSync(resolve(root, ".claude/commands"))).toBe(false);
+    expect(existsSync(resolve(root, ".claude"))).toBe(false);
+    expect(existsSync(resolve(root, ".pi"))).toBe(false);
+  });
+
+  it("settings.json does not include legacy Agent(sensei) permission", () => {
+    setupAgents(root, ["claude"]);
+    const settings = JSON.parse(readFileSync(resolve(root, ".claude/settings.json"), "utf8"));
+    expect(settings.permissions.allow).not.toContain("Agent(sensei)");
   });
 });
 

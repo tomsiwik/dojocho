@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 3000,
     host: process.env.HOST || 'localhost',
+    allowedHosts: ['dojocho.td', 'host.docker.internal', 'localhost', '127.0.0.1'],
   },
   resolve: {
     tsconfigPaths: true,

@@ -54,26 +54,26 @@ export function pmCommands(root: string): PmCommands {
     case "pnpm":
       return {
         name: pm,
-        installSilent: "pnpm install --ignore-workspace --silent",
+        installSilent: "pnpm install --ignore-workspace --reporter=append-only",
         add: (pkg) => `pnpm add ${pkg}`,
       };
     case "yarn":
       return {
         name: pm,
-        installSilent: "yarn install --silent",
+        installSilent: "yarn install",
         add: (pkg) => `yarn add ${pkg}`,
       };
     case "bun":
       return {
         name: pm,
-        installSilent: "bun install --silent",
+        installSilent: "bun install",
         add: (pkg) => `bun add ${pkg}`,
       };
     case "npm":
     default:
       return {
         name: pm,
-        installSilent: "npm install --silent",
+        installSilent: "npm install --no-progress",
         add: (pkg) => `npm install ${pkg}`,
       };
   }

@@ -17,7 +17,7 @@ After install, the CLI is available as `dojo`.
 ## Usage
 
 ```sh
-dojo setup --claude       # set up your dojo (creates dojo.config.ts, wires up your agent)
+dojo setup                # set up your dojo (auto-detects your agent via env vars)
 dojo add effect-ts        # install a training pack (a "dojo")
 claude /kata              # start practicing
 ```

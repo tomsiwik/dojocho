@@ -3,13 +3,13 @@ import type { ReactNode } from 'react'
 export interface LandingTemplateProps {
   /** Absolute URL to the OG background image. */
   backgroundUrl?: string
-  /** Absolute URL (or data URI) to the round dojocho seal. */
+  /** Absolute URL (or data URI) to the dojocho wordmark. */
   logoUrl?: string
 }
 
 /**
- * 1200x630 landing-page OG card — just the round dojocho seal centered
- * over the cherry-blossom background.
+ * 1200x630 landing-page OG card — wordmark centered over the
+ * cherry-blossom background.
  */
 export default function LandingTemplate({
   backgroundUrl,
@@ -57,7 +57,7 @@ export default function LandingTemplate({
           <img
             src={logoUrl}
             alt="dojocho"
-            style={{ width: 500, height: 500 }}
+            style={{ width: 800, height: 'auto' }}
           />
         ) : (
           <span

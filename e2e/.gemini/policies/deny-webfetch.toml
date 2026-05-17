@@ -1,0 +1,11 @@
+[[rule]]
+toolName = "web_fetch"
+decision = "deny"
+priority = 100
+denyMessage = "WebFetch is disabled. Use the shell tool with `curl -sSf <url>` to fetch URLs."
+
+[[rule]]
+toolName = "google_web_search"
+decision = "deny"
+priority = 100
+denyMessage = "Web search is disabled. Trust the URLs provided by the user and use shell tools."

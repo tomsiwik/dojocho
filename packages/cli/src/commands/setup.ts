@@ -1,18 +1,27 @@
-import { existsSync, mkdirSync, lstatSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, lstatSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { resolve } from "node:path";
+import { resolve, relative } from "node:path";
 import { CLI, DOJOS_DIR, readDojoRc, writeDojoRc, type DojoRc } from "../config";
 import { pmCommands } from "../pm";
 import { prompt, invokeAsk } from "../format";
 
 export const AGENTS = {
-  claude: { dir: ".claude", hasSettings: true },
-  opencode: { dir: ".opencode", hasSettings: false },
-  codex: { dir: ".codex", hasSettings: false },
-  gemini: { dir: ".gemini", hasSettings: false },
+  claude: { dir: ".claude", commandsDir: "commands", hasSettings: true, envVars: ["CLAUDECODE"] },
+  opencode: { dir: ".opencode", commandsDir: "commands", hasSettings: false, envVars: ["OPENCODE"] },
+  codex: { dir: ".codex", commandsDir: "commands", hasSettings: false, envVars: ["CODEX_THREAD_ID"] },
+  gemini: { dir: ".gemini", commandsDir: "commands", hasSettings: false, envVars: ["GEMINI_CLI"] },
+  pi: { dir: ".pi", commandsDir: "prompts", hasSettings: false, envVars: ["PI_CODING_AGENT"] },
 } as const;
 
+const AGENTS_COMMANDS_DIR = ".agents/commands";
+
 export type AgentName = keyof typeof AGENTS;
+
+function detectAgentsFromEnv(): AgentName[] {
+  return (Object.keys(AGENTS) as AgentName[]).filter((a) =>
+    AGENTS[a].envVars.some((v) => Boolean(process.env[v])),
+  );
+}
 
 const CLAUDE_SETTINGS = {
   permissions: {
@@ -31,29 +40,6 @@ const CLAUDE_SETTINGS = {
 const DEFAULT_DOJO_MD = `!\`dojo $ARGUMENTS\`
 
 Follow any \`<dojo:prompt>\` instructions in the output.
-`;
-
-const DEFAULT_KATA_MD = `!\`dojo status\`
-
-## Protocol
-
-CLI output uses XML tags to separate directives from student content:
-
-- \`<dojo:status>\` — Machine state. Parse the \`run:\` line and execute it.
-- \`<dojo:prompt>\` — Interaction spec. Follow the instructions inside.
-- \`<dojo:sensei>\` — Teaching material. Internalize but never show verbatim.
-- \`<dojo:learnings>\` — Prior student observations. Use to personalize teaching.
-- **Unwrapped text** — Student-facing. Display as-is.
-
-## Flow
-
-1. Parse \`<dojo:status>\` above.
-2. If state is \`complete\`, congratulate the student.
-3. If state is \`no-dojo\`, tell them to run \`dojo add <source>\`.
-4. Otherwise, execute the \`run:\` command.
-5. After running, follow any \`<dojo:prompt>\` instructions.
-6. Use \`<dojo:sensei>\` content to guide teaching — never paste it to the student.
-7. If \`<dojo:learnings>\` is present, use it to personalize teaching based on prior observations.
 `;
 
 const DEFAULT_KATA_MD_CLAUDE = `!\`dojo status\`
@@ -114,6 +100,7 @@ const DOJO_CONFIG = `import { defineConfig } from "@dojocho/config"
 export default defineConfig()
 `;
 
+
 const DEFAULT_RC: DojoRc = {
   currentDojo: "",
   currentKata: null,
@@ -125,17 +112,19 @@ export function setup(root: string, args: string[]): void {
   const explicit = (Object.keys(AGENTS) as AgentName[]).filter(
     (a) => args.includes(`--${a}`),
   );
+  const detected = explicit.length > 0 ? explicit : detectAgentsFromEnv();
 
-  if (explicit.length === 0) {
+  if (detected.length === 0) {
     promptAgents();
     return;
   }
 
   scaffold(root);
-  setupAgents(root, explicit);
+  setupAgents(root, detected);
 
-  const kataCmd = explicit.length === 1 ? `${explicit[0]} "/kata"` : "/kata in your agent prompt";
-  console.log(`Dojo ready.
+  const kataCmd = detected.length === 1 ? `${detected[0]} "/kata"` : "/kata in your agent prompt";
+  const suffix = explicit.length === 0 ? ` (detected from env: ${detected.join(", ")})` : "";
+  console.log(`Dojo ready${suffix}.
 
   Add a dojo with: ${CLI} add <source>
   Then use:        ${kataCmd}`);
@@ -147,6 +136,7 @@ function promptAgents(): void {
     `- "OpenCode" → --opencode`,
     `- "Codex" → --codex`,
     `- "Gemini CLI" → --gemini`,
+    `- "Pi" → --pi`,
   ].join("\n");
 
   console.log(prompt(`${invokeAsk("multiSelect")} to ask the student:
@@ -203,32 +193,57 @@ function scaffold(root: string): void {
     );
   }
 
+
   const pm = pmCommands(root);
   console.log("Installing @dojocho/config...");
-  execSync(pm.add("@dojocho/config"), { cwd: root, stdio: "pipe" });
+  try {
+    execSync(pm.add("@dojocho/config"), { cwd: root, stdio: "pipe" });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const firstLine = msg.split("\n").find((l) => l.includes("ERR_") || l.includes("error"))
+      ?? msg.split("\n")[0];
+    console.warn(`! Could not install @dojocho/config: ${firstLine.trim()}`);
+    console.warn(`  Continuing setup. Install it manually later (e.g. when authoring katas):`);
+    console.warn(`    ${pm.add("@dojocho/config")}`);
+  }
+}
+
+function symlinkCanonical(root: string, agent: AgentName, name: "dojo" | "kata"): void {
+  const cfg = AGENTS[agent];
+  const targetDir = resolve(root, cfg.dir, cfg.commandsDir);
+  const target = resolve(targetDir, `${name}.md`);
+  const canonical = resolve(root, AGENTS_COMMANDS_DIR, `${name}.md`);
+
+  // Replace any existing symlink or regular file with a fresh symlink so the
+  // canonical content stays the single source of truth across agents.
+  try { lstatSync(target); unlinkSync(target); } catch {}
+  symlinkSync(relative(targetDir, canonical), target);
+}
+
+function writeCanonicalCommands(root: string): void {
+  const canonicalDir = resolve(root, AGENTS_COMMANDS_DIR);
+  mkdirSync(canonicalDir, { recursive: true });
+
+  const canonicalDojo = resolve(canonicalDir, "dojo.md");
+  if (!existsSync(canonicalDojo)) writeFileSync(canonicalDojo, DEFAULT_DOJO_MD);
+
+  const canonicalKata = resolve(canonicalDir, "kata.md");
+  if (!existsSync(canonicalKata)) writeFileSync(canonicalKata, DEFAULT_KATA_MD_CLAUDE);
 }
 
 export function setupAgents(root: string, agents: AgentName[]): void {
+  writeCanonicalCommands(root);
+
   for (const agent of agents) {
-    const dir = AGENTS[agent].dir;
-    mkdirSync(resolve(root, dir, "commands"), { recursive: true });
-    mkdirSync(resolve(root, dir, "skills"), { recursive: true });
+    const cfg = AGENTS[agent];
+    mkdirSync(resolve(root, cfg.dir, cfg.commandsDir), { recursive: true });
+    mkdirSync(resolve(root, cfg.dir, "skills"), { recursive: true });
 
-    const dojoMd = resolve(root, dir, "commands", "dojo.md");
-    try { if (lstatSync(dojoMd).isSymbolicLink()) unlinkSync(dojoMd); } catch {}
-    if (!existsSync(dojoMd)) {
-      writeFileSync(dojoMd, DEFAULT_DOJO_MD);
-    }
+    symlinkCanonical(root, agent, "dojo");
+    symlinkCanonical(root, agent, "kata");
 
-    const kataMdContent = agent === "claude" ? DEFAULT_KATA_MD_CLAUDE : DEFAULT_KATA_MD;
-    const kataMd = resolve(root, dir, "commands", "kata.md");
-    try { if (lstatSync(kataMd).isSymbolicLink()) unlinkSync(kataMd); } catch {}
-    if (!existsSync(kataMd)) {
-      writeFileSync(kataMd, kataMdContent);
-    }
-
-    if (AGENTS[agent].hasSettings) {
-      const settingsPath = resolve(root, dir, "settings.json");
+    if (cfg.hasSettings) {
+      const settingsPath = resolve(root, cfg.dir, "settings.json");
       writeFileSync(settingsPath, JSON.stringify(CLAUDE_SETTINGS, null, 2) + "\n");
     }
   }

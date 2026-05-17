@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import ImageResponse from 'takumi-js/response'
 import LandingTemplate from '@/components/og/landing-template'
-import { getOgBackgroundDataUrl, getLogoSealDataUrl } from '@/lib/og-assets'
+import { getOgBackgroundDataUrl, getLogoWordmarkDataUrl } from '@/lib/og-assets'
 
 export const Route = createFileRoute('/og/landing.webp')({
   server: {
@@ -9,7 +9,7 @@ export const Route = createFileRoute('/og/landing.webp')({
       GET: async () => {
         const [backgroundUrl, logoUrl] = await Promise.all([
           getOgBackgroundDataUrl(),
-          getLogoSealDataUrl(),
+          getLogoWordmarkDataUrl(),
         ])
         return new ImageResponse(
           <LandingTemplate backgroundUrl={backgroundUrl} logoUrl={logoUrl} />,

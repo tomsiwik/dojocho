@@ -25,10 +25,6 @@ async function dataUrl(relPath: string, mime: string): Promise<string> {
 export const getOgBackgroundDataUrl = () =>
   dataUrl('public/og-bg.png', 'image/png')
 
-/** Round dojocho seal — the hero on the landing page. */
-export const getLogoSealDataUrl = () =>
-  dataUrl('public/logo.png', 'image/png')
-
-/** Wide "DOJOCHO" wordmark — used in the docs nav. */
+/** Wide "DOJOCHO" wordmark — the single brand mark. */
 export const getLogoWordmarkDataUrl = () =>
   dataUrl('public/logo.svg', 'image/svg+xml')

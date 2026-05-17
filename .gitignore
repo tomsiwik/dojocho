@@ -2,6 +2,10 @@
 node_modules
 .turbo
 
+# Local secrets for e2e tests — see .env.example for the var names.
+.env
+.env.local
+
 # build outputs
 packages/cli/dist/
 packages/config/dist/
@@ -14,3 +18,6 @@ apps/web/src/routeTree.gen.ts
 .vercel
 .tanstack
 **/.source
+
+# Runtime artifacts
+/logs/

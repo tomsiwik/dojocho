@@ -63,7 +63,7 @@ function Home() {
               Usage
             </h2>
             <pre className="overflow-x-auto rounded-md border border-border bg-background p-4 font-mono text-sm text-foreground leading-relaxed">
-              <span>dojo setup --claude</span>   <span className="text-muted-foreground"># set up your dojo</span>{"\n"}
+              <span>dojo setup</span>            <span className="text-muted-foreground"># set up your dojo</span>{"\n"}
               <span>dojo add effect-ts</span>    <span className="text-muted-foreground"># add a training pack</span>{"\n"}
 {"\n"}
               <span>claude /kata</span>          <span className="text-muted-foreground"># start practicing</span>

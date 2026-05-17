@@ -14,7 +14,7 @@ import {
 import { remove as removeDojo } from "./remove";
 import { configuredAgents } from "./setup";
 import { detectPackageManager, pmCommands } from "../pm";
-import { configuredAgents, AGENTS } from "./setup";
+import { AGENTS } from "./setup";
 
 export async function add(root: string, args: string[]): Promise<void> {
   const source = args.find((a) => !a.startsWith("--"));
@@ -114,7 +114,17 @@ function installExtracted(root: string, extractedDir: string, source: string, fo
   const pkgPath = resolve(extractedDir, "package.json");
   if (existsSync(pkgPath)) {
     console.log(`Installing ${name} dependencies...`);
-    execSync(pm.installSilent, { cwd: extractedDir, stdio: "pipe" });
+    try {
+      execSync(pm.installSilent, { cwd: extractedDir, stdio: "pipe" });
+    } catch (err) {
+      const e = err as { stderr?: Buffer; stdout?: Buffer; message?: string };
+      const detail =
+        e.stderr?.toString().trim() ||
+        e.stdout?.toString().trim() ||
+        e.message ||
+        "unknown error";
+      throw new Error(`Failed to install ${name} dependencies via ${pm.name}:\n\n${detail}`);
+    }
   }
 
   // Move to final location

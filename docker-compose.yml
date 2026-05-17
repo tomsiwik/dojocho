@@ -1,0 +1,34 @@
+services:
+  dojocho-e2e:
+    container_name: dojocho-e2e
+    build:
+      context: .
+      dockerfile: e2e/Dockerfile
+    image: dojocho-e2e:latest
+    env_file: .env
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      CEREBRAS_API_KEY: ${CEREBRAS_API_KEY}
+      OPENCODE_CONFIG_DIR: /root/.opencode
+      NODE_EXTRA_CA_CERTS: /etc/ssl/portless-ca.pem
+      NO_COLOR: "1"
+      CI: "1"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+      - dojocho.td:host-gateway
+    volumes:
+      - .:/workspace
+      - ${HOME}/.portless/ca.pem:/etc/ssl/portless-ca.pem:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('node:net').createConnection(4000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    command: >
+      sh -c "
+        sed -i \"s|__CEREBRAS_API_KEY__|$$CEREBRAS_API_KEY|g\" /root/.pi/agent/models.json &&
+        cp /etc/ssl/portless-ca.pem /usr/local/share/ca-certificates/portless.crt &&
+        update-ca-certificates >/tmp/ca.log 2>&1 &&
+        node /opt/dojocho/proxy/index.mjs
+      "

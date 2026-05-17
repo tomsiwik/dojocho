@@ -12,12 +12,12 @@ You do the typing. The agent runs the tests, watches what you wrote, and asks th
 ## Quickstart
 
 ```sh
-dojo setup --claude
+dojo setup
 dojo add effect-ts
 claude /kata
 ```
 
-`setup` wires the `/kata` slash command into Claude Code, `add` pulls in a dojo, and `/kata` puts you in front of your first failing test with the sensei watching.
+`setup` detects your coding agent (via env vars like `CLAUDECODE=1`) and wires the `/kata` slash command into it, `add` pulls in a dojo, and `/kata` puts you in front of your first failing test with the sensei watching. Pass `--claude`, `--opencode`, `--codex`, or `--gemini` if you need to override detection.
 
 ## Where to go next
 

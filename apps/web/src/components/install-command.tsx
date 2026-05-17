@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AGENT_PROMPT } from './install-prompt';
 
 export interface InstallCommandProps {
   /** Command variants keyed by label. */
@@ -23,11 +24,18 @@ export function InstallCommand({
 }: InstallCommandProps) {
   const [active, setActive] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   const copy = () => {
     navigator.clipboard.writeText(commands[active].cmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(AGENT_PROMPT);
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 2000);
   };
 
   return (
@@ -58,6 +66,16 @@ export function InstallCommand({
           className="shrink-0 text-fd-muted-foreground hover:text-fd-foreground transition-colors text-xs"
         >
           {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <div className="flex items-center justify-between gap-2 border-t border-fd-border px-4 py-2 text-xs text-fd-muted-foreground">
+        <span>Or have your agent install it</span>
+        <button
+          type="button"
+          onClick={copyPrompt}
+          className="shrink-0 text-fd-muted-foreground hover:text-fd-foreground transition-colors"
+        >
+          {promptCopied ? 'Copied!' : 'Copy Prompt'}
         </button>
       </div>
     </div>

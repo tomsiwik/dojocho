@@ -1,0 +1,19 @@
+{
+  "providers": {
+    "cerebras": {
+      "baseUrl": "https://api.cerebras.ai/v1",
+      "api": "openai-completions",
+      "apiKey": "__CEREBRAS_API_KEY__",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": true,
+        "requiresReasoningContentOnAssistantMessages": false,
+        "thinkingFormat": "openai",
+        "maxTokensField": "max_completion_tokens"
+      },
+      "models": [
+        { "id": "gpt-oss-120b", "input": ["text"], "reasoning": true }
+      ]
+    }
+  }
+}
