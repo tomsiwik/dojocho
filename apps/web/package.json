@@ -41,19 +41,19 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
-    "@types/mdx": "^2.0.13",
-    "@types/node": "^25.8.0",
-    "@types/react": "^19.2.16",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "nitro": "3.0.260415-beta",
     "playwright": "^1.60.0",
-    "portless": "^0.13.0",
-    "shadcn": "^4.7.0",
+    "portless": "^0.14.0",
+    "shadcn": "^4.10.0",
     "tailwindcss": "^4.3.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13",
+    "vite": "^8.0.16",
     "youch": "^4.1.1"
   }
 }
