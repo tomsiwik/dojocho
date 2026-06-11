@@ -25,7 +25,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "effect": "^3.21.2"
+    "effect": "^3.21.3"
   },
   "peerDependencies": {
     "@dojocho/config": "workspace:*"
