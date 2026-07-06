@@ -37,6 +37,7 @@ import {
 import { runTests } from "../runner";
 import { sensei, prompt, invokeAsk, learnings } from "../format";
 import { appendNote, readLearnings } from "../journal";
+import { refreshCassette } from "../tracking";
 
 const USAGE = `Usage: ${CLI} kata [flags]
 
@@ -272,6 +273,7 @@ function start(root: string): void {
   }
 
   scaffold(root, rc, dojoPath, target);
+  refreshCassette(root);
 }
 
 function check(root: string, args: string[]): void {
@@ -307,6 +309,7 @@ function check(root: string, args: string[]): void {
   }
 
   const result = runTests(target, catalog, dojoPath);
+  refreshCassette(root);
   const workspaceRel = relative(root, target.workspacePath);
 
   if (result.error) {
@@ -391,6 +394,7 @@ function change(root: string, name: string): void {
   }
 
   scaffold(root, rc, dojoPath, target);
+  refreshCassette(root);
 }
 
 function open(root: string): void {

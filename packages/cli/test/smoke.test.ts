@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync, lstatSync, readlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync, lstatSync, readlinkSync, readdirSync } from "node:fs";
 import { rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
@@ -10,6 +10,7 @@ import { kata } from "../src/commands/kata";
 import { journalPath, appendNote, readLearnings } from "../src/journal";
 import { runLifecycleScript } from "../src/commands/add";
 import { remove } from "../src/commands/remove";
+import { track } from "../src/commands/track";
 
 // --- Helpers ---
 
@@ -510,6 +511,86 @@ describe("dojo:learnings emission", () => {
     const output = captureLog(() => kata(root, ["intro"]));
     expect(output).toContain("<dojo:learnings>");
     expect(output).toContain("Intro observation");
+  });
+});
+
+describe("dojo track", () => {
+  let root: string;
+
+  beforeEach(() => { root = makeTmpDir(); });
+  afterEach(() => { rmSync(root, { recursive: true, force: true }); vi.unstubAllEnvs(); });
+
+  it("records a Pi session log as a normalized cassette", () => {
+    const source = resolve(root, "session.jsonl");
+    writeFileSync(source, [
+      JSON.stringify({ type: "session", id: "abc" }),
+      JSON.stringify({ type: "message", message: { role: "user", content: [{ type: "text", text: "Start kata" }] } }),
+      JSON.stringify({ type: "message", message: { role: "assistant", content: [{ type: "thinking", thinking: "hidden" }, { type: "toolCall", name: "bash", arguments: { command: "dojo kata --start" } }] } }),
+      JSON.stringify({ type: "message", message: { role: "toolResult", content: [{ type: "text", text: "Kata scaffolded" }] } }),
+    ].join("\n"));
+
+    vi.stubEnv("PI_CODING_AGENT", "1");
+    const output = captureLog(() => track(root, ["--source", source]));
+    expect(output).toContain("Recorded 3 entries");
+    expect(output).toContain(".dojo/cassettes/");
+
+    const dir = resolve(root, ".dojo/cassettes");
+    const file = readdirSync(dir).find((name) => name.endsWith(".jsonl"));
+    expect(file).toBeTruthy();
+
+    const cassette = JSON.parse(readFileSync(resolve(dir, file!), "utf8"));
+    expect(cassette[0]).toEqual({ role: "user", content: "Start kata" });
+    expect(cassette[1].content).toEqual([{ type: "toolCall", name: "bash", command: "dojo kata --start" }]);
+    expect(cassette[2]).toEqual({ role: "toolResult", content: "Kata scaffolded" });
+  });
+
+  it("lists recorded cassettes", () => {
+    mkdirSync(resolve(root, ".dojo/cassettes"), { recursive: true });
+    writeFileSync(resolve(root, ".dojo/cassettes/example.jsonl"), "[]\n");
+
+    const output = captureLog(() => track(root, ["--list"]));
+    expect(output).toContain(".dojo/cassettes/example.jsonl");
+  });
+
+  it("records on kata start and refreshes the same cassette on check", () => {
+    const source = resolve(root, "session.jsonl");
+    const firstMessage = JSON.stringify({
+      type: "message",
+      message: { role: "user", content: [{ type: "text", text: "Start next kata" }] },
+    });
+    writeFileSync(source, `${firstMessage}\n`);
+    vi.stubEnv("DOJOCHO_SESSION_LOG", source);
+
+    writeRc(root, { currentDojo: "my-dojo", currentKata: null, editor: null });
+    writeDojoJson(root, "my-dojo", {
+      name: "my-dojo",
+      version: "1.0.0",
+      description: "test",
+      runner: { adapter: "exit-code" },
+      test: "true",
+      katas: [{ template: "katas/001-basics/solution.ts", name: "001-basics" }],
+    });
+    mkdirSync(resolve(root, ".dojos/my-dojo/katas/001-basics"), { recursive: true });
+    writeFileSync(resolve(root, ".dojos/my-dojo/katas/001-basics/solution.ts"), "// template");
+
+    captureLog(() => kata(root, ["--start"]));
+
+    const dir = resolve(root, ".dojo/cassettes");
+    const filesAfterStart = readdirSync(dir).filter((name) => name.endsWith(".jsonl"));
+    expect(filesAfterStart).toHaveLength(1);
+    expect(JSON.parse(readFileSync(resolve(dir, filesAfterStart[0]), "utf8"))).toHaveLength(1);
+
+    const secondMessage = JSON.stringify({
+      type: "message",
+      message: { role: "assistant", content: [{ type: "text", text: "Check progress" }] },
+    });
+    writeFileSync(source, `${firstMessage}\n${secondMessage}\n`);
+
+    captureLog(() => kata(root, ["--check"]));
+
+    const filesAfterCheck = readdirSync(dir).filter((name) => name.endsWith(".jsonl"));
+    expect(filesAfterCheck).toEqual(filesAfterStart);
+    expect(JSON.parse(readFileSync(resolve(dir, filesAfterStart[0]), "utf8"))).toHaveLength(2);
   });
 });
 

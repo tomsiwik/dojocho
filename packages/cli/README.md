@@ -20,6 +20,7 @@ After install, the CLI is available as `dojo`.
 dojo setup                # set up your dojo (auto-detects your agent via env vars)
 dojo add effect-ts        # install a training pack (a "dojo")
 claude /kata              # start practicing
+dojo track --list         # inspect locally recorded .dojo/cassettes
 ```
 
 You write the code. The agent runs your tests, points out where you're

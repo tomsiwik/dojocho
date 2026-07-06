@@ -25,6 +25,7 @@ Commands:
   setup [--agent]     Set up a new dojo project and configure agents
   add <source>        Add a dojo (training pack)
   remove <name>       Remove a dojo
+  track               Record the active agent session as a cassette
 
 Flags:
   --test/--check      Show overall progress
