@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
  * or any vite/nitro flag).
  */
 export function ui(_cwd: string, args: string[]): void {
-	const port = process.env.DOJO_UI_PORT ?? "4567";
+	const port = process.env.PORT ?? "4567";
 	const uiDir = resolveUiDir();
 
 	if (!uiDir) {
@@ -24,13 +24,12 @@ export function ui(_cwd: string, args: string[]): void {
 	}
 
 	console.error(`→ starting dojo UI from ${uiDir}`);
+	console.error(`  project: ${process.env.DOJO_PROJECT_ROOT}`);
 	console.error(`  http://localhost:${port}\n`);
 
-	const env = { ...process.env, PORT: port };
 	const child = spawn("pnpm", ["dev", ...args], {
 		cwd: uiDir,
 		stdio: "inherit",
-		env,
 	});
 
 	child.on("error", (err) => {
