@@ -1050,7 +1050,7 @@ const LessonNavigationItem = memo(function LessonNavigationItem({
         <AccordionPrimitive.Header>
           <AccordionPrimitive.Trigger
             aria-description={!accessible ? "Upcoming lesson; expand to preview its goal" : undefined}
-            className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[13px] outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
+            className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
             data-navigation-disabled={!accessible || undefined}
             onClick={() => accessible && item.name !== currentKata && onOpenLesson(item.name)}
           >
