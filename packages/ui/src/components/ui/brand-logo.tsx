@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import logoUrl from "../../../public/brand/dojofoo-light3d.png?url";
+import logoUrl from "../../../public/brand/dojofoo.svg?url";
 import { cn } from "../../lib/utils";
 
 type BrandLogoProps = Omit<ComponentProps<"img">, "alt" | "src"> & {
