@@ -99,14 +99,14 @@ export function ChatCassettePlayer({
         <ChatContainerHeader>
           <div className="grid w-full min-w-0 grid-cols-2 items-start gap-3 text-xs text-muted-foreground">
             <div className="flex min-w-0 flex-col items-start gap-1">
-              <span className="px-3 text-xs font-semibold uppercase tracking-[0.16em]">Active course</span>
+              <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Active course</span>
               <Select value="starter-kata">
                 <SelectTrigger className="w-full min-w-0 px-3 text-sm font-medium" variant="borderless" />
                 <SelectContent><SelectItem index={0} value="starter-kata">Starter Kata</SelectItem></SelectContent>
               </Select>
             </div>
             <div className="flex min-w-0 flex-col items-start gap-1">
-              <span className="px-3 text-xs font-semibold uppercase tracking-[0.16em]">Session</span>
+              <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
               <Select value="storybook-session">
                 <SelectTrigger className="w-full min-w-0 px-3 text-sm font-medium" variant="borderless" />
                 <SelectContent><SelectItem index={0} value="storybook-session">storybook-session</SelectItem></SelectContent>

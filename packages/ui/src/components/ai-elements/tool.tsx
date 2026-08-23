@@ -51,7 +51,7 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => {
   if (serialized === undefined) return null;
   return (
     <div className={cn("space-y-2 overflow-hidden", className)} {...props}>
-      <h4 className="font-medium text-[10px] uppercase tracking-wide text-muted-foreground">Parameters</h4>
+      <h4 className="font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Parameters</h4>
       <div className="bg-muted/50">
         <CodeBlock code={serialized} language="json" />
       </div>
@@ -76,7 +76,7 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
 
   return (
     <div className={cn("space-y-2", className)} {...props}>
-      <h4 className="font-medium text-[10px] uppercase tracking-wide text-muted-foreground">
+      <h4 className="font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {errorText ? "Error" : "Result"}
       </h4>
       <div className={cn(

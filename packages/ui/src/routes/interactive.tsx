@@ -55,7 +55,7 @@ function InteractiveCourse() {
       />
       <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl md:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="border-b border-dashed border-border bg-surface-1 p-6 md:border-b-0 md:border-r">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Interactive course</p>
+          <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Interactive course</p>
           <h1 className="mt-3 text-xl font-semibold">{lesson?.lessonTitle ?? "Loading…"}</h1>
           {lesson && <p className="mt-5 text-sm text-muted-foreground">Step {Math.min(lesson.step + 1, lesson.totalSteps)} of {lesson.totalSteps}</p>}
           {lesson && <div className="mt-3 h-1 bg-border"><div className="h-full bg-primary transition-[width]" style={{ width: `${lesson.complete ? 100 : (lesson.step / lesson.totalSteps) * 100}%` }} /></div>}
@@ -73,7 +73,7 @@ function InteractiveCourse() {
             )}
             {lesson?.current?.type === "present" && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Present</p>
+                <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Present</p>
                 <h2 className="mt-4 text-2xl font-semibold">{lesson.current.title}</h2>
                 <div className="mt-5"><CourseContent basePath={lesson.current.contentBase} workspaceId={workspaceId}>{lesson.current.content}</CourseContent></div>
                 <Button className="mt-8" disabled={busy} onClick={() => void request("/advance", { method: "POST" })}>Continue <ArrowRight size={16} /></Button>
@@ -81,7 +81,7 @@ function InteractiveCourse() {
             )}
             {lesson?.current?.type === "question" && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Question</p>
+                <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Question</p>
                 <h2 className="mt-4 text-2xl font-semibold">{lesson.current.title}</h2>
                 <div className="mt-5"><CourseContent basePath={lesson.current.promptBase} workspaceId={workspaceId}>{lesson.current.prompt}</CourseContent></div>
                 {lesson.response ? (
@@ -95,7 +95,7 @@ function InteractiveCourse() {
                   </div>
                 ) : (
                   <form className="mt-7" onSubmit={submit}>
-                    <label className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground" htmlFor="interactive-answer">Your answer</label>
+                    <label className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground" htmlFor="interactive-answer">Your answer</label>
                     <input autoComplete="off" className="mt-2 w-full border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary" id="interactive-answer" onChange={(event) => setAnswer(event.target.value)} value={answer} />
                     <Button className="mt-4" disabled={busy || !answer.trim()} type="submit">Check answer</Button>
                   </form>

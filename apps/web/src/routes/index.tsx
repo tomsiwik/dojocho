@@ -128,7 +128,7 @@ function FilterMenu({
 
   return (
     <section className={className} aria-label={label}>
-      <h2 className="px-4 pb-4 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</h2>
+      <h2 className="px-4 pb-4 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</h2>
       <nav>
         {options.map((option, index) => {
           const active = selected === option.value;

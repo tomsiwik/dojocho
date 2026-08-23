@@ -178,7 +178,7 @@ function CourseIndex() {
           {visibleCourses.map((course) => {
             const content = (
               <article className="group flex min-h-[10.5rem] flex-col border border-border/60 bg-surface-1 p-4 transition-colors duration-80 hover:border-primary">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{course.language}</p>
+                <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{course.language}</p>
                 <h2 className="mt-3 text-[15px] font-semibold">{humanTitle(course.dojo)}</h2>
                 <p className="mt-2 line-clamp-2 pb-5 font-prose text-sm text-muted-foreground">{course.description}</p>
                 <div className="mt-auto flex items-end justify-between gap-4 border-t border-dashed border-border pt-3">
@@ -225,7 +225,7 @@ function LocalFilter({ label, allLabel, items, selected, onSelect, className = "
   const options = [{ label: allLabel, value: "all" }, ...items.map((item) => ({ label: item, value: item }))];
   return (
     <section aria-label={label} className={className}>
-      <h2 className="px-4 pb-4 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</h2>
+      <h2 className="px-4 pb-4 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</h2>
       <nav>
         {options.map((option, index) => {
           const active = selected === option.value;
@@ -663,7 +663,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         <ScrollArea className="min-h-0 bg-surface-1" data-testid="lesson-pane">
           <div className="flex flex-col pb-12">
             <div className="order-2 px-8 pt-8">
-              <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${lesson.isCurrent ? "text-muted-foreground" : "text-emerald-400"}`}>
+              <p className={`font-display text-xs font-medium uppercase tracking-[0.14em] ${lesson.isCurrent ? "text-muted-foreground" : "text-emerald-400"}`}>
                 {lesson.isCurrent ? "Current lesson" : "Completed lesson"}
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight">{lesson.title}</h2>
@@ -932,7 +932,7 @@ function LessonNavigation({
       <div className="border-b border-dashed px-5 pb-5 pt-5">
         <BrandLogo alt="Dojofoo wordmark" className="h-6" />
         <h1 className="mt-1.5 text-xl font-semibold">{humanTitle(lesson.dojo)}</h1>
-        <h2 className="mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Chapters</h2>
+        <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Chapters</h2>
       </div>
       <ScrollArea className="min-h-0 flex-1" data-testid="lesson-scroll" viewportClassName="scroll-fade pb-5">
         <div className="w-full">
@@ -973,7 +973,7 @@ function CourseSelector({
   return (
     <div className="grid w-full min-w-0 grid-cols-2 items-start gap-3 text-xs text-muted-foreground">
       <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 text-xs font-semibold uppercase tracking-[0.16em]">Active course</span>
+        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Active course</span>
         <Select
           onValueChange={(dojo) => {
             const next = courses.find((course) => course.dojo === dojo);
@@ -995,7 +995,7 @@ function CourseSelector({
         </Select>
       </div>
       <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 text-xs font-semibold uppercase tracking-[0.16em]">Session</span>
+        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
         <Select value={sessionId ?? "none"}>
           <SelectTrigger
             aria-label="Session"
@@ -1441,7 +1441,7 @@ function LessonBriefing({ markdown }: { markdown: string }) {
         const value = line.trim();
         if (!value) return null;
         if (value.startsWith("### ")) {
-          return <h3 className="pt-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground" key={index}>{value.slice(4)}</h3>;
+          return <h3 className="pt-2 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground" key={index}>{value.slice(4)}</h3>;
         }
         const numbered = value.match(/^(\d+)\.\s+(.*)$/);
         if (numbered) {
@@ -1479,7 +1479,7 @@ function MessageContent({
   if (kind === "commentary") {
     return (
       <div className="w-full border-l border-dashed pl-3 text-sm text-muted-foreground">
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider">Agent note</p>
+        <p className="mb-1 font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Agent note</p>
         <MarkdownText text={text} />
       </div>
     );

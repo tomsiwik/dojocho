@@ -370,7 +370,7 @@ export function AnimatedSeparator({ item }: { item: PageTree.Separator }) {
           <span className="absolute left-1/2 translate-x-[calc(-50%-0.5px)] bg-fd-border w-px h-6 top-full" />
         </span>
       )}
-      <span className="text-[11px] font-semibold text-fd-muted-foreground/60 uppercase">
+      <span className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {item.name}
       </span>
     </SidebarSeparator>
