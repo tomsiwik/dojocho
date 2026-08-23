@@ -1,0 +1,14 @@
+{"delayMs":0,"historyMessage":{"id":"u1","role":"user","parts":[{"type":"text","content":"Walk me through the lesson slowly."}]}}
+{"delayMs":0,"historyMessage":{"id":"a1","role":"assistant","parts":[{"type":"text","content":"We’ll begin with the boundary: trimming changes only the outside of a name."}]}}
+{"delayMs":0,"historyMessage":{"id":"u2","role":"user","parts":[{"type":"text","content":"So internal spaces remain?"}]}}
+{"delayMs":0,"historyMessage":{"id":"a2","role":"assistant","parts":[{"type":"text","content":"Exactly. Trimming leaves the space between the words for the next transformation."}]}}
+{"delayMs":0,"historyMessage":{"id":"u3","role":"user","parts":[{"type":"text","content":"What happens next?"}]}}
+{"delayMs":0,"historyMessage":{"id":"a3","role":"assistant","parts":[{"type":"thinking","content":"Choosing one concrete contrast before introducing syntax."},{"type":"text","content":"Compare one internal space with three adjacent spaces. Both should reach the same handle."}]}}
+{"delayMs":0,"prompt":"I’m ready to try it."}
+{"delayMs":300,"chunk":{"type":"RUN_STARTED","threadId":"storybook-session","runId":"run-scroll"}}
+{"delayMs":0,"chunk":{"type":"TEXT_MESSAGE_START","messageId":"assistant-final","role":"assistant"}}
+{"delayMs":180,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-final","delta":"Good. Make one small edit, "}}
+{"delayMs":220,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-final","delta":"then use Check. We’ll use the resulting behavior—"}}
+{"delayMs":220,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-final","delta":"not syntax recall—to decide what to explore next."}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_END","messageId":"assistant-final"}}
+{"delayMs":0,"chunk":{"type":"RUN_FINISHED","threadId":"storybook-session","runId":"run-scroll","finishReason":"stop"}}

@@ -28,6 +28,14 @@
     "./vitest": {
       "import": "./dist/vitest.js",
       "types": "./dist/vitest.d.ts"
+    },
+    "./local-state": {
+      "import": "./dist/local-state.js",
+      "types": "./dist/local-state.d.ts"
+    },
+    "./project-preparation": {
+      "import": "./dist/project-preparation.js",
+      "types": "./dist/project-preparation.d.ts"
     }
   },
   "peerDependencies": {
@@ -42,7 +50,8 @@
     "build": "tsup"
   },
   "dependencies": {
-    "jiti": "^2.7.0"
+    "jiti": "^2.7.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

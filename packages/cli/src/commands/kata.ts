@@ -43,8 +43,8 @@ import { queueCourseEvent } from "../telemetry";
 const USAGE = `Usage: ${CLI} kata [flags]
 
 Flags:
-  (none)              Show SENSEI.md for current kata (smart fallback)
-  intro               Show current kata's SENSEI.md briefing
+  (none)              Show the current Sensei source (smart fallback)
+  intro               Show the current kata briefing
   --start             Scaffold next kata
   --test/--check      Run tests for current kata
   --list              List all katas with state
@@ -153,7 +153,7 @@ function kataIntro(root: string, args: string[]): void {
   if (existsSync(target.senseiPath)) {
     console.log(sensei(readFileSync(target.senseiPath, "utf8")));
   } else {
-    console.log(`No SENSEI.md found for ${target.name}.`);
+    console.log(`No SENSEI.mdx or SENSEI.md found for ${target.name}.`);
   }
   emitLearnings(root, rc.currentDojo);
 
@@ -213,7 +213,7 @@ function smart(root: string, args: string[]): void {
     if (md) {
       console.log(md);
     } else {
-      console.log(`Dojo "${rc.currentDojo}" has no dojo.json or DOJO.md.`);
+      console.log(`Dojo "${rc.currentDojo}" has no dojo manifest or DOJO.md.`);
     }
     return;
   }
@@ -232,7 +232,7 @@ function smart(root: string, args: string[]): void {
     if (existsSync(target.senseiPath)) {
       console.log(sensei(readFileSync(target.senseiPath, "utf8")));
     } else {
-      console.log(`No SENSEI.md found for ${target.name}.`);
+      console.log(`No SENSEI.mdx or SENSEI.md found for ${target.name}.`);
     }
     emitLearnings(root, rc.currentDojo);
     return;

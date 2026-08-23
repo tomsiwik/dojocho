@@ -1,0 +1,9 @@
+{"delayMs":0,"prompt":"I need a little more help."}
+{"delayMs":300,"chunk":{"type":"RUN_STARTED","threadId":"storybook-session","runId":"run-question"}}
+{"delayMs":0,"chunk":{"type":"TEXT_MESSAGE_START","messageId":"assistant-1","role":"assistant"}}
+{"delayMs":180,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"Before we continue, describe what still feels uncertain."}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_END","messageId":"assistant-1"}}
+{"delayMs":250,"chunk":{"type":"TOOL_CALL_START","toolCallId":"question-1","toolCallName":"elicitation","toolName":"elicitation"}}
+{"delayMs":160,"chunk":{"type":"TOOL_CALL_ARGS","toolCallId":"question-1","delta":"{\"id\":\"reflection\",\"question\":\"What should we revisit together?\",\"options\":[]}"}}
+{"delayMs":180,"chunk":{"type":"TOOL_CALL_END","toolCallId":"question-1","toolCallName":"elicitation","toolName":"elicitation","input":{"id":"reflection","question":"What should we revisit together?","options":[]}}}
+{"delayMs":0,"chunk":{"type":"RUN_FINISHED","threadId":"storybook-session","runId":"run-question","finishReason":"tool_calls"}}

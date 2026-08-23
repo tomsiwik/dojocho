@@ -76,6 +76,6 @@ The first install of an external public GitHub dojo also includes its canonical 
 }
 ```
 
-The API reads `dojo.json` and the course snapshot from GitHub and validates them before
+The API reads `dojo.yaml`, `dojo.yml`, or `dojo.json` and the course snapshot from GitHub and validates them before
 persisting the listing. Later progress events use the source lock to retain the same
 `owner/repository` course ID. Local paths, session IDs, and chat transcripts are not sent.

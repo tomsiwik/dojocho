@@ -1,9 +1,11 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, basename, dirname } from "node:path";
 import { createJiti } from "jiti";
+import { parse as parseYaml } from "yaml";
 
 export const CLI = "npx dojofoo";
 export const DOJOS_DIR = ".dojos";
+export const MANIFEST_NAMES = ["dojo.yaml", "dojo.yml", "dojo.json"] as const;
 
 // --- User-facing config types ---
 
@@ -116,6 +118,7 @@ export interface KataEntry {
 }
 
 export interface DojoManifest {
+  mode?: "katas";
   name: string;
   version: string;
   description: string;
@@ -130,13 +133,33 @@ export interface DojoManifest {
   repository?: string;
 }
 
+export interface InteractiveDojoManifest {
+  mode: "interactive";
+  name: string;
+  version: string;
+  description: string;
+  lessons: string;
+  author?: string;
+  language?: string;
+  framework?: string;
+  tags?: string[];
+  homepage?: string;
+  repository?: string;
+}
+
+export type CourseManifest = DojoManifest | InteractiveDojoManifest;
+
+export function courseMode(manifest: CourseManifest): "katas" | "interactive" {
+  return manifest.mode ?? "katas";
+}
+
 export class ManifestValidationError extends Error {
   constructor(
     public readonly errors: string[],
     path: string,
   ) {
     super(
-      `Invalid dojo.json at ${path}:\n${errors.map((e) => `  - ${e}`).join("\n")}`,
+      `Invalid dojo manifest at ${path}:\n${errors.map((e) => `  - ${e}`).join("\n")}`,
     );
     this.name = "ManifestValidationError";
   }
@@ -155,7 +178,7 @@ export function validateManifest(data: unknown): string[] {
 
   const obj = data as Record<string, unknown>;
 
-  for (const field of ["name", "version", "description", "test"] as const) {
+  for (const field of ["name", "version", "description"] as const) {
     if (!(field in obj)) {
       errors.push(`Missing required field: "${field}"`);
     } else if (typeof obj[field] !== "string") {
@@ -165,7 +188,25 @@ export function validateManifest(data: unknown): string[] {
     }
   }
 
-  if (!("katas" in obj)) {
+  const mode = obj.mode ?? "katas";
+  if (mode !== "katas" && mode !== "interactive") {
+    errors.push('"mode" must be "katas" or "interactive"');
+  }
+
+  if (mode === "interactive") {
+    if (!("lessons" in obj)) errors.push('Missing required field: "lessons"');
+    else if (typeof obj.lessons !== "string" || obj.lessons.trim() === "") {
+      errors.push('"lessons" must be a non-empty string');
+    }
+  } else if (!("test" in obj)) {
+    errors.push('Missing required field: "test"');
+  } else if (typeof obj.test !== "string" || obj.test.trim() === "") {
+    errors.push('"test" must be a non-empty string');
+  }
+
+  if (mode === "interactive") {
+    if ("katas" in obj) errors.push('"katas" is not supported for interactive courses');
+  } else if (!("katas" in obj)) {
     errors.push('Missing required field: "katas"');
   } else if (!Array.isArray(obj.katas)) {
     errors.push('"katas" must be an array');
@@ -234,18 +275,22 @@ export function validateManifest(data: unknown): string[] {
   return errors;
 }
 
-export function parseManifest(json: string, path: string): DojoManifest {
+export function parseManifest(source: string, path: string): CourseManifest {
   let data: unknown;
   try {
-    data = JSON.parse(json);
+    data = path.endsWith(".yaml") || path.endsWith(".yml")
+      ? parseYaml(source)
+      : JSON.parse(source);
   } catch {
-    throw new ManifestValidationError(["Invalid JSON"], path);
+    throw new ManifestValidationError([
+      path.endsWith(".yaml") || path.endsWith(".yml") ? "Invalid YAML" : "Invalid JSON",
+    ], path);
   }
   const errors = validateManifest(data);
   if (errors.length > 0) {
     throw new ManifestValidationError(errors, path);
   }
-  return data as DojoManifest;
+  return data as CourseManifest;
 }
 
 // --- Resolved kata ---
@@ -285,10 +330,28 @@ export function writeDojoRc(root: string, rc: DojoRc): void {
 }
 
 export function readCatalog(root: string, active: string): DojoManifest {
-  const catalogPath = resolve(root, DOJOS_DIR, active, "dojo.json");
-  if (!existsSync(catalogPath)) {
-    throw new Error(`dojo.json not found at ${catalogPath}`);
+  const manifest = readCourseManifest(root, active);
+  if (courseMode(manifest) !== "katas") {
+    throw new Error(`Dojo "${active}" is an interactive course, not a kata course`);
   }
+  return manifest as DojoManifest;
+}
+
+export function findManifestPath(directory: string): string | null {
+  const matches = MANIFEST_NAMES
+    .map((name) => resolve(directory, name))
+    .filter(existsSync);
+  if (matches.length === 0) return null;
+  if (matches.length > 1) {
+    throw new Error(`Multiple dojo manifests found in ${directory}; keep only one of ${MANIFEST_NAMES.join(", ")}`);
+  }
+  return matches[0];
+}
+
+export function readCourseManifest(root: string, active: string): CourseManifest {
+  const directory = resolve(root, DOJOS_DIR, active);
+  const catalogPath = findManifestPath(directory);
+  if (!catalogPath) throw new Error(`Dojo manifest not found in ${directory}`);
   return parseManifest(readFileSync(catalogPath, "utf8"), catalogPath);
 }
 
@@ -349,7 +412,9 @@ export function resolveKata(
     template: entry.template,
     workspacePath: resolve(wp, name, templateBasename),
     testPath: resolve(dojo, dirname(entry.template), `${stem}.test${ext}`),
-    senseiPath: resolve(dojo, dirname(entry.template), "SENSEI.md"),
+    senseiPath: ["SENSEI.mdx", "SENSEI.md"]
+      .map((name) => resolve(dojo, dirname(entry.template), name))
+      .find(existsSync) ?? resolve(dojo, dirname(entry.template), "SENSEI.md"),
     dojoKataDir: resolve(dojo, dirname(entry.template)),
     test: entry.test,
   };

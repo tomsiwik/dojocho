@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const source = resolve(packageRoot, "../../apps/ui/.output");
+const source = resolve(packageRoot, "../../packages/ui/.output");
 const destination = resolve(packageRoot, "dist/ui");
 
 if (!existsSync(resolve(source, "server/index.mjs"))) {

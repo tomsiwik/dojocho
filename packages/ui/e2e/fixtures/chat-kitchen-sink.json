@@ -1,0 +1,90 @@
+[
+  {
+    "id": "user-1",
+    "role": "user",
+    "parts": [
+      { "type": "text", "content": "Help me understand this failure." }
+    ]
+  },
+  {
+    "id": "assistant-1",
+    "role": "assistant",
+    "parts": [
+      {
+        "type": "thinking",
+        "content": "The learner changed the normalization step, while the whitespace assertion still fails."
+      },
+      {
+        "type": "text",
+        "content": "Trimming now works. Let’s inspect the remaining whitespace transformation."
+      },
+      {
+        "type": "tool-call",
+        "id": "check-latest",
+        "name": "check_lesson",
+        "arguments": "{}",
+        "input": {},
+        "state": "complete",
+        "output": {
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "total": 3,
+          "complete": false,
+          "tests": [{
+            "name": "collapses mixed whitespace",
+            "suite": ["normalizeHandle"],
+            "status": "failed",
+            "failureMessages": ["Expected ada-lovelace but received ada lovelace"]
+          }]
+        }
+      },
+      {
+        "type": "ui-resource",
+        "resource": {
+          "uri": "dojofoo://lessons/normalize-handle/fragments/regex-whitespace",
+          "mimeType": "text/markdown",
+          "text": "regex-whitespace"
+        },
+        "toolCallId": "present-1",
+        "toolName": "present_lesson_fragment"
+      },
+      {
+        "type": "tool-call",
+        "id": "ask-1",
+        "name": "elicitation",
+        "arguments": "{\"question\":\"Which kind of hint would help?\"}",
+        "input": {
+          "question": "Which kind of hint would help?",
+          "options": [{ "label": "Pattern" }, { "label": "String method" }]
+        },
+        "state": "input-complete"
+      },
+      {
+        "type": "tool-call",
+        "id": "check-1",
+        "name": "check_lesson",
+        "arguments": "{\"lesson\":\"normalize-handle\"}",
+        "input": { "lesson": "normalize-handle" },
+        "state": "complete",
+        "output": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "total": 3,
+          "complete": true,
+          "tests": [{
+            "name": "collapses mixed whitespace",
+            "suite": ["normalizeHandle"],
+            "status": "passed",
+            "failureMessages": []
+          }]
+        }
+      },
+      {
+        "type": "text",
+        "content": "All checks pass. What made the final pattern match a run rather than one character?"
+      }
+    ]
+  }
+]

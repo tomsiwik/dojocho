@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dojofoo UI"
+  short_description: "Control the active Dojofoo learning interface"
+  default_prompt: "Use $dojofoo to ask me a structured question in the lesson UI."

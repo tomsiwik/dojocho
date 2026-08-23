@@ -10,7 +10,8 @@ import {
   observeLocalContext,
   recordDojoLifecycle,
   sessionFromEnvironment,
-} from "../src/local-state";
+  setSessionLifecycle,
+} from "@dojofoo/config/local-state";
 
 describe("local dojo state", () => {
   const paths: string[] = [];
@@ -77,6 +78,9 @@ describe("local dojo state", () => {
       id: context.sessionId,
       harness: "codex",
       nativeId: "thread-123",
+      ownership: "external",
+      harnessSessionId: null,
+      lifecycleState: null,
       cwd: root,
       transcriptPath: "/tmp/thread-123.jsonl",
       firstSeenAt: 100,
@@ -91,6 +95,35 @@ describe("local dojo state", () => {
         kata: "001-hello-effect",
       }),
     ]);
+  });
+
+  it("persists an opaque harness lifecycle pointer without copying the transcript", () => {
+    const { root, stateHome } = fixture();
+    const context = observeLocalContext(root, {
+      stateHome,
+      now: 100,
+      session: { harness: "codex", nativeId: "thread-123", transcriptPath: "/native/thread.jsonl" },
+    });
+    const lifecycleState = {
+      type: "resume-session",
+      harnessId: "codex",
+      specificationVersion: "harness-v1",
+      data: { threadId: "thread-123" },
+    };
+
+    const session = setSessionLifecycle(context.sessionId!, {
+      ownership: "managed",
+      harnessSessionId: context.sessionId!,
+      lifecycleState,
+    }, { stateHome, now: 200 });
+
+    expect(session).toEqual(expect.objectContaining({
+      ownership: "managed",
+      harnessSessionId: context.sessionId,
+      lifecycleState: JSON.stringify(lifecycleState),
+      transcriptPath: "/native/thread.jsonl",
+      lastSeenAt: 200,
+    }));
   });
 
   it("records existing dojo lifecycle actions without duplicating run identity", () => {
@@ -156,5 +189,21 @@ describe("local dojo state", () => {
     expect(observeLocalContext(root, { stateHome, now: 200 })).toEqual(first);
     expect(listWorkspaces({ stateHome })).toHaveLength(1);
     expect(listDojoRuns({ stateHome })).toHaveLength(1);
+  });
+
+  it("keeps the indexed workspace when its on-disk instance identity changes", () => {
+    const { root, stateHome } = fixture();
+    const first = observeLocalContext(root, { stateHome, now: 100 });
+    writeFileSync(resolve(root, ".dojo", "instance.json"), JSON.stringify({
+      version: 1,
+      instanceId: "replacement-instance-id",
+    }));
+
+    const second = observeLocalContext(root, { stateHome, now: 200 });
+
+    expect(second.workspaceId).toBe(first.workspaceId);
+    expect(listWorkspaces({ stateHome })).toEqual([
+      expect.objectContaining({ id: first.workspaceId, path: root, lastSeenAt: 200 }),
+    ]);
   });
 });

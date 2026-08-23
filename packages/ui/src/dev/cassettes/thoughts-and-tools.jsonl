@@ -1,0 +1,23 @@
+{"delayMs":0,"prompt":"Run the lesson checks and help me read the first useful failure."}
+{"delayMs":300,"chunk":{"type":"RUN_STARTED","threadId":"storybook-session","runId":"run-check"}}
+{"delayMs":0,"chunk":{"type":"REASONING_START","messageId":"reasoning-1"}}
+{"delayMs":0,"chunk":{"type":"REASONING_MESSAGE_START","messageId":"reasoning-1","role":"reasoning"}}
+{"delayMs":150,"chunk":{"type":"REASONING_MESSAGE_CONTENT","messageId":"reasoning-1","delta":"**Inspecting the "}}
+{"delayMs":170,"chunk":{"type":"REASONING_MESSAGE_CONTENT","messageId":"reasoning-1","delta":"current lesson state**"}}
+{"delayMs":300,"chunk":{"type":"REASONING_MESSAGE_END","messageId":"reasoning-1"}}
+{"delayMs":0,"chunk":{"type":"REASONING_END","messageId":"reasoning-1"}}
+{"delayMs":180,"chunk":{"type":"TOOL_CALL_START","toolCallId":"check-1","toolCallName":"check_lesson","toolName":"check_lesson"}}
+{"delayMs":100,"chunk":{"type":"TOOL_CALL_ARGS","toolCallId":"check-1","delta":"{}"}}
+{"delayMs":100,"chunk":{"type":"TOOL_CALL_END","toolCallId":"check-1","toolCallName":"check_lesson","toolName":"check_lesson","input":{}}}
+{"delayMs":850,"chunk":{"type":"TOOL_CALL_RESULT","messageId":"check-result-1","toolCallId":"check-1","role":"tool","state":"output-available","content":"{\"passed\":2,\"failed\":1,\"skipped\":0,\"total\":3,\"complete\":false,\"tests\":[{\"name\":\"collapses mixed whitespace\",\"suite\":[\"normalizeHandle\"],\"status\":\"failed\",\"failureMessages\":[\"Expected ada-lovelace but received ada lovelace\"]}]}"}}
+{"delayMs":100,"chunk":{"type":"REASONING_START","messageId":"reasoning-2"}}
+{"delayMs":0,"chunk":{"type":"REASONING_MESSAGE_START","messageId":"reasoning-2","role":"reasoning"}}
+{"delayMs":140,"chunk":{"type":"REASONING_MESSAGE_CONTENT","messageId":"reasoning-2","delta":"The learner has not yet connected adjacent whitespace with one repeated match."}}
+{"delayMs":150,"chunk":{"type":"REASONING_MESSAGE_END","messageId":"reasoning-2"}}
+{"delayMs":0,"chunk":{"type":"REASONING_END","messageId":"reasoning-2"}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_START","messageId":"assistant-1","role":"assistant"}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"Trimming and lowercasing now pass. "}}
+{"delayMs":120,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"The remaining failure treats three adjacent whitespace characters differently from one—"}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"what relationship do you notice between those cases?"}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_END","messageId":"assistant-1"}}
+{"delayMs":0,"chunk":{"type":"RUN_FINISHED","threadId":"storybook-session","runId":"run-check","finishReason":"stop"}}

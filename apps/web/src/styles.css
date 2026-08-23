@@ -5,6 +5,8 @@
 @import "fumadocs-ui/css/shadcn.css";
 @import "fumadocs-ui/css/preset.css";
 
+@source "../../../packages/uix/src/**/*.{ts,tsx}";
+
 @font-face {
   font-family: "Iosevka";
   font-style: normal;

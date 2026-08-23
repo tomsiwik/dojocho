@@ -1,6 +1,6 @@
 ---
 title: npx dojofoo ui
-description: Open the browser-based dojo lesson workspace.
+description: Open the browser-based dojo lesson workspace with Portless or localhost.
 ---
 
 ## Usage
@@ -9,21 +9,85 @@ description: Open the browser-based dojo lesson workspace.
 npx dojofoo ui
 ```
 
-With Portless available, dojofoo starts the lesson UI at:
+Dojofoo prefers [Portless](https://github.com/vercel-labs/portless) when the
+`portless` command is installed. It gives the disposable local daemon a stable,
+trusted URL:
 
 ```text
 https://dojo.localhost
 ```
 
-The command prints the effective URL when it starts. If Portless uses a custom
-TLD, the URL follows that configuration, for example `https://dojo.td`.
+The command prints and opens the effective URL. The daemon serves both the UI
+and its same-origin API; stopping the foreground command stops the daemon but
+keeps your course and session index in `~/.dojofoo/dojofoo.db`.
 
-Without Portless, dojofoo falls back to `http://localhost:4567`.
+Portless is optional. When it is missing, fails to start, or cannot register a
+route, dojofoo automatically starts the same UI directly at:
+
+```text
+http://localhost:4567
+```
 
 ## Options
 
 ```sh
-npx dojofoo ui --background  # keep the server running in the background
-npx dojofoo ui --no-open     # print the URL without opening a browser
-npx dojofoo ui --name course # use course.localhost as the service name
+npx dojofoo ui --background       # keep the daemon running in the background
+npx dojofoo ui --no-open          # print the URL without opening a browser
+npx dojofoo ui --name course      # use course.localhost with Portless
+npx dojofoo ui --tld test         # request dojo.test from Portless
+npx dojofoo ui --no-portless      # skip Portless and use localhost directly
+npx dojofoo ui --port 4570        # use a different direct-fallback port
 ```
+
+`--port` applies to direct localhost mode and to the automatic fallback. You
+can also set `DOJO_UI_PORT=4570`. Set `DOJO_UI_DISABLE_PORTLESS=1` for the
+environment-variable equivalent of `--no-portless`.
+
+## Installing Portless
+
+Portless recommends a global installation:
+
+```sh
+npm install -g portless
+portless trust
+portless doctor
+```
+
+Portless currently requires Node.js 24 or newer. Dojofoo itself supports Node.js
+22.13 or newer, so using the localhost fallback is expected on Node 22.
+
+The first Portless launch may ask for administrator access to bind HTTPS and
+trust its local certificate authority. This is Portless setup, not a dojofoo
+requirement.
+
+## Troubleshooting Portless
+
+Start with its read-only health check:
+
+```sh
+portless doctor
+portless list
+```
+
+Common recovery commands are:
+
+```sh
+portless trust       # repair browser certificate trust
+portless hosts sync  # repair .localhost resolution, especially for Safari
+portless prune       # remove registrations left by crashed processes
+```
+
+If Portless still cannot start, bypass it without changing your installation:
+
+```sh
+npx dojofoo ui --no-portless
+```
+
+If port `4567` is already occupied, choose another:
+
+```sh
+npx dojofoo ui --no-portless --port 4570
+```
+
+The Portless and localhost URLs expose the same UI, local database, sessions,
+and API. Switching transports does not reset course progress.

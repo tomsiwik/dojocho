@@ -9,13 +9,16 @@ import {
   readDojoRc,
   writeDojoRc,
   dojoDir,
+  courseMode,
+  findManifestPath,
   loadConfig,
   parseManifest,
+  readCourseManifest,
   type RegistryItem,
 } from "../config";
 import { remove as removeDojo } from "./remove";
 import { configuredAgents } from "./setup";
-import { detectPackageManager, pmCommands } from "../pm";
+import { pmCommands } from "../pm";
 import { AGENTS } from "./setup";
 import { queueCourseEvent } from "../telemetry";
 import {
@@ -100,15 +103,15 @@ function addLocal(root: string, source: string, force: boolean): void {
   mkdirSync(tmpDir, { recursive: true });
 
   try {
-    // Pack the source dojo using its own PM (resolves workspace:* if pnpm/yarn)
-    const sourcePm = detectPackageManager(sourcePath);
-    execSync(`${sourcePm} pack --pack-destination ${tmpDir}`, { cwd: sourcePath, stdio: "pipe" });
-
-    const tarballs = readdirSync(tmpDir).filter((f) => f.endsWith(".tgz"));
-    if (tarballs.length === 0) throw new Error(`Failed to pack ${sourcePath}`);
-
-    safeExtract(tarballs[0], tmpDir);
-    installExtracted(root, resolve(tmpDir, "package"), source, force, {
+    const staged = resolve(tmpDir, "course");
+    cpSync(sourcePath, staged, {
+      recursive: true,
+      filter: (path) => {
+        const relativePath = relative(sourcePath, path);
+        return !relativePath.split("/").some((part) => part === ".git" || part === "node_modules");
+      },
+    });
+    installExtracted(root, staged, source, force, {
       version: 1,
       type: "local",
       locator: sourcePath,
@@ -125,11 +128,11 @@ function installExtracted(
   force: boolean,
   installedSource?: InstalledSource,
 ): void {
-  const dojoJsonPath = resolve(extractedDir, "dojo.json");
-  if (!existsSync(dojoJsonPath)) {
-    throw new Error(`${source} is not a dojo — missing dojo.json`);
+  const manifestPath = findManifestPath(extractedDir);
+  if (!manifestPath) {
+    throw new Error(`${source} is not a dojo — missing dojo.yaml, dojo.yml, or dojo.json`);
   }
-  const manifest = parseManifest(readFileSync(dojoJsonPath, "utf8"), dojoJsonPath);
+  const manifest = parseManifest(readFileSync(manifestPath, "utf8"), manifestPath);
   const name = manifest.name.includes("/") ? manifest.name.split("/").pop()! : manifest.name;
   const targetPath = dojoDir(root, name);
   const currentSource = readInstalledSource(targetPath);
@@ -143,7 +146,8 @@ function installExtracted(
   // Install deps in staging dir (still in tmpDir)
   const pm = pmCommands(root);
   const pkgPath = resolve(extractedDir, "package.json");
-  if (existsSync(pkgPath)) {
+  const hasMise = existsSync(resolve(extractedDir, "mise.toml")) || existsSync(resolve(extractedDir, ".mise.toml"));
+  if (existsSync(pkgPath) && !hasMise) {
     console.log(`Installing ${name} dependencies...`);
     try {
       execSync(pm.installSilent, { cwd: extractedDir, stdio: "pipe" });
@@ -183,8 +187,8 @@ function addGithub(root: string, source: string, force: boolean): void {
       .digest("hex")}`;
     safeExtract("dojo.tgz", tmpDir);
     const extracted = readdirSync(tmpDir, { withFileTypes: true })
-      .find((entry) => entry.isDirectory() && existsSync(resolve(tmpDir, entry.name, "dojo.json")));
-    if (!extracted) throw new Error(`${source} is not a dojo — missing dojo.json`);
+      .find((entry) => entry.isDirectory() && findManifestPath(resolve(tmpDir, entry.name)) !== null);
+    if (!extracted) throw new Error(`${source} is not a dojo — missing dojo.yaml, dojo.yml, or dojo.json`);
     installExtracted(root, resolve(tmpDir, extracted.name), source, force, {
       version: 1,
       type: "github",
@@ -275,7 +279,7 @@ function addUrl(root: string, url: string, force: boolean): void {
     safeExtract("dojo.tgz", tmpDir);
 
     // npm-packed tarballs extract to "package/", raw tarballs may not
-    const extractedDir = existsSync(resolve(tmpDir, "package", "dojo.json"))
+    const extractedDir = findManifestPath(resolve(tmpDir, "package"))
       ? resolve(tmpDir, "package")
       : tmpDir;
 
@@ -314,23 +318,25 @@ function finalize(root: string, name: string, targetPath: string, source?: Insta
     }
   }
 
-  // Root tsconfig extends the dojo's
-  const dojo = loadConfig(root);
-  const katasInclude = `${relative(root, dojo.katasPath)}/**/*.ts`;
-  const tsconfigPath = resolve(root, "tsconfig.json");
-  const extendsPath = `./${relative(root, resolve(targetPath, "tsconfig.json"))}`;
-  writeFileSync(
-    tsconfigPath,
-    JSON.stringify(
-      {
-        extends: extendsPath,
-        compilerOptions: { noEmit: true },
-        include: [katasInclude],
-      },
-      null,
-      2,
-    ) + "\n",
-  );
+  if (courseMode(readCourseManifest(root, name)) === "katas") {
+    // Kata courses extend their tooling into the learner's coding workspace.
+    const dojo = loadConfig(root);
+    const katasInclude = `${relative(root, dojo.katasPath)}/**/*.ts`;
+    const tsconfigPath = resolve(root, "tsconfig.json");
+    const extendsPath = `./${relative(root, resolve(targetPath, "tsconfig.json"))}`;
+    writeFileSync(
+      tsconfigPath,
+      JSON.stringify(
+        {
+          extends: extendsPath,
+          compilerOptions: { noEmit: true },
+          include: [katasInclude],
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+  }
 
   // Symlink commands/skills to agent directories
   symlinkDojo(root, targetPath);

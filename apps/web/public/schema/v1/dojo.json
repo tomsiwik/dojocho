@@ -4,9 +4,15 @@
   "title": "DojoManifest",
   "description": "Manifest file for a dojofoo dojo (training package). Defines metadata, test command, and kata entries.",
   "type": "object",
-  "required": ["name", "version", "description", "test", "katas"],
+  "required": ["name", "version", "description"],
   "additionalProperties": false,
   "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["katas", "interactive"],
+      "default": "katas",
+      "description": "Learning contract. Omitted manifests remain kata courses."
+    },
     "$schema": {
       "type": "string",
       "description": "JSON Schema reference for editor support."
@@ -44,6 +50,11 @@
       "description": "Ordered list of katas in this dojo.",
       "items": { "$ref": "#/$defs/KataEntry" }
     },
+    "lessons": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the interactive lesson definition, relative to the dojo root."
+    },
     "author": {
       "type": "string",
       "description": "Author of the dojo."
@@ -77,6 +88,13 @@
       "description": "URL or path to the dojo's source repository."
     }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "interactive" } }, "required": ["mode"] },
+      "then": { "required": ["lessons"], "not": { "required": ["katas"] } },
+      "else": { "required": ["test", "katas"] }
+    }
+  ],
   "$defs": {
     "RunnerConfig": {
       "type": "object",

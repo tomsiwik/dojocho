@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveConfig, validateManifest } from "../src/config";
+import { parseManifest, resolveConfig, validateManifest } from "../src/config";
 
 describe("configuration defaults", () => {
   it("uses the stable Vercel registry while the custom domain DNS is unavailable", () => {
@@ -10,6 +10,31 @@ describe("configuration defaults", () => {
 });
 
 describe("course discovery metadata", () => {
+  it("parses a documented YAML manifest", () => {
+    expect(parseManifest(`
+# Inline author guidance remains outside the data model.
+mode: interactive
+name: "@acme/learning"
+version: 1.0.0
+description: Learn through authored MDX.
+lessons: lessons/introduction.json
+`, "/course/dojo.yaml")).toMatchObject({
+      mode: "interactive",
+      name: "@acme/learning",
+      lessons: "lessons/introduction.json",
+    });
+  });
+
+  it("accepts a minimal interactive course without kata fields", () => {
+    expect(validateManifest({
+      mode: "interactive",
+      name: "@acme/learning",
+      version: "1.0.0",
+      description: "Learn through authored interactions.",
+      lessons: "lessons/introduction.json",
+    })).toEqual([]);
+  });
+
   it("accepts language, framework, author, and topical tags", () => {
     expect(validateManifest({
       name: "@acme/effect",

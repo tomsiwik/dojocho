@@ -4,7 +4,7 @@ import { rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { setup, setupAgents, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
+import { setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
 import { intro } from "../src/commands/intro";
 import { kata } from "../src/commands/kata";
 import { journalPath, appendNote, readLearnings } from "../src/journal";
@@ -151,6 +151,23 @@ describe("setupAgents", () => {
     const settings = JSON.parse(readFileSync(resolve(root, ".claude/settings.json"), "utf8"));
     expect(settings.permissions.allow).not.toContain("Agent(sensei)");
     expect(settings.permissions.allow).toContain("Bash(npx dojofoo *)");
+  });
+});
+
+describe("setupSkills", () => {
+  let root: string;
+
+  beforeEach(() => { root = makeTmpDir(); });
+  afterEach(() => { rmSync(root, { recursive: true, force: true }); });
+
+  it("installs one canonical skill without creating agent commands", () => {
+    setupSkills(root, ["opencode", "codex"]);
+
+    const canonical = resolve(root, ".agents/skills/dojofoo/SKILL.md");
+    expect(readFileSync(canonical, "utf8")).toContain("check_lesson");
+    expect(lstatSync(resolve(root, ".opencode/skills/dojofoo")).isSymbolicLink()).toBe(true);
+    expect(lstatSync(resolve(root, ".codex/skills/dojofoo")).isSymbolicLink()).toBe(true);
+    expect(existsSync(resolve(root, ".agents/commands"))).toBe(false);
   });
 });
 
@@ -303,7 +320,7 @@ describe("dojo kata intro", () => {
     writeWorkspaceFile(root, "001-basics", "solution.ts");
 
     const output = captureLog(() => kata(root, ["intro"]));
-    expect(output).toContain("No SENSEI.md found");
+    expect(output).toContain("No SENSEI.mdx or SENSEI.md found");
   });
 
   it("does not mark kata as introduced without --done", () => {
@@ -365,7 +382,7 @@ describe("dojo kata smart mode (intro tracking)", () => {
     writeWorkspaceFile(root, "001-basics", "solution.ts");
 
     const output = captureLog(() => kata(root, []));
-    expect(output).toContain("No SENSEI.md found for 001-basics.");
+    expect(output).toContain("No SENSEI.mdx or SENSEI.md found for 001-basics.");
   });
 
   it("shows SENSEI.md directly when dojo introduced but kata not", () => {
