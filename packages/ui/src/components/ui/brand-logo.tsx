@@ -11,7 +11,7 @@ function BrandLogo({ alt = "dojofoo", className, ...props }: BrandLogoProps) {
     <img
       alt={alt}
       className={cn(
-        "h-8 w-auto [filter:brightness(0)_invert(9%)] dark:[filter:none]",
+        "h-6 w-auto [filter:brightness(0)_invert(9%)] dark:[filter:none]",
         className,
       )}
       src={logoUrl}
