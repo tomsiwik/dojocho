@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, lstatSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, lstatSync, readFileSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { resolve, relative } from "node:path";
+import { dirname, resolve, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CLI, DOJOS_DIR, readDojoRc, writeDojoRc, type DojoRc } from "../config";
 import { pmCommands } from "../pm";
 import { prompt, invokeAsk } from "../format";
@@ -14,6 +15,7 @@ export const AGENTS = {
 } as const;
 
 const AGENTS_COMMANDS_DIR = ".agents/commands";
+const AGENTS_SKILLS_DIR = ".agents/skills";
 
 export type AgentName = keyof typeof AGENTS;
 
@@ -114,10 +116,18 @@ export function setup(root: string, args: string[]): void {
   const explicit = (Object.keys(AGENTS) as AgentName[]).filter(
     (a) => args.includes(`--${a}`),
   );
-  const detected = explicit.length > 0 ? explicit : detectAgentsFromEnv();
+  const skillsOnly = args.includes("--skills");
+  const configured = skillsOnly ? configuredAgents(root) : [];
+  const detected = explicit.length > 0 ? explicit : configured.length > 0 ? configured : detectAgentsFromEnv();
 
   if (detected.length === 0) {
     promptAgents();
+    return;
+  }
+
+  if (skillsOnly) {
+    setupSkills(root, detected);
+    console.log(`Dojofoo skill installed for: ${detected.join(", ")}`);
     return;
   }
 
@@ -233,14 +243,47 @@ function writeCanonicalCommands(root: string): void {
   if (!existsSync(canonicalKata)) writeFileSync(canonicalKata, DEFAULT_KATA_MD_CLAUDE);
 }
 
+function writeCanonicalSkill(root: string): void {
+  const sourceDir = dirname(fileURLToPath(import.meta.url));
+  const source = [
+    resolve(sourceDir, "..", "skills", "dojofoo", "SKILL.md"),
+    resolve(sourceDir, "..", "..", "skills", "dojofoo", "SKILL.md"),
+  ].find(existsSync);
+  if (!source) throw new Error("Could not locate the bundled Dojofoo skill.");
+  const targetDir = resolve(root, AGENTS_SKILLS_DIR, "dojofoo");
+  mkdirSync(targetDir, { recursive: true });
+  writeFileSync(resolve(targetDir, "SKILL.md"), readFileSync(source, "utf8"));
+}
+
+export function setupSkills(root: string, agents: AgentName[]): void {
+  writeCanonicalSkill(root);
+  for (const agent of agents) {
+    mkdirSync(resolve(root, AGENTS[agent].dir, "skills"), { recursive: true });
+    symlinkCanonicalSkill(root, agent);
+  }
+}
+
+function symlinkCanonicalSkill(root: string, agent: AgentName): void {
+  const targetParent = resolve(root, AGENTS[agent].dir, "skills");
+  const target = resolve(targetParent, "dojofoo");
+  const canonical = resolve(root, AGENTS_SKILLS_DIR, "dojofoo");
+  try {
+    const existing = lstatSync(target);
+    if (!existing.isSymbolicLink()) return;
+    unlinkSync(target);
+  } catch {
+    // The skill has not been installed for this agent yet.
+  }
+  symlinkSync(relative(targetParent, canonical), target, "dir");
+}
+
 export function setupAgents(root: string, agents: AgentName[]): void {
   writeCanonicalCommands(root);
+  setupSkills(root, agents);
 
   for (const agent of agents) {
     const cfg = AGENTS[agent];
     mkdirSync(resolve(root, cfg.dir, cfg.commandsDir), { recursive: true });
-    mkdirSync(resolve(root, cfg.dir, "skills"), { recursive: true });
-
     symlinkCanonical(root, agent, "dojo");
     symlinkCanonical(root, agent, "kata");
 

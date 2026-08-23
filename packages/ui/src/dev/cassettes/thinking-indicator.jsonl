@@ -1,0 +1,14 @@
+{"delayMs":0,"prompt":"Can you inspect my latest attempt?"}
+{"delayMs":350,"chunk":{"type":"RUN_STARTED","threadId":"storybook-session","runId":"run-thinking"}}
+{"delayMs":600,"chunk":{"type":"REASONING_START","messageId":"reasoning-1"}}
+{"delayMs":0,"chunk":{"type":"REASONING_MESSAGE_START","messageId":"reasoning-1","role":"reasoning"}}
+{"delayMs":160,"chunk":{"type":"REASONING_MESSAGE_CONTENT","messageId":"reasoning-1","delta":"Comparing the new edit "}}
+{"delayMs":180,"chunk":{"type":"REASONING_MESSAGE_CONTENT","messageId":"reasoning-1","delta":"with the last failing behavior."}}
+{"delayMs":500,"chunk":{"type":"REASONING_MESSAGE_END","messageId":"reasoning-1"}}
+{"delayMs":0,"chunk":{"type":"REASONING_END","messageId":"reasoning-1"}}
+{"delayMs":120,"chunk":{"type":"TEXT_MESSAGE_START","messageId":"assistant-1","role":"assistant"}}
+{"delayMs":120,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"Your change now "}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"handles adjacent spaces as one group. "}}
+{"delayMs":140,"chunk":{"type":"TEXT_MESSAGE_CONTENT","messageId":"assistant-1","delta":"What input would help verify tabs behave the same way?"}}
+{"delayMs":100,"chunk":{"type":"TEXT_MESSAGE_END","messageId":"assistant-1"}}
+{"delayMs":0,"chunk":{"type":"RUN_FINISHED","threadId":"storybook-session","runId":"run-thinking","finishReason":"stop"}}

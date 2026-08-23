@@ -88,6 +88,48 @@ describe("GitHubCourseRegistrar", () => {
     expect(await registrar.register({ type: "github", repository: "acme/private" })).toBeNull();
   });
 
+  it("registers a YAML-authored interactive course with its MDX and artifacts", async () => {
+    const manifest = [
+      "name: '@acme/learn-python'",
+      "version: 1.0.0",
+      "description: Learn Python interactively.",
+      "mode: interactive",
+      "lessons: lessons",
+    ].join("\n");
+    const files = new Map([
+      ["dojo.yaml", manifest],
+      ["lessons/install/lesson.json", JSON.stringify({ id: "install", title: "Install", steps: [] })],
+      ["content/install.mdx", "# Install Python"],
+      ["assets/python.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\" />"],
+      ["components/check.html", "<!doctype html><title>Check</title>"],
+      ["mise.toml", "[tools]\npython = \"3.13\""],
+    ]);
+    const fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/repos/acme/learn-python")) {
+        return Response.json({ private: false, default_branch: "main" });
+      }
+      if (url.includes("/git/trees/main?recursive=1")) {
+        return Response.json({
+          sha: "interactive-sha",
+          tree: [...files].map(([path, contents]) => ({ path, type: "blob", size: contents.length })),
+        });
+      }
+      const path = [...files.keys()].find((candidate) => url.endsWith(`/${candidate}`));
+      return path ? new Response(files.get(path)) : new Response("missing", { status: 404 });
+    });
+    const upsert = vi.fn();
+
+    const registered = await new GitHubCourseRegistrar({ fetch, store: { upsert } }).register({
+      type: "github",
+      repository: "acme/learn-python",
+    });
+
+    expect(registered).toMatchObject({ mode: "interactive", katas: [], hash: "interactive-sha" });
+    expect(registered?.files.map(({ path }) => path)).toEqual([...files.keys()].sort());
+    expect(upsert).toHaveBeenCalledWith(registered);
+  });
+
   it("rejects a repository whose dojo manifest is invalid", async () => {
     const fetch = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);

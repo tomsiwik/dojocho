@@ -22,7 +22,18 @@ apps/ui/test-results/
 apps/ui/playwright-report/
 apps/web/test-results/
 apps/web/playwright-report/
-dojos/*/coverage/
+/.storybook-static/
+packages/ui/test-results/
+packages/ui/playwright-report/
+**/coverage/
 
 # Runtime artifacts
 /logs/
+/.agents/
+/.codex/
+/.dojo/
+/.dojorc
+/.dojos/
+/.opencode/
+/dojo.config.ts
+/tsconfig.json

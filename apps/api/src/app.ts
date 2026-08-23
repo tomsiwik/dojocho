@@ -28,6 +28,7 @@ export interface Course {
   katas: string[];
   hash: string | null;
   files: CourseFile[] | null;
+  mode?: "katas" | "interactive";
 }
 
 export type CourseEventName = "installed" | "started" | "kata_completed" | "finished";
@@ -71,7 +72,8 @@ const listingFields = ({
   sourceType,
   installUrl,
   url,
-}: Course) => ({ id, slug, name, source, installs, sourceType, installUrl, url });
+  mode,
+}: Course) => ({ id, slug, name, source, installs, sourceType, installUrl, url, mode });
 
 const courseEventNames = new Set<CourseEventName>([
   "installed",

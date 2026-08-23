@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://dojo.foo/docs">Documentation</a> &middot; <a href="https://dojo.foo/dojos">Dojos</a>
+  <a href="https://dojo.foo/docs">Documentation</a> &middot; <a href="https://dojo.foo/dojos">Dojos</a> &middot; <a href="ROADMAP.md">Roadmap</a>
 </p>
 
 ---
@@ -29,7 +29,8 @@ npx dojofoo add dojofoo/effect-ts # add a ryū (training pack) you want to study
 claude /kata                 # let the agent walk you through an exercise
 ```
 
-The agent reads the kata's `SENSEI.md`, runs your tests, and reacts to what you wrote. It won't auto-solve the kata. You do the typing.
+The agent follows the kata's `SENSEI.mdx` or `SENSEI.md`, runs your tests, and
+reacts to what you wrote. It won't auto-solve the kata. You do the typing.
 
 See the [docs](https://dojo.foo/docs) for installation details, the full command reference, and how to author your own dojo.
 

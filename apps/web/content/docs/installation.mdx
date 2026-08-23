@@ -19,14 +19,56 @@ npx dojofoo --help
 - A coding agent that can read project files and run shell commands —
   [Claude Code](https://docs.anthropic.com/claude/docs/claude-code) is the
   default target.
+- `mise`, installed automatically for the current user by `npx dojofoo install`
+  when it is not already available. On Windows, install it first with
+  `winget install jdx.mise`.
+
+## Reproducible environments with mise
+
+Dojofoo recognizes a checked-in `mise.toml` or `.mise.toml` as the project's
+environment contract. Before it starts or restores a lesson, it runs
+`mise install` and then `mise run setup` when the project defines a local
+`setup` task. Mise owns runtime versions, trust, task dependencies, and task
+freshness; dojofoo does not maintain a second setup manifest or cache.
+
+```toml
+[tools]
+node = "24"
+pnpm = "10"
+
+[tasks.setup]
+run = "pnpm install"
+```
+
+Projects without a mise configuration continue unchanged. During initial
+dojofoo setup, the CLI downloads mise's official installer to a temporary file,
+installs the binary at `~/.local/bin/mise`, verifies it, and makes it available
+to the current process. It does not edit shell startup files. Mise handles trust
+for checked-in configuration and may ask for confirmation before loading
+configuration that can execute code. Manual installation options remain
+available in the [mise installation guide](https://mise.jdx.dev/installing-mise.html).
 
 ## Local state
 
 Dojofoo keeps its local workspace, dojo run, and agent session index in
 `~/.dojofoo/dojofoo.db`. Kata progress and installed dojo files remain in the
 workspace, so existing CLI and agent flows continue to use the same files.
-- For language-specific dojos, the matching toolchain (e.g. `pnpm` for
-  TypeScript dojos, `uv` for Python dojos).
+
+`npx dojofoo ui` starts a disposable local service alongside the lesson UI. It
+reads the durable index on startup and exposes same-origin control-plane routes
+under `/api/control`, including an overview and workspace, run, session, and
+event collections. The service stops with the foreground command; the SQLite
+index remains available for the next launch.
+
+When available, Portless provides the stable `https://dojo.localhost` address.
+It is optional: dojofoo automatically falls back to `http://localhost:4567` if
+Portless is absent or fails, and `npx dojofoo ui --no-portless` selects that
+mode explicitly. See the [UI command guide](/docs/commands/ui) for installation,
+custom ports, and troubleshooting.
+
+The lesson UI lists unfinished courses from every indexed workspace. Selecting
+one switches all lesson, editor, test, and Sensei requests to that workspace;
+the selection is restored when the UI reconnects.
 
 The CLI runs through `npx`, so there is no global package to uninstall. Remove
 an installed dojo from a project with `npx dojofoo remove <name>`.

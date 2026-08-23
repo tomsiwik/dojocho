@@ -3,6 +3,7 @@ import type {
   CourseRegistrar,
   CourseRegistrationSource,
 } from "./app";
+import { parse as parseYaml } from "yaml";
 
 interface CourseSnapshotStore {
   upsert(course: Course): Promise<void>;
@@ -25,6 +26,7 @@ interface GitHubTree {
 }
 
 interface ExternalManifest {
+  mode?: "katas" | "interactive";
   name: string;
   version: string;
   description: string;
@@ -32,54 +34,60 @@ interface ExternalManifest {
   language?: string;
   framework?: string;
   tags?: string[];
-  test: string;
-  katas: Array<{ template: string; name?: string; tags?: string[] }>;
+  test?: string;
+  katas?: Array<{ template: string; name?: string; tags?: string[] }>;
+  lessons?: string;
 }
+
+const manifestNames = ["dojo.yaml", "dojo.yml", "dojo.json"] as const;
 
 const repositoryPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u;
 const maximumFileBytes = 256 * 1024;
 const maximumSnapshotBytes = 2 * 1024 * 1024;
 const maximumSnapshotFiles = 250;
 
-function parseExternalManifest(contents: string): ExternalManifest {
-  const value = JSON.parse(contents) as Partial<ExternalManifest>;
+function parseExternalManifest(contents: string, path: string): ExternalManifest {
+  const value = (path.endsWith(".json") ? JSON.parse(contents) : parseYaml(contents)) as Partial<ExternalManifest>;
+  const mode = value.mode ?? "katas";
   if (
     !value
     || typeof value !== "object"
     || typeof value.name !== "string"
     || typeof value.version !== "string"
     || typeof value.description !== "string"
-    || typeof value.test !== "string"
+    || (mode !== "katas" && mode !== "interactive")
     || (value.author !== undefined && typeof value.author !== "string")
     || (value.language !== undefined && typeof value.language !== "string")
     || (value.framework !== undefined && typeof value.framework !== "string")
     || (value.tags !== undefined
       && (!Array.isArray(value.tags) || value.tags.some((tag) => typeof tag !== "string")))
-    || !Array.isArray(value.katas)
-    || value.katas.length === 0
-    || value.katas.some((kata) =>
+    || (mode === "katas" && typeof value.test !== "string")
+    || (mode === "interactive" && typeof value.lessons !== "string")
+    || (mode === "katas" && (!Array.isArray(value.katas) || value.katas.length === 0))
+    || (value.katas?.some((kata) =>
       !kata
       || typeof kata !== "object"
       || typeof kata.template !== "string"
       || (kata.name !== undefined && typeof kata.name !== "string")
       || (kata.tags !== undefined
-        && (!Array.isArray(kata.tags) || kata.tags.some((tag) => typeof tag !== "string"))))
+        && (!Array.isArray(kata.tags) || kata.tags.some((tag) => typeof tag !== "string")))) ?? false)
   ) {
-    throw new Error("Invalid dojo.json");
+    throw new Error("Invalid dojo manifest");
   }
   const facets = new Set([value.language, value.framework]
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.toLocaleLowerCase()));
   if (value.tags?.some((tag) => facets.has(tag.toLocaleLowerCase()))) {
-    throw new Error("Invalid dojo.json");
+    throw new Error("Invalid dojo manifest");
   }
   return value as ExternalManifest;
 }
 
 function snapshotPath(path: string) {
-  if (["dojo.json", "DOJO.md", "README.md", "package.json"].includes(path)) return true;
+  if ([...manifestNames, "DOJO.md", "README.md", "package.json", "mise.toml", ".mise.toml"].includes(path)) return true;
   return /^katas\/[^/]+\/(?:KATA|SENSEI)\.md$/u.test(path)
-    || /^katas\/[^/]+\/[^/]+\.(?:ts|tsx|js|jsx|json|py|java)$/u.test(path);
+    || /^katas\/[^/]+\/[^/]+\.(?:ts|tsx|js|jsx|json|py|java)$/u.test(path)
+    || /^(?:lessons|content|assets|components)\/.+\.(?:mdx|md|json|yaml|yml|svg|png|jpe?g|webp|pdf|mp4|webm|html|css|js)$/u.test(path);
 }
 
 function kataName(template: string, explicit?: string) {
@@ -142,7 +150,8 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
           return true;
         })
         .slice(0, maximumSnapshotFiles);
-      if (!paths.some((entry) => entry.path === "dojo.json")) return null;
+      const manifestPaths = manifestNames.filter((name) => paths.some((entry) => entry.path === name));
+      if (manifestPaths.length !== 1) return null;
 
       const files = await Promise.all(paths.map(async ({ path }) => {
         const response = await this.#fetch(
@@ -151,10 +160,11 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
         if (!response.ok) throw new Error(`Unable to fetch ${path}`);
         return { path, contents: await response.text() };
       }));
-      const manifestText = files.find((file) => file.path === "dojo.json")?.contents;
+      const manifestPath = manifestPaths[0];
+      const manifestText = files.find((file) => file.path === manifestPath)?.contents;
       if (!manifestText) return null;
-      const manifest = parseExternalManifest(manifestText);
-      const katas = manifest.katas.map((kata) => kataName(kata.template, kata.name));
+      const manifest = parseExternalManifest(manifestText, manifestPath);
+      const katas = (manifest.katas ?? []).map((kata) => kataName(kata.template, kata.name));
       const course: Course = {
         id: source.repository,
         slug: repositoryName,
@@ -177,6 +187,7 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
         katas,
         hash: tree.sha ?? source.integrity ?? null,
         files,
+        mode: manifest.mode ?? "katas",
       };
       await this.#store.upsert(course);
       return course;

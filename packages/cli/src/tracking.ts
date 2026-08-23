@@ -8,8 +8,9 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, relative, resolve } from "node:path";
+import { runtimeIdentity, type RuntimeName } from "./runtime";
 
-type AgentName = "pi" | "codex" | "claude" | "opencode" | "gemini" | "unknown";
+type AgentName = RuntimeName;
 
 type CassetteEntry = {
   role: "user" | "assistant" | "toolResult";
@@ -75,8 +76,9 @@ export function detectSessionSource(root: string): SessionSource | null {
     if (value && existsSync(expandHome(value))) return sourceFromPath(value);
   }
 
-  const agent = detectAgent();
-  const sessionId = sessionIdFor(agent);
+  const identity = runtimeIdentity();
+  const agent = identity.name;
+  const sessionId = identity.sessionId ?? null;
   const source = findSourceForAgent(root, agent, sessionId);
   if (source) return source;
 
@@ -130,7 +132,7 @@ function sourceFromCandidates(agent: AgentName, candidates: Candidate[], session
 function sourceFromPath(path: string): SessionSource {
   const expanded = expandHome(path);
   return {
-    agent: detectAgent(),
+    agent: runtimeIdentity().name,
     sessionId: sessionIdFromPath(expanded),
     path: expanded,
   };
@@ -290,32 +292,6 @@ function codexMessageContent(content: unknown): CassetteEntry["content"] | null 
   return items.map((item) =>
     typeof item === "string" ? { type: "text", text: item } : item,
   );
-}
-
-function detectAgent(): AgentName {
-  if (process.env.PI_CODING_AGENT) return "pi";
-  if (process.env.CODEX_THREAD_ID) return "codex";
-  if (process.env.CLAUDECODE) return "claude";
-  if (process.env.OPENCODE) return "opencode";
-  if (process.env.GEMINI_CLI) return "gemini";
-  return "unknown";
-}
-
-function sessionIdFor(agent: AgentName): string | null {
-  const keysByAgent: Record<AgentName, string[]> = {
-    pi: ["PI_SESSION_ID", "PI_THREAD_ID"],
-    codex: ["CODEX_THREAD_ID"],
-    claude: ["CLAUDE_SESSION_ID", "CLAUDE_CONVERSATION_ID"],
-    opencode: ["OPENCODE_SESSION_ID"],
-    gemini: ["GEMINI_SESSION_ID"],
-    unknown: [],
-  };
-
-  for (const key of keysByAgent[agent]) {
-    const value = process.env[key];
-    if (value) return value;
-  }
-  return null;
 }
 
 function findJsonl(dir: string): Candidate[] {

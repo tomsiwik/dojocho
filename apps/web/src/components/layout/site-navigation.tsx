@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, buttonVariants } from '@dojofoo/ui/button'
+import { SiteNavigation as SharedSiteNavigation } from '@dojofoo/ui/site-navigation'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { GithubIcon } from '@/components/github-icon'
@@ -23,24 +24,18 @@ export function SiteNavigation({
   className,
 }: SiteNavigationProps) {
   return (
-    <Component
-      className={cn(
-        'border-b border-dashed border-border bg-background/90 backdrop-blur-md',
-        Component === 'header' && 'sticky top-0 z-40',
-        className,
-      )}
-    >
-      <div
-        data-site-navigation=""
-        className="mx-auto flex h-16 w-full max-w-(--fd-layout-width) items-center gap-2 px-5 lg:px-8"
-      >
+    <SharedSiteNavigation
+      as={Component}
+      data-site-navigation=""
+      className={className}
+      brand={(
         <Link to="/" aria-label="Dojofoo courses" className="mr-1 flex items-center">
           <img src="/dojofoo.svg" alt="dojofoo" className="h-5 w-auto" />
         </Link>
-
-        <SearchToggle size="icon" showShortcut className="text-muted-foreground [&_svg]:!size-5" />
-
-        <nav aria-label="Primary" className="ml-auto flex items-center gap-1">
+      )}
+      leading={<SearchToggle size="icon" showShortcut className="text-muted-foreground [&_svg]:!size-5" />}
+      actions={(
+        <>
           <Link
             to="/$"
             params={{ _splat: 'docs' }}
@@ -71,8 +66,8 @@ export function SiteNavigation({
             </Link>
           </Button>
           {mobileAction}
-        </nav>
-      </div>
-    </Component>
+        </>
+      )}
+    />
   )
 }

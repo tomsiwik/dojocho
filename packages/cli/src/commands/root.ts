@@ -22,18 +22,29 @@ Commands:
   kata                Kata-level actions (sensei, check, scaffold)
   intro               Show the active dojo's introduction
   status              Show current dojo/kata state
-  install [--agent]   Set up a new dojo project and configure agents
+  install [--agent]   Install mise, then set up a project and its agents
+  install --skills    Refresh skills for configured or selected agents
   add <source>        Add a dojo (training pack)
   update <source>     Update an installed dojo from its recorded source
   remove <name>       Remove a dojo
-  ui [--background]   Start the dojo lesson web UI (default: https://dojo.localhost)
+  ui [--background]   Start or control the lesson UI
   track               Record the active agent session as a cassette
 
 Flags:
   --test/--check      Show overall progress
   --list              List installed dojos
   --open              Print the active DOJO.md
-  --change <dojo>     Switch active dojo`;
+  --change <dojo>     Switch active dojo
+
+UI flags:
+  prompt              Show a structured prompt in the current lesson UI
+  --skill             Print agent instructions for controlling the UI
+  --background        Keep the UI daemon running after this command exits
+  --no-open           Print the URL without opening a browser
+  --name <name>       Set the Portless subdomain (default URL: https://dojo.localhost)
+  --tld <tld>         Set the Portless top-level domain
+  --no-portless       Use the http://localhost:4567 fallback directly
+  --port <port>       Change the direct/fallback port`;
 
 export function root(rootDir: string, args: string[]): void {
   const flag = args.find((a) => a.startsWith("--"));

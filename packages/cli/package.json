@@ -32,6 +32,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "README.md",
     "LICENSE"
   ],
@@ -39,19 +40,22 @@
     "dojofoo": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup && node scripts/bundle-ui.mjs",
+    "build": "pnpm --filter @dojofoo/ui build && tsup && node scripts/bundle-ui.mjs",
     "test": "vitest run",
     "test:package": "node scripts/test-packed-ui.mjs",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
+    "@agentclientprotocol/codex-acp": "^1.4.0",
     "@dojofoo/config": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "jiti": "^2.7.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@dojofoo/lesson-ui": "workspace:*",
+    "@dojofoo/ui": "workspace:*",
     "tsup": "^8.0.0",
     "vitest": "^4.1.10"
   }

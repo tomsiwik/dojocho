@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { resolve } from "node:path";
 import { readInstalledSource } from "./source";
-import { recordDojoLifecycle, workspaceIdFor } from "./local-state";
+import { recordDojoLifecycle, workspaceIdFor } from "@dojofoo/config/local-state";
 
 export type CourseEventName = "installed" | "started" | "kata_completed" | "finished";
 

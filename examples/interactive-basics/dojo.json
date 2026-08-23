@@ -1,0 +1,10 @@
+{
+  "$schema": "https://dojo.foo/schema/v1/dojo.json",
+  "mode": "interactive",
+  "name": "@dojofoo/interactive-basics",
+  "version": "0.0.1",
+  "description": "A minimal interactive lesson that demonstrates resumable presentation and feedback.",
+  "language": "Other",
+  "tags": ["Learning"],
+  "lessons": "lessons/introduction.json"
+}
