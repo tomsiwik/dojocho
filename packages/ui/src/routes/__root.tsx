@@ -20,6 +20,8 @@ export const Route = createRootRoute({
       { name: "description", content: "Dojo web UI" },
     ],
     links: [
+      { rel: "preconnect", href: "https://api.fontshare.com" },
+      { rel: "preconnect", href: "https://cdn.fontshare.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap",

@@ -21,6 +21,7 @@ import {
 import { Tool, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
+import { BrandLogo } from "@dojofoo/ui/brand-logo";
 import { ChatMessage } from "@dojofoo/ui/chat-message";
 import { ChatContainer, ChatContainerContent, ChatContainerFooter, ChatContainerHeader } from "@dojofoo/ui/chat-container";
 import {
@@ -141,7 +142,7 @@ function CourseIndex() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <SiteNavigation
-        brand={<a aria-label="Dojofoo courses" className="mr-1 flex items-center" href="/"><img alt="dojofoo" className="h-8 w-auto [filter:brightness(0)_invert(9%)] dark:[filter:none]" src="/brand/dojofoo-light3d.png" /></a>}
+        brand={<a aria-label="Dojofoo courses" className="mr-1 flex items-center" href="/"><BrandLogo /></a>}
         actions={(
           <>
             <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="https://dojo.foo" rel="noreferrer" target="_blank">Marketplace</a>
@@ -929,7 +930,7 @@ function LessonNavigation({
   return (
     <aside className="flex min-h-0 flex-col border-r border-dashed bg-surface-1" data-testid="lesson-navigation">
       <div className="border-b border-dashed px-5 pb-5 pt-5">
-        <img alt="Dojofoo wordmark" className="h-6 w-auto [filter:brightness(0)_invert(9%)] dark:[filter:none]" src="/brand/dojofoo-light3d.png" />
+        <BrandLogo alt="Dojofoo wordmark" className="h-6" />
         <h1 className="mt-1.5 text-xl font-semibold">{humanTitle(lesson.dojo)}</h1>
         <h2 className="mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Chapters</h2>
       </div>

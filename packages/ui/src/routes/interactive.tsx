@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@dojofoo/ui/button";
+import { BrandLogo } from "@dojofoo/ui/brand-logo";
 import { SiteNavigation } from "@dojofoo/ui/site-navigation";
 import type { InteractiveSnapshot } from "@/server/interactive/service";
 import { CourseContent } from "@/components/course-content";
@@ -49,7 +50,7 @@ function InteractiveCourse() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <SiteNavigation
-        brand={<Link aria-label="Dojofoo courses" className="flex items-center" to="/"><img alt="dojofoo" className="h-8 w-auto [filter:brightness(0)_invert(9%)] dark:[filter:none]" src="/brand/dojofoo-light3d.png" /></Link>}
+        brand={<Link aria-label="Dojofoo courses" className="flex items-center" to="/"><BrandLogo /></Link>}
         actions={<Link className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground" to="/"><ArrowLeft size={15} /> Courses</Link>}
       />
       <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl md:grid-cols-[16rem_minmax(0,1fr)]">

@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, buttonVariants } from '@dojofoo/ui/button'
+import { BrandLogo } from '@dojofoo/ui/brand-logo'
 import { SiteNavigation as SharedSiteNavigation } from '@dojofoo/ui/site-navigation'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -30,7 +31,7 @@ export function SiteNavigation({
       className={className}
       brand={(
         <Link to="/" aria-label="Dojofoo courses" className="mr-1 flex items-center">
-          <img src="/dojofoo.svg" alt="dojofoo" className="h-5 w-auto" />
+          <BrandLogo />
         </Link>
       )}
       leading={<SearchToggle size="icon" showShortcut className="text-muted-foreground [&_svg]:!size-5" />}
