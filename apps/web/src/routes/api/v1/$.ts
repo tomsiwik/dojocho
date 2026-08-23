@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 async function forwardToCoursesApi({ request }: { request: Request }) {
   const origin = process.env.DOJO_API_ORIGIN
-    ?? (process.env.NODE_ENV !== "production" ? "http://127.0.0.1:4311" : null);
+    ?? (process.env.NODE_ENV !== "production" ? "https://dojo.foo" : null);
   if (!origin) {
     return Response.json(
       { error: "service_unavailable", message: "Courses API binding is unavailable." },

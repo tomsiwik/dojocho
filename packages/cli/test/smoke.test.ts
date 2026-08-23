@@ -85,6 +85,12 @@ describe("dojo setup", () => {
       vi.unstubAllEnvs();
     }
   });
+
+  it("generates a dependency-free dojo config", () => {
+    captureLog(() => setup(root, ["--codex"]));
+
+    expect(readFileSync(resolve(root, "dojo.config.ts"), "utf8")).toBe("export default {}\n");
+  });
 });
 
 describe("setupAgents", () => {

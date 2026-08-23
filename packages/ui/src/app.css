@@ -41,6 +41,38 @@
   src: url("@fontsource/khand/files/khand-latin-700-normal.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/hind/files/hind-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("@fontsource/hind/files/hind-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/hind/files/hind-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/hind/files/hind-latin-700-normal.woff2") format("woff2");
+}
+
 .cm-line-covered {
   background-color: rgb(88 199 96 / 0.06);
 }
@@ -78,9 +110,9 @@
 
 @theme inline {
   --font-display: "Khand", ui-sans-serif, sans-serif;
-  --font-sans: "General Sans", ui-sans-serif, sans-serif;
+  --font-sans: "Hind", ui-sans-serif, sans-serif;
   --font-mono: "Iosevka", monospace;
-  --font-prose: "General Sans", ui-sans-serif, sans-serif;
+  --font-prose: "Hind", ui-sans-serif, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

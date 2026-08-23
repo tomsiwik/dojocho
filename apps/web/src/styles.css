@@ -47,13 +47,45 @@
   src: url("@fontsource/khand/files/khand-latin-700-normal.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/hind/files/hind-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("@fontsource/hind/files/hind-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/hind/files/hind-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/hind/files/hind-latin-700-normal.woff2") format("woff2");
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-display: "Khand", ui-sans-serif, sans-serif;
-  --font-sans: "General Sans", ui-sans-serif, sans-serif;
+  --font-sans: "Hind", ui-sans-serif, sans-serif;
   --font-mono: "Iosevka", monospace;
-  --font-prose: "General Sans", ui-sans-serif, sans-serif;
+  --font-prose: "Hind", ui-sans-serif, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

@@ -57,6 +57,7 @@
     "@codemirror/lint": "^6.9.4",
     "@codemirror/view": "^6.43.8",
     "@dojofoo/config": "workspace:*",
+    "@fontsource/hind": "5.3.0",
     "@fontsource/iosevka": "^5.3.0",
     "@fontsource/khand": "5.3.0",
     "@lezer/highlight": "^1.2.3",

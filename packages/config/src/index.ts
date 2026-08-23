@@ -377,6 +377,13 @@ export function loadConfig(root?: string, env?: ConfigEnv): ResolvedConfig {
     const configPath = resolve(projectRoot, name);
     if (existsSync(configPath)) {
       try {
+        const source = readFileSync(configPath, "utf8");
+        if (
+          source.includes('import { defineConfig } from "@dojofoo/config"')
+          && /export default defineConfig\(\s*\)/.test(source)
+        ) {
+          return resolveConfig({}, projectRoot);
+        }
         const jiti = createJiti(configPath);
         const mod = jiti(configPath) as { default?: unknown } | DojoUserConfig;
         let raw = "default" in mod && mod.default ? mod.default : mod;

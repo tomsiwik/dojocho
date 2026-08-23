@@ -11,7 +11,7 @@ export default defineConfig({
     host: process.env.HOST || 'localhost',
     allowedHosts: ['dojofoo.td', 'host.docker.internal', 'localhost', '127.0.0.1'],
     proxy: {
-      '/api/v1': process.env.DOJO_API_ORIGIN ?? 'http://127.0.0.1:4311',
+      '/api/v1': process.env.DOJO_API_ORIGIN ?? 'https://dojo.foo',
     },
   },
   resolve: {

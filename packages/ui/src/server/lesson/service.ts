@@ -11,6 +11,7 @@ import {
   readDojoMd,
   readDojoRc,
   resolveAllKatas,
+  writeDojoRc,
 } from "@dojofoo/config";
 import type { UIMessage } from "@tanstack/ai-client";
 import type { HarnessKind } from "../harness/adapter";
@@ -134,7 +135,7 @@ export async function getLesson(root: string, requestedKata?: string): Promise<L
   const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
   const progress = rc.progress?.[rc.currentDojo];
-  const current = findCurrentKata(katas, rc.currentKata);
+  const current = findCurrentKata(katas, rc.currentKata) ?? findNextKata(katas, progress);
   const selected = requestedKata
     ? findKataByIdOrName(katas, requestedKata)
     : current;
@@ -210,7 +211,7 @@ export async function getLesson(root: string, requestedKata?: string): Promise<L
     kata: selected.name,
     title: humanTitle(selected.name),
     briefing: senpaiBriefing(sensei),
-    code: existsSync(selected.workspacePath) ? readFileSync(selected.workspacePath, "utf8") : "",
+    code: existsSync(selected.workspacePath) ? readFileSync(selected.workspacePath, "utf8") : starterCode,
     starterCode,
     fileId: "solution",
     filePath: relative(root, selected.workspacePath),
@@ -266,6 +267,12 @@ export async function writeLessonFile(
   const target = lessonTarget(root, courseId, lessonId);
   mkdirSync(dirname(target.workspacePath), { recursive: true });
   writeFileSync(target.workspacePath, content);
+  const rc = readDojoRc(root);
+  rc.currentKata = lessonId;
+  rc.progress ??= {};
+  rc.progress[courseId] ??= { completed: [], lastActive: null };
+  rc.progress[courseId].lastActive = lessonId;
+  writeDojoRc(root, rc);
   const state = readWebState(root);
   delete state.results[lessonKey(courseId, lessonId)];
   writeWebState(root, state);

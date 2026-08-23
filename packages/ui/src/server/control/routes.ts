@@ -6,10 +6,10 @@ import {
   readLocalSnapshot,
   type LocalStateOptions,
 } from "@dojofoo/config/local-state";
-import { courseMode, readCourseManifest, readDojoRc } from "@dojofoo/config";
+import { courseMode, readCourseManifest, readDojoRc, type KataProgress } from "@dojofoo/config";
 import { Hono } from "hono";
 import { readFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import {
   adoptLocalSession,
   SessionAdoptionError,
@@ -74,9 +74,10 @@ export function buildControlRoutes(options: ControlRouteOptions = {}) {
               && candidate.dojo === rc.currentDojo
               && candidate.completedAt === null
             );
-            const catalog = courseMetadata(workspace.path, rc.currentDojo);
+            const progress = rc.progress?.[rc.currentDojo];
+            const catalog = courseMetadata(workspace.path, rc.currentDojo, rc.currentKata, progress);
             if (!catalog) return [];
-            const lessonId = rc.currentKata ?? rc.progress?.[rc.currentDojo]?.lastActive ?? null;
+            const lessonId = catalog.lessonId;
             const sessions = lessonSessions(workspace.path, rc.currentDojo);
             const sessionId = sessions.find((session) => session.lessonId === lessonId)?.sessionId ?? null;
             return [{
@@ -146,19 +147,48 @@ export function buildControlRoutes(options: ControlRouteOptions = {}) {
 
 export const controlRoutes = buildControlRoutes();
 
-function courseMetadata(root: string, dojo: string) {
+function courseMetadata(
+  root: string,
+  dojo: string,
+  currentLesson: string | null,
+  progress?: KataProgress,
+) {
   try {
     const catalog = readCourseManifest(root, dojo);
+    const mode = courseMode(catalog);
     return {
-      mode: courseMode(catalog),
+      mode,
       description: catalog.description,
       language: catalog.language ?? "Other",
       framework: catalog.framework ?? null,
       tags: catalog.tags ?? [],
+      lessonId: "katas" in catalog
+        ? continuationLesson(catalog.katas, currentLesson, progress)
+        : null,
     };
   } catch {
     return null;
   }
+}
+
+function continuationLesson(
+  lessons: Array<{ name?: string; template: string; prerequisites?: string[] }>,
+  currentLesson: string | null,
+  progress?: KataProgress,
+): string | null {
+  const named = lessons.map((lesson) => ({
+    ...lesson,
+    id: lesson.name ?? basename(dirname(lesson.template)),
+  }));
+  const known = new Set(named.map((lesson) => lesson.id));
+  if (currentLesson && known.has(currentLesson)) return currentLesson;
+  if (progress?.lastActive && known.has(progress.lastActive)) return progress.lastActive;
+
+  const completed = new Set(progress?.completed ?? []);
+  return named.find((lesson) =>
+    !completed.has(lesson.id)
+    && (lesson.prerequisites ?? []).every((prerequisite) => completed.has(prerequisite))
+  )?.id ?? named.at(-1)?.id ?? null;
 }
 
 function lessonSessions(root: string, dojo: string): Array<{ lessonId: string; sessionId: string }> {
