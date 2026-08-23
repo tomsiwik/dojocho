@@ -24,6 +24,10 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      {
+        rel: "stylesheet",
+        href: "https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap",
+      },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     ],
   }),
@@ -36,7 +40,7 @@ function RootLayout() {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen antialiased flex flex-col" suppressHydrationWarning>
+      <body className="min-h-screen antialiased flex flex-col font-sans" suppressHydrationWarning>
         <RootProvider
           theme={{ defaultTheme: "dark" }}
           search={{ SearchDialog }}

@@ -9,13 +9,13 @@ test("docs hydrate and search opens", async ({ page }) => {
   });
 
   await page.goto("/docs", { waitUntil: "networkidle" });
-  await expect(page.getByRole("heading", { name: "Documentation", level: 1 })).toHaveCSS("font-family", /Iosevka/);
-  await expect(page.getByText("dojofoo is a kata-driven training framework", { exact: false })).toHaveCSS("font-family", /Geist Variable/);
+  await expect(page.getByRole("heading", { name: "Documentation", level: 1 })).toHaveCSS("font-family", /Khand/);
+  await expect(page.getByText("dojofoo is a kata-driven training framework", { exact: false })).toHaveCSS("font-family", /General Sans/);
   await expect(page.locator("pre").first()).toHaveCSS("font-family", /Iosevka/);
   const footerItem = page.locator("[data-docs-footer-item]").first();
   await expect(footerItem).toBeVisible();
-  await expect(footerItem.locator("[data-docs-footer-title]")).toHaveCSS("font-family", /Iosevka/);
-  await expect(footerItem.locator("[data-docs-footer-description]")).toHaveCSS("font-family", /Geist Variable/);
+  await expect(footerItem.locator("[data-docs-footer-title]")).toHaveCSS("font-family", /Khand/);
+  await expect(footerItem.locator("[data-docs-footer-description]")).toHaveCSS("font-family", /General Sans/);
   expect(await page.evaluate(() => {
     const navigation = document.querySelector<HTMLElement>("#nd-subnav");
     const sidebar = document.querySelector<HTMLElement>("[data-sidebar-placeholder]");

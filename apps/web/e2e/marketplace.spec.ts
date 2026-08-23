@@ -84,8 +84,8 @@ test("browses compact courses from reusable marketplace navigation", async ({ pa
   await expect(page.getByRole("searchbox", { name: "Search courses" })).toHaveCount(0);
 
   const effectCard = page.getByTestId("course-effect-ts");
-  await expect(effectCard.locator('[data-slot="card-title"]')).toHaveCSS("font-family", /Iosevka/);
-  await expect(effectCard.locator('[data-slot="card-description"]')).toHaveCSS("font-family", /Geist Variable/);
+  await expect(effectCard.locator('[data-slot="card-title"]')).toHaveCSS("font-family", /Khand/);
+  await expect(effectCard.locator('[data-slot="card-description"]')).toHaveCSS("font-family", /General Sans/);
   const cards = page.locator('[data-testid^="course-"]');
   await expect(cards.first()).toHaveAttribute("data-testid", "course-effect-ts");
   await sort.click();
@@ -196,7 +196,7 @@ test("browses compact courses from reusable marketplace navigation", async ({ pa
 
   await page.getByRole("link", { name: /Effect TS/i }).click();
   await expect(page.getByRole("heading", { name: "Effect TS" })).toBeVisible();
-  await expect(page.locator("body")).toHaveCSS("font-family", /Iosevka/);
+  await expect(page.locator("body")).toHaveCSS("font-family", /General Sans/);
   expect(await page.evaluate(async () => {
     const faces = await document.fonts.load('400 16px "Iosevka"');
     return faces.some((face) => face.status === "loaded");
@@ -215,7 +215,7 @@ test("browses compact courses from reusable marketplace navigation", async ({ pa
   await expect(detailInstall).toBeVisible();
   await expect(detailInstall.getByText("Copy", { exact: true })).toHaveCount(0);
   await expect(detailInstall.locator("mark")).toHaveCSS("font-family", /Iosevka/);
-  await expect(page.getByText("Master Effect through 40 hands-on katas.", { exact: true })).toHaveCSS("font-family", /Geist Variable/);
+  await expect(page.getByText("Master Effect through 40 hands-on katas.", { exact: true })).toHaveCSS("font-family", /General Sans/);
   await expect(page.getByText("Tom Siwik", { exact: true })).toBeVisible();
   await expect(page.getByText("TypeScript", { exact: true })).toBeVisible();
   await expect(page.getByText("Effect", { exact: true })).toBeVisible();

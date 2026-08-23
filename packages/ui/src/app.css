@@ -167,7 +167,7 @@
   }
 }
 
-.font-prose :where(h1, h2, h3, h4, h5, h6, blockquote, q, pre, code, a, button, [role="button"]),
+.font-prose :where(blockquote, q, pre, code, a, button, [role="button"]),
 .font-prose :where(ol, ul) > li::marker {
   font-family: "Iosevka", monospace;
 }

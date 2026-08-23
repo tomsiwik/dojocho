@@ -282,7 +282,7 @@ function FooterItem({ item, index }: { item: Item; index: 0 | 1 }) {
     >
       <div
         className={cn(
-          'inline-flex items-center gap-1.5 font-mono font-medium',
+          'inline-flex items-center gap-1.5 font-display font-medium',
           index === 1 && 'flex-row-reverse',
         )}
       >
