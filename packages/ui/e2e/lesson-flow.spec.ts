@@ -71,7 +71,7 @@ test("senpai completes and resumes a Socratic kata", async ({ page }) => {
   await page.getByRole("link").filter({ hasText: /effect/i }).first().click();
   await expect(page).toHaveURL(/\/session\/.+/);
   await expect(page.getByRole("heading", { name: /hello effect/i })).toBeVisible();
-  await expect(page.getByTestId("active-course-selector")).toHaveValue(/.+/);
+  await expect(page.getByTestId("chat-pane")).toBeVisible();
   await expect(page.locator(".cm-editor")).toBeVisible();
   await expect(page.locator('.cm-editor [aria-label="Solution code"]')).toHaveCount(1);
   const senseiMessages = page.getByTestId("sensei-message");

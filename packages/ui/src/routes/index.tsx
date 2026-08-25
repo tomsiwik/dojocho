@@ -24,7 +24,7 @@ import { ToolTimeline, type TimelineStep } from "@dojofoo/uix/components/element
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
-import { ChatContainer, ChatContainerContent, ChatContainerFooter, ChatContainerHeader } from "@dojofoo/ui/chat-container";
+import { ChatContainer, ChatContainerContent, ChatContainerFooter } from "@dojofoo/ui/chat-container";
 import { CourseCard } from "@dojofoo/ui/course-card";
 import {
   Dialog,
@@ -39,7 +39,6 @@ import { InputMessage } from "@dojofoo/ui/input-message";
 import { ScrollArea } from "@dojofoo/ui/scroll-area";
 import { SiteNavigation } from "@dojofoo/ui/site-navigation";
 import { ThinkingIndicator } from "@dojofoo/ui/thinking-indicator";
-import { ThemeToggle } from "@dojofoo/ui/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -181,9 +180,6 @@ function CourseIndex() {
         brand={<a aria-label="Dojofoo courses" className="mr-1 flex items-center" href="/"><BrandLogo /></a>}
         actions={(
           <>
-            <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="/avatar">Avatar studio</a>
-            <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="https://dojo.foo" rel="noreferrer" target="_blank">Marketplace</a>
-            <ThemeToggle />
             <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="https://dojo.foo/docs" rel="noreferrer" target="_blank">Docs</a>
           </>
         )}
@@ -973,29 +969,6 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
           data-host-event-count={hostChatEvents.length}
           data-testid="chat-pane"
         >
-          <ChatContainerHeader>
-            <CourseSelector
-              courses={courses}
-              onSelect={(nextWorkspaceId) => {
-                if (dirty && !window.confirm("Switch courses and discard unsaved editor changes?")) return;
-                window.localStorage.setItem("dojofoo.workspace", nextWorkspaceId);
-                const nextCourse = courses.find((course) => course.workspaceId === nextWorkspaceId);
-                if (nextCourse?.sessionId) {
-                  void navigate({ to: "/session/$sessionId", params: { sessionId: nextCourse.sessionId } });
-                } else if (nextCourse?.kata) {
-                  void navigate({
-                    to: "/course/$workspaceId/$courseId/lesson/$lessonId",
-                    params: { workspaceId: nextWorkspaceId, courseId: nextCourse.dojo, lessonId: nextCourse.kata },
-                  });
-                } else {
-                  void navigate({ to: "/course/$workspaceId", params: { workspaceId: nextWorkspaceId } });
-                }
-              }}
-              sessionId={lesson.sessionId}
-              workspaceId={workspaceId}
-            />
-            {lesson.checkpointed && <span className="font-mono text-[10px] font-normal uppercase tracking-wider text-teal-400">Checkpointed</span>}
-          </ChatContainerHeader>
           <ChatContainerContent>
               {timelineMessages
                 .filter((message) => message.parts.some((part) => part.type !== "text"
@@ -1109,63 +1082,6 @@ function LessonNavigation({
         </div>
       </ScrollArea>
     </aside>
-  );
-}
-
-function CourseSelector({
-  courses,
-  onSelect,
-  sessionId,
-  workspaceId,
-}: {
-  courses: ActiveCourse[];
-  onSelect: (workspaceId: string) => void;
-  sessionId: string | null;
-  workspaceId: string;
-}) {
-  const selected = courses.find((course) => course.workspaceId === workspaceId) ?? courses[0];
-  const dojoNames = [...new Set(courses.map((course) => course.dojo))];
-  const visibleSessionId = sessionId ? middleEllipsis(sessionId) : "No session";
-
-  return (
-    <div className="grid w-full min-w-0 grid-cols-2 items-start gap-3 text-xs text-muted-foreground">
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Active course</span>
-        <Select
-          onValueChange={(dojo) => {
-            const next = courses.find((course) => course.dojo === dojo);
-            if (next) onSelect(next.workspaceId);
-          }}
-          value={selected?.dojo ?? ""}
-        >
-          <SelectTrigger
-            aria-label="Active course"
-            className="w-full min-w-0 px-3 text-sm font-medium"
-            data-testid="active-course-selector"
-            variant="borderless"
-          />
-          <SelectContent>
-            {dojoNames.map((dojo, index) => (
-              <SelectItem index={index} key={dojo} value={dojo}>{humanTitle(dojo)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
-        <Select value={sessionId ?? "none"}>
-          <SelectTrigger
-            aria-label="Session"
-            className="w-full min-w-0 px-3 text-sm font-medium"
-            data-testid="session-selector"
-            variant="borderless"
-          />
-          <SelectContent>
-            <SelectItem index={0} value={sessionId ?? "none"}>{visibleSessionId}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
   );
 }
 
