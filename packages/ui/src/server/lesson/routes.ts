@@ -134,6 +134,7 @@ app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/messages", async (c)
   const stream = streamAcpAsAgUi({
     threadId: params.threadId,
     runId: params.runId,
+    reveal: body.kind === "introduction" ? "first-assistant-text" : "immediate",
     execute: async (onPart: (part: AcpStreamPart) => void) => {
       if (body.kind === "introduction") {
         await streamLessonIntroduction(root, lessonId, onPart, c.req.raw.signal);

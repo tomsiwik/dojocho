@@ -39,7 +39,7 @@ export interface DojoLessonContext {
     state: "completed" | "ongoing" | "not-started";
   };
   learner: {
-    file: { path: string; language: string };
+    file: { path: string; language: string; content: string };
     latestCheck: unknown | null;
   };
 }

@@ -50,4 +50,51 @@ describe("ACP to AG-UI stream", () => {
     expect(events.map(({ type }) => type)).toEqual(["RUN_STARTED", "RUN_ERROR"]);
     expect(events[1]).toMatchObject({ message: "provider unavailable" });
   });
+
+  it("keeps introduction preparation private until learner-facing text starts", async () => {
+    const events = [];
+    for await (const event of streamAcpAsAgUi({
+      runId: "run-introduction",
+      threadId: "thread-1",
+      reveal: "first-assistant-text",
+      execute: async (write) => {
+        write({ type: "reasoning-start", id: "reasoning-1" });
+        write({ type: "reasoning-delta", id: "reasoning-1", delta: "Finding the lesson file" });
+        write({ type: "reasoning-end", id: "reasoning-1" });
+        write({ type: "tool-input-start", toolCallId: "read-1", toolName: "read", dynamic: true });
+        write({ type: "tool-input-available", toolCallId: "read-1", toolName: "read", input: { path: "solution.ts" }, dynamic: true });
+        write({ type: "tool-output-available", toolCallId: "read-1", output: "file contents", dynamic: true });
+        write({ type: "text-start", id: "welcome" });
+        write({ type: "text-delta", id: "welcome", delta: "Welcome to the lesson." });
+        write({ type: "text-end", id: "welcome" });
+        write({ type: "tool-input-start", toolCallId: "later-1", toolName: "dojo_ui_show", dynamic: true });
+      },
+    })) events.push(event);
+
+    expect(events.map(({ type }) => type)).toEqual([
+      "RUN_STARTED",
+      "TEXT_MESSAGE_START",
+      "TEXT_MESSAGE_CONTENT",
+      "TEXT_MESSAGE_END",
+      "TOOL_CALL_START",
+      "RUN_FINISHED",
+    ]);
+    expect(JSON.stringify(events)).not.toContain("Finding the lesson file");
+    expect(events).not.toContainEqual(expect.objectContaining({ toolCallId: "read-1" }));
+  });
+
+  it("still exposes a preparation failure before readiness", async () => {
+    const events = [];
+    for await (const event of streamAcpAsAgUi({
+      runId: "run-introduction-error",
+      threadId: "thread-1",
+      reveal: "first-assistant-text",
+      execute: async (write) => {
+        write({ type: "reasoning-start", id: "reasoning-1" });
+        throw new Error("provider unavailable");
+      },
+    })) events.push(event);
+
+    expect(events.map(({ type }) => type)).toEqual(["RUN_STARTED", "RUN_ERROR"]);
+  });
 });

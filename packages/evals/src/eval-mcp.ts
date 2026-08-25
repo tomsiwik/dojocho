@@ -32,7 +32,7 @@ server.registerTool(lessonCapabilities.context.tool, {
     phase: "resume",
     course: { id: "kata-capabilities" },
     lesson: { id: "001-transformation", title: "Transform a Display Name", objective: "Normalize varied whitespace.", state: "ongoing" },
-    learner: { file: { path: "solution.ts", language: "typescript" }, latestCheck: null },
+    learner: { file: { path: "solution.ts", language: "typescript", content: "" }, latestCheck: null },
   };
   return { content: [{ type: "text", text: JSON.stringify(context) }], structuredContent: context };
 });

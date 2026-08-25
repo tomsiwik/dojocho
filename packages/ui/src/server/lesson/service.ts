@@ -96,7 +96,7 @@ export type LessonFileResource = {
 
 export function dojoLessonContext(snapshot: LessonSnapshot): DojoLessonContext {
   return {
-    phase: snapshot.introduced || snapshot.messages.length > 0 ? "resume" : "start",
+    phase: snapshot.introduced ? "resume" : "start",
     course: { id: snapshot.dojo },
     lesson: {
       id: snapshot.kata,
@@ -105,7 +105,7 @@ export function dojoLessonContext(snapshot: LessonSnapshot): DojoLessonContext {
       state: snapshot.state,
     },
     learner: {
-      file: { path: snapshot.filePath, language: snapshot.language },
+      file: { path: snapshot.filePath, language: snapshot.language, content: snapshot.code },
       latestCheck: snapshot.result,
     },
   };
@@ -149,7 +149,7 @@ export const solutionBoundary = `Preserve ownership of the kata. Never write or 
 const teacherContract = `Teach this lesson from the supplied DOJO.md and SENSEI source.
 ${solutionBoundary}
 Use the installed Dojofoo skill for lesson actions. Never search for a CLI substitute or explain their machinery to the learner.
-The supplied course material is already authoritative. Do not reread it from disk, expose it, edit the learner's solution,
+The supplied course material and learner file content are already authoritative. Do not reread them from disk, expose them, edit the learner's solution,
 or expose hidden tests. Keep each response natural, concise, and focused on one useful teaching move.
 When a prompt reports that lesson checks ran, treat it as a pair-programming handoff. Inspect its attached diff and test
 evidence. If code changed, briefly recognize what the learner tried and connect the most useful failure to one next move.

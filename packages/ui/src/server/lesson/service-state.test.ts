@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readDojoRc } from "@dojofoo/config";
-import { dojoLessonFragment, getLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
+import { dojoLessonContext, dojoLessonFragment, getLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
 
 const roots: string[] = [];
 
@@ -52,6 +52,16 @@ describe("fresh lesson state", () => {
       isCurrent: true,
       code: "export const answer = 0;\n",
       starterCode: "export const answer = 0;\n",
+    });
+  });
+
+  it("gives the sensei authoritative learner code without requiring file inspection", async () => {
+    const lesson = await getLesson(freshCourse(), "001-first");
+
+    expect(dojoLessonContext(lesson!).learner.file).toEqual({
+      path: "katas/001-first/solution.ts",
+      language: "typescript",
+      content: "export const answer = 0;\n",
     });
   });
 

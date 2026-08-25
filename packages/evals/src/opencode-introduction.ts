@@ -103,7 +103,12 @@ async function runVariant(variant: (typeof variants)[number]): Promise<void> {
     .split(/\r?\n/u)
     .filter(Boolean)
     .map((line) => JSON.parse(line) as { name: string });
-  const toolNames = calls.map((call) => call.name);
+  const nativeToolNames = events.flatMap((event) => {
+    if (event.part?.type !== "tool") return [];
+    const name = event.part.tool ?? event.part.toolName ?? event.part.name;
+    return name ? [name] : [];
+  });
+  const toolNames = [...new Set([...nativeToolNames, ...calls.map((call) => call.name)])];
   printResult(`opencode-local:${variant.id}`, text, toolNames, Date.now() - startedAt);
   } finally {
     await rm(root, { recursive: true, force: true });

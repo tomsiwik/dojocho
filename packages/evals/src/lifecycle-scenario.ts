@@ -52,7 +52,11 @@ export function lifecyclePrompt(stage: LifecycleStage): string {
       state: stage === "complete" ? "completed" : stage === "start" ? "not-started" : "ongoing",
     },
     learner: {
-      file: { path: "solution.ts", language: "typescript" },
+      file: {
+        path: "solution.ts",
+        language: "typescript",
+        content: "export function normalize(input: string) { throw new Error('Not implemented'); }",
+      },
       latestCheck: stage === "complete" ? { total: 4, passed: 4, failed: 0, complete: true } : null,
     },
   };
