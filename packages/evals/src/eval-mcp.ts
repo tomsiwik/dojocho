@@ -7,6 +7,8 @@ import { z } from "zod";
 const callsFile = process.env.DOJOFOO_EVAL_CALLS;
 if (!callsFile) throw new Error("DOJOFOO_EVAL_CALLS is required");
 const callsPath = callsFile;
+const completionDecisions = (process.env.DOJOFOO_EVAL_COMPLETION_DECISIONS ?? "Pause").split(",");
+let completionIndex = 0;
 
 const server = new McpServer({ name: "dojofoo-eval", version: "0.0.1" });
 
@@ -62,7 +64,9 @@ server.registerTool(lessonCapabilities.complete.tool, {
   inputSchema: {},
 }, async () => {
   await record(lessonCapabilities.complete.tool);
-  return { content: [{ type: "text", text: "Pause" }], structuredContent: { decision: "Pause" } };
+  const decision = completionDecisions[Math.min(completionIndex, completionDecisions.length - 1)] ?? "Pause";
+  completionIndex += 1;
+  return { content: [{ type: "text", text: decision }], structuredContent: { decision } };
 });
 
 await server.connect(new StdioServerTransport());

@@ -44,3 +44,20 @@ whitespace too, so a run can contain more than ordinary spaces.
 
 Normalization creates one stable boundary representation so downstream domain
 logic does not repeatedly account for equivalent input forms.
+
+## Review topics
+
+When the learner chooses Review, always clarify method chaining versus currying,
+then choose two connected topics below. Ground them in the learner's actual
+expression instead of reciting the whole checklist.
+
+- The sequence is method chaining and a transformation pipeline, not currying.
+  Currying converts a multi-argument function into nested one-argument functions.
+- Ordering is observable: trimming before replacement prevents boundary
+  whitespace from becoming separators.
+- `toLowerCase()` is preferable for a stable machine identifier;
+  `toLocaleLowerCase()` intentionally varies for locale-sensitive human text.
+- The normalizer is idempotent: normalizing an already canonical value should
+  leave it unchanged.
+- `\s`, `+`, and `g` answer different questions: character class, match size,
+  and search continuation.

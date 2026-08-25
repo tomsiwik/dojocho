@@ -2,14 +2,14 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { lifecyclePrompt, scoreLifecycle, type LifecycleStage } from "./lifecycle-scenario";
+import { lifecyclePrompt, lifecycleSolution, scoreLifecycle, type LifecycleStage } from "./lifecycle-scenario";
 
 interface OpenCodeEvent {
   type?: string;
   part?: { type?: string; text?: string; tool?: string; toolName?: string; name?: string };
 }
 
-const allStages: LifecycleStage[] = ["start", "stuck", "complete", "resume"];
+const allStages: LifecycleStage[] = ["start", "stuck", "complete", "review", "resume"];
 const requested = process.env.DOJOFOO_EVAL_STAGE;
 if (requested && !allStages.includes(requested as LifecycleStage)) {
   throw new Error(`Unknown lifecycle stage: ${requested}`);
@@ -27,11 +27,7 @@ const root = await mkdtemp(join(tmpdir(), "dojofoo-lifecycle-eval-"));
 
 try {
   const callsFile = join(root, "tool-calls.jsonl");
-  await writeFile(join(root, "solution.ts"), [
-    "export function normalizeHandle(input: string): string {",
-    "  return input.trim().toLowerCase().replace(' ', '-');",
-    "}",
-  ].join("\n"));
+  await writeFile(join(root, "solution.ts"), lifecycleSolution("stuck"));
   const skillDirectory = join(root, ".opencode/skills/dojofoo");
   await mkdir(skillDirectory, { recursive: true });
   await writeFile(join(skillDirectory, "SKILL.md"), skill);
@@ -53,7 +49,7 @@ try {
         type: "local",
         command: [join(import.meta.dirname, "../node_modules/.bin/tsx"), join(import.meta.dirname, "eval-mcp.ts")],
         enabled: true,
-        environment: { DOJOFOO_EVAL_CALLS: callsFile },
+        environment: { DOJOFOO_EVAL_CALLS: callsFile, DOJOFOO_EVAL_COMPLETION_DECISIONS: "Pause" },
       },
     },
   };
@@ -61,12 +57,20 @@ try {
 
   for (const stage of stages) {
     await writeFile(callsFile, "");
+    await writeFile(join(root, "solution.ts"), lifecycleSolution(stage));
+    config.mcp.dojofoo.environment.DOJOFOO_EVAL_COMPLETION_DECISIONS = stage === "review" ? "Review,Pause" : "Pause";
     const startedAt = Date.now();
     const child = spawn(command, [
       "run", "--format", "json", "--pure", "--auto", "--dir", root, "--agent", "dojofoo-eval",
       ...(process.env.DOJOFOO_EVAL_MODEL ? ["--model", process.env.DOJOFOO_EVAL_MODEL] : []),
       lifecyclePrompt(stage),
-    ], { env: { ...process.env, OPENCODE_CONFIG_CONTENT: JSON.stringify(config) }, stdio: ["ignore", "pipe", "inherit"] });
+    ], {
+      env: {
+        ...process.env,
+        OPENCODE_CONFIG_CONTENT: JSON.stringify(config),
+      },
+      stdio: ["ignore", "pipe", "inherit"],
+    });
     let output = "";
     const timeout = setTimeout(() => child.kill("SIGTERM"), 90_000);
     child.stdout.setEncoding("utf8");

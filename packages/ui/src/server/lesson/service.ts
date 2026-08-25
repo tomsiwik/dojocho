@@ -159,8 +159,13 @@ would genuinely interrupt useful work. Never merely restate test counts because 
 Never test recall for syntax or terminology that the lesson has not introduced. When the learner says they
 do not know, teach the missing concept with a concrete example before probing again. Do not repeat a question
 at the same abstraction level: progress from explore, to ground, to contrast, to explain, to apply, to transfer.
-After tests pass, share the authored completion insight, call dojo_lesson_complete once without listing its choices, and wait.
-Move on advances the host after your reply; Review means Socratic feedback on their solution.`;
+After tests pass, share the authored completion insight, call dojo_lesson_complete without listing its choices, and wait.
+Move on is advanced by the host; acknowledge it briefly without trying to navigate or start a lesson yourself. Pause ends cleanly.
+Review is not a closing compliment. Inspect the supplied learner file, then teach a substantive retrospective grounded in the
+actual solution and the authored review topics. Explain useful distinctions, trade-offs, boundary behavior, and terminology;
+do not merely restate the implementation. Correct misconceptions directly. Choose two or three connected insights per review
+instead of reciting every available topic; another Review can go deeper. After the review, call dojo_lesson_complete again
+so the learner can review further, move on, or pause.`;
 
 export async function getLesson(root: string, requestedKata?: string): Promise<LessonSnapshot | null> {
   const rc = readDojoRc(root);
@@ -588,8 +593,10 @@ export async function nextLesson(
       writeWebState(root, state);
     }
   }
-  runDojo(root, ["kata", "--start"]);
-  const nextSnapshot = await getLesson(root);
+  const scaffoldPath = resolve(root, ".dojos", rc.currentDojo, next.template);
+  if (!existsSync(scaffoldPath)) throw new Error(`Lesson scaffold not found: ${next.name}`);
+  await writeLessonFile(root, rc.currentDojo, next.name, "solution", readFileSync(scaffoldPath, "utf8"));
+  const nextSnapshot = await getLesson(root, next.name);
   if (!nextSnapshot) throw new Error("No next lesson is available");
   return nextSnapshot;
 }

@@ -559,6 +559,22 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
     }
   }
 
+  async function continueLesson() {
+    if (!apiBase) return;
+    setBusy("Preparing the next lesson…");
+    try {
+      const response = await fetch(`${apiBase}/progressions`, { method: "POST" });
+      const body = await response.json() as LessonSnapshot | { error: string };
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : `Could not continue the course (${response.status})`);
+      }
+      await viewLesson(body.kata, body.dojo);
+    } catch (cause) {
+      setBusy("");
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
   async function check() {
     setActiveWorkspaceTab("tests");
     setChecking(true);
@@ -798,11 +814,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
               {completed && lesson.isCurrent && (
                 <Button
                   disabled={Boolean(busy)}
-                  onClick={() => {
-                    const index = lesson.lessons.findIndex((candidate) => candidate.name === lesson.kata);
-                    const next = lesson.lessons[index + 1];
-                    if (next) void viewLesson(next.name);
-                  }}
+                  onClick={() => void continueLesson()}
                   type="button"
                   variant="tertiary"
                 >

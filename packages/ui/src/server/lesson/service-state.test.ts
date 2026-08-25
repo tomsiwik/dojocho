@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readDojoRc } from "@dojofoo/config";
-import { dojoLessonContext, dojoLessonFragment, getLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
+import { dojoLessonContext, dojoLessonFragment, getLesson, nextLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
 
 const roots: string[] = [];
 
@@ -30,10 +30,16 @@ function freshCourse(): string {
     "katas:",
     "  - name: 001-first",
     "    template: katas/001-first/solution.ts",
+    "  - name: 002-second",
+    "    template: katas/002-second/solution.ts",
   ].join("\n"));
   writeFileSync(resolve(root, ".dojos", "starter", "DOJO.md"), "Teach carefully.");
   writeFileSync(resolve(lesson, "SENSEI.md"), "# First lesson\n\nBegin here.");
   writeFileSync(resolve(lesson, "solution.ts"), "export const answer = 0;\n");
+  const second = resolve(root, ".dojos", "starter", "katas", "002-second");
+  mkdirSync(second, { recursive: true });
+  writeFileSync(resolve(second, "SENSEI.md"), "# Second lesson\n\nContinue here.");
+  writeFileSync(resolve(second, "solution.ts"), "export const second = 0;\n");
   return root;
 }
 
@@ -76,6 +82,20 @@ describe("fresh lesson state", () => {
     });
     expect(readFileSync(resolve(root, "katas", "001-first", "solution.ts"), "utf8"))
       .toBe("export const answer = 1;\n");
+  });
+
+  it("advances by materializing the next lesson without spawning the CLI", async () => {
+    const root = freshCourse();
+    const rc = readDojoRc(root);
+    rc.currentKata = "001-first";
+    rc.progress = { starter: { completed: ["001-first"], lastActive: "001-first" } };
+    writeFileSync(resolve(root, ".dojorc"), `${JSON.stringify(rc)}\n`);
+
+    const next = await nextLesson(root, { checkpointCurrent: false });
+
+    expect(next).toMatchObject({ kata: "002-second", isCurrent: true, state: "ongoing" });
+    expect(readFileSync(resolve(root, "katas/002-second/solution.ts"), "utf8"))
+      .toBe("export const second = 0;\n");
   });
 
   it("allows only authored fragments from the active lesson", async () => {

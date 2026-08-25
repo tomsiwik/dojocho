@@ -4,6 +4,7 @@ import {
   answerSenseiQuestion,
   checkLesson,
   getLesson,
+  nextLesson,
   readLessonFile,
   setLessonModel,
   streamLessonIntroduction,
@@ -100,6 +101,21 @@ app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/checks", async (c) =
     }, 201);
   } catch (cause) {
     return c.json({ error: cause instanceof Error ? cause.message : "Could not run the lesson checks." }, 500);
+  }
+});
+
+app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/progressions", async (c) => {
+  try {
+    const { root, courseId, lessonId } = context(c);
+    const lesson = await getLesson(root, lessonId);
+    if (!lesson) return c.json({ error: "Lesson not found" }, 404);
+    assertCourse(lesson.dojo, courseId);
+    if (!lesson.result?.complete && lesson.state !== "completed") {
+      return c.json({ error: "Complete the current lesson before moving on" }, 409);
+    }
+    return c.json(await nextLesson(root));
+  } catch (cause) {
+    return c.json({ error: cause instanceof Error ? cause.message : "Could not continue the course" }, 409);
   }
 });
 
