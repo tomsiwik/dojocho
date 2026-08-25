@@ -16,19 +16,76 @@
 }
 
 @font-face {
-  font-family: "Geist Variable";
+  font-family: "Khand";
   font-style: normal;
   font-display: swap;
-  font-weight: 100 900;
-  src: url("@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2-variations");
+  font-weight: 400;
+  src: url("@fontsource/khand/files/khand-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Khand";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("@fontsource/khand/files/khand-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Khand";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/khand/files/khand-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Khand";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/khand/files/khand-latin-700-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/hind/files/hind-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("@fontsource/hind/files/hind-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("@fontsource/hind/files/hind-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Hind";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/hind/files/hind-latin-700-normal.woff2") format("woff2");
 }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Iosevka', monospace;
-  --font-mono: 'Iosevka', monospace;
-  --font-prose: 'Geist Variable', ui-sans-serif, sans-serif;
+  --font-display: "Khand", ui-sans-serif, sans-serif;
+  --font-sans: "Hind", ui-sans-serif, sans-serif;
+  --font-mono: "Iosevka", monospace;
+  --font-prose: "Hind", ui-sans-serif, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -69,9 +126,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-.font-prose :where(h1, h2, h3, h4, h5, h6, blockquote, q, pre, code, a, button, [role="button"]),
+.font-prose :where(pre, code),
 .font-prose :where(ol, ul) > li::marker {
   font-family: "Iosevka", monospace;
+}
+
+.font-prose :where(pre, code) {
+  font-size: 15px;
 }
 
 :root {
@@ -161,7 +222,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Iosevka', monospace;
+    font-family: var(--font-sans);
+  }
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
   }
 
   /* Make the docs sidebar share the page background instead of inheriting

@@ -35,6 +35,7 @@ import { ReasoningEffort } from "../components/elements/reasoning-effort";
 import { RecommendationCard } from "../components/elements/recommendation-card";
 import { ReviewableDiff, type DiffHunk } from "../components/elements/reviewable-diff";
 import { createCassetteAgent, LESSON_CASSETTE } from "./ag-ui-cassette";
+import { SESSION_COMPLETION_TIMEOUT_CASSETTE } from "./session-completion-timeout-cassette";
 
 interface ChatShowcaseProps {
   autoplay: boolean;
@@ -82,15 +83,19 @@ function ReasoningPart({ text, status }: ReasoningMessagePartProps) {
 function ToolPart({ toolName, args, result, status }: ToolCallMessagePartProps) {
   const [open, setOpen] = useState(true);
   const running = status.type === "running";
+  const renderedResult = result === undefined ? "Waiting for result…" : typeof result === "string" ? result : JSON.stringify(result, null, 2);
+  const failed = /(?:error|failed|timed out)/iu.test(renderedResult);
+  const completion = toolName === "dojofoo_dojo_lesson_complete";
   return (
     <ToolCall
       className="max-w-none"
-      label="Checked lesson"
-      activeLabel="Checking lesson"
+      label={failed ? "Completion prompt failed" : completion ? "Asked how to continue" : "Checked lesson"}
+      activeLabel={completion ? "Asking how to continue" : "Checking lesson"}
       query={toolName}
       request={JSON.stringify(args, null, 2)}
-      result={result === undefined ? "Waiting for result…" : JSON.stringify(result, null, 2)}
+      result={renderedResult}
       running={running}
+      error={failed}
       open={open}
       onOpenChange={setOpen}
     />
@@ -150,8 +155,8 @@ function RuntimeComposer() {
   );
 }
 
-function ProtocolChat({ autoplay, speed }: ChatShowcaseProps) {
-  const agent = useMemo(() => createCassetteAgent(LESSON_CASSETTE, speed), [speed]);
+function ProtocolChat({ autoplay, cassette = LESSON_CASSETTE, speed }: ChatShowcaseProps & { cassette?: readonly import("./ag-ui-cassette").CassetteEvent[] }) {
+  const agent = useMemo(() => createCassetteAgent(cassette, speed), [cassette, speed]);
   const runtime = useAgUiRuntime({ agent, showThinking: true });
   return (
     <AssistantRuntimeProvider runtime={runtime}>
@@ -279,6 +284,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const ProtocolKitchenSink: Story = {};
+export const CapturedCompletionTimeout: Story = {
+  render: (args) => <ProtocolChat {...args} cassette={SESSION_COMPLETION_TIMEOUT_CASSETTE} />,
+};
 export const LongRunningAgent: Story = { render: (args) => <LongRunning {...args} /> };
 export const HumanInputAndApproval: Story = { render: (args) => <HumanInTheLoop {...args} /> };
 export const RichLessonOutput: Story = { render: (args) => <RichLessonArtifacts {...args} /> };

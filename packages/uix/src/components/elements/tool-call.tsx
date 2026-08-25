@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, XIcon } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -22,6 +22,7 @@ export interface ToolCallProps {
   request: string;
   result: string;
   running: boolean;
+  error?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   className?: string;
@@ -34,6 +35,7 @@ export function ToolCall({
   request,
   result,
   running,
+  error = false,
   open,
   onOpenChange,
   className,
@@ -65,9 +67,10 @@ export function ToolCall({
           {query}
         </span>
         <span className="ms-auto flex w-4 items-center justify-end">
-          {!running && (
+          {!running && !error && (
             <CheckIcon className="fade-in zoom-in-90 animate-in size-3.5 text-emerald-500 duration-200" />
           )}
+          {error && <XIcon className="fade-in zoom-in-90 animate-in size-3.5 text-red-500 duration-200" />}
         </span>
       </CollapsibleTrigger>
       <CollapsibleContent className={cn(collapsePanel, "outline-none")}>

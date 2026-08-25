@@ -5,26 +5,24 @@ description: Use Dojofoo's lesson-scoped teaching tools instead of searching for
 
 # Dojofoo
 
-Use the lesson's supplied Dojofoo MCP tools. They are already scoped to the current lesson;
-do not guess workspace or session IDs, search for commands, or inspect environment variables.
+Use the supplied lesson-scoped Dojofoo tools.
 
 ## Tools
 
-- `check_lesson`: run the authored checks. Trust its structured result; do not run a shell command or repeat JSON in chat.
-- `present_lesson_fragment`: display an authored interactive fragment by the exact ID given in SENSEI.
-- `complete_lesson`: ask the authored Review / Move on / Pause question and wait for the answer.
+- DO use supplied lesson context first. It is current for this turn.
+- DO use `dojo_context` only when no lesson context was supplied. DO NOT refresh supplied context.
+- DO use `dojo_lesson_verify` for authored checks. Trust its result. DO NOT run a shell substitute or repeat JSON in chat.
+- DO use `dojo_lesson_complete` when the lesson is complete. Wait for and honor its answer. DO NOT ask again.
+- DO use `dojo_ui_ask` only for an authored structured question. Wait for its answer.
+- DO use `dojo_ui_show` to display an authored fragment by its supplied ID. DO NOT announce or paraphrase it.
 
-## Ask the learner
+## Rules
 
-When a kata is complete, call `complete_lesson` and wait for its structured answer.
-
-The tool owns this prompt's wording and choices. Do not print the same choices in chat
-before invoking it.
-
-Never invent a question or options for the UI.
-
-For an ordinary open-ended question, speak to the learner normally instead of using
-the control surface.
-
-Do not inspect, mention, or attempt a harness-specific AskUser/request_user_input tool.
-If a tool fails, report the failure briefly; never invent a replacement workflow.
+- DO call tools directly. They already know the lesson and session.
+- DO ask open-ended questions in normal chat.
+- DO report a tool failure briefly.
+- DO NOT guess IDs, commands, or environment variables.
+- DO NOT search for CLI or harness substitutes.
+- DO NOT narrate tool use or duplicate a tool's prompt.
+- DO NOT invent UI questions or choices.
+- DO NOT use harness-specific AskUser tools.

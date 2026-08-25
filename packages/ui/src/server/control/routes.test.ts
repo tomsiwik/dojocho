@@ -64,7 +64,7 @@ describe("local control-plane API", () => {
     const response = await buildControlRoutes({ stateHome, now: 200 }).request("/courses");
 
     expect(await response.json()).toEqual([
-      expect.objectContaining({ dojo: "starter", kata: null, runId: null }),
+      expect.objectContaining({ dojo: "starter", kata: "001-first", runId: null }),
     ]);
   });
 
@@ -121,6 +121,17 @@ describe("local control-plane API", () => {
 
   it("keeps completed lesson sessions addressable after the course advances", async () => {
     const { root, stateHome } = fixture();
+    writeFileSync(resolve(root, ".dojos", "starter", "dojo.yaml"), [
+      "name: '@test/starter'",
+      "version: 1.0.0",
+      "description: A kata course.",
+      "test: echo ok",
+      "katas:",
+      "  - name: 001-first",
+      "    template: katas/001-first/solution.ts",
+      "  - name: 002-second",
+      "    template: katas/002-second/solution.ts",
+    ].join("\n"));
     mkdirSync(resolve(root, ".dojo"), { recursive: true });
     writeFileSync(resolve(root, ".dojo", "web.json"), JSON.stringify({
       threads: {

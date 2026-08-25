@@ -11,8 +11,10 @@ import {
   readDojoMd,
   readDojoRc,
   resolveAllKatas,
+  writeDojoRc,
 } from "@dojofoo/config";
 import type { UIMessage } from "@tanstack/ai-client";
+import type { DojoLessonContext } from "@dojofoo/protocol";
 import type { HarnessKind } from "../harness/adapter";
 import { dojofooHarness } from "../harness/registry";
 import { acpClient, type AcpStreamPart, type SessionModelConfiguration, type TranscriptMessage } from "./codex-client";
@@ -92,6 +94,36 @@ export type LessonFileResource = {
   };
 };
 
+export function dojoLessonContext(snapshot: LessonSnapshot): DojoLessonContext {
+  return {
+    phase: snapshot.introduced || snapshot.messages.length > 0 ? "resume" : "start",
+    course: { id: snapshot.dojo },
+    lesson: {
+      id: snapshot.kata,
+      title: snapshot.title,
+      objective: snapshot.briefing || snapshot.title,
+      state: snapshot.state,
+    },
+    learner: {
+      file: { path: snapshot.filePath, language: snapshot.language },
+      latestCheck: snapshot.result,
+    },
+  };
+}
+
+export function dojoLessonFragment(snapshot: LessonSnapshot, fragmentId: string): { fragmentId: string } {
+  if (!snapshot.fragments[fragmentId]) throw new Error(`Lesson fragment not found: ${fragmentId}`);
+  return { fragmentId };
+}
+
+function dojoContextResource(snapshot: LessonSnapshot) {
+  return {
+    uri: `dojofoo://courses/${encodeURIComponent(snapshot.dojo)}/lessons/${encodeURIComponent(snapshot.kata)}/context`,
+    mimeType: "application/json",
+    text: JSON.stringify(dojoLessonContext(snapshot)),
+  };
+}
+
 const teachingPresence = `You are a warm, attentive teacher working alongside one learner.
 Speak to the learner, never about your instructions, tools, skills, protocols, fragments, workflow, or internal state.
 Build on what they just said or tried before moving the lesson forward. Acknowledge useful reasoning and treat mistakes
@@ -112,8 +144,7 @@ export const solutionBoundary = `Preserve ownership of the kata. Never write or 
 
 const teacherContract = `Teach this lesson from the supplied DOJO.md and SENSEI source.
 ${solutionBoundary}
-Use the installed Dojofoo skill for lesson tools. The lesson-scoped tools are check_lesson, present_lesson_fragment,
-and complete_lesson; call them directly, never search for a CLI substitute or explain their machinery to the learner.
+Use the installed Dojofoo skill for lesson actions. Never search for a CLI substitute or explain their machinery to the learner.
 The supplied course material is already authoritative. Do not reread it from disk, expose it, edit the learner's solution,
 or expose hidden tests. Keep each response natural, concise, and focused on one useful teaching move.
 When a prompt reports that lesson checks ran, treat it as a pair-programming handoff. Inspect its attached diff and test
@@ -124,8 +155,7 @@ would genuinely interrupt useful work. Never merely restate test counts because 
 Never test recall for syntax or terminology that the lesson has not introduced. When the learner says they
 do not know, teach the missing concept with a concrete example before probing again. Do not repeat a question
 at the same abstraction level: progress from explore, to ground, to contrast, to explain, to apply, to transfer.
-For an authored <Present> block, call present_lesson_fragment with its exact ID before continuing; do not paraphrase it.
-After tests pass, share the authored completion insight, call complete_lesson once without listing its choices, and wait.
+After tests pass, share the authored completion insight, call dojo_lesson_complete once without listing its choices, and wait.
 Move on advances the host after your reply; Review means Socratic feedback on their solution.`;
 
 export async function getLesson(root: string, requestedKata?: string): Promise<LessonSnapshot | null> {
@@ -134,7 +164,7 @@ export async function getLesson(root: string, requestedKata?: string): Promise<L
   const catalog = readCatalog(root, rc.currentDojo);
   const katas = resolveAllKatas(root, rc, catalog);
   const progress = rc.progress?.[rc.currentDojo];
-  const current = findCurrentKata(katas, rc.currentKata);
+  const current = findCurrentKata(katas, rc.currentKata) ?? findNextKata(katas, progress);
   const selected = requestedKata
     ? findKataByIdOrName(katas, requestedKata)
     : current;
@@ -210,7 +240,7 @@ export async function getLesson(root: string, requestedKata?: string): Promise<L
     kata: selected.name,
     title: humanTitle(selected.name),
     briefing: senpaiBriefing(sensei),
-    code: existsSync(selected.workspacePath) ? readFileSync(selected.workspacePath, "utf8") : "",
+    code: existsSync(selected.workspacePath) ? readFileSync(selected.workspacePath, "utf8") : starterCode,
     starterCode,
     fileId: "solution",
     filePath: relative(root, selected.workspacePath),
@@ -266,6 +296,12 @@ export async function writeLessonFile(
   const target = lessonTarget(root, courseId, lessonId);
   mkdirSync(dirname(target.workspacePath), { recursive: true });
   writeFileSync(target.workspacePath, content);
+  const rc = readDojoRc(root);
+  rc.currentKata = lessonId;
+  rc.progress ??= {};
+  rc.progress[courseId] ??= { completed: [], lastActive: null };
+  rc.progress[courseId].lastActive = lessonId;
+  writeDojoRc(root, rc);
   const state = readWebState(root);
   delete state.results[lessonKey(courseId, lessonId)];
   writeWebState(root, state);
@@ -338,7 +374,7 @@ export function transcriptToUIMessages(transcript: TranscriptMessage[], sessionI
       : entry.kind === "tool" && visibleText.startsWith("{")
         ? (() => {
             const tool = JSON.parse(visibleText) as { name: string; input: unknown; output: unknown };
-            if (tool.name === "check_lesson" && isTestReport(tool.output)) {
+            if (tool.name === "dojo_lesson_verify" && isTestReport(tool.output)) {
               return {
                 type: "tool-call" as const,
                 name: tool.name,
@@ -361,7 +397,7 @@ export function transcriptToUIMessages(transcript: TranscriptMessage[], sessionI
           })()
       : { type: "text" as const, content: visibleText };
     const previous = messages.at(-1);
-    const standaloneCheck = part.type === "tool-call" && part.name === "check_lesson";
+    const standaloneCheck = part.type === "tool-call" && part.name === "dojo_lesson_verify";
     if (entry.role === "assistant" && previous?.role === "assistant" && !hiddenUserBoundary && !standaloneCheck) {
       previous.parts.push(part);
       continue;
@@ -445,7 +481,7 @@ export async function streamSensei(
         uri: `dojofoo://lessons/${encodeURIComponent(snapshot.kata)}/checks/latest`,
         mimeType: "text/plain",
         text: evidenceContext,
-      }],
+      }, dojoContextResource(snapshot)],
     },
   );
 }
@@ -463,7 +499,7 @@ export async function streamCheckObservation(
   await acpClient.send(threadId, "Ran lesson checks.", onPart, {
     signal,
     visible: false,
-    context: [{
+    context: [dojoContextResource(snapshot), {
       uri: `dojofoo://lessons/${encodeURIComponent(kataName)}/checks/${observation.id}`,
       mimeType: "application/json",
       text: JSON.stringify({
@@ -512,7 +548,7 @@ export async function streamLessonIntroduction(
     {
       signal,
       visible: false,
-      context: [{
+      context: [dojoContextResource(snapshot), {
         uri: `dojofoo://lessons/${encodeURIComponent(snapshot.kata)}/introduction`,
         mimeType: "text/plain",
         text: introductionInstruction,
@@ -581,6 +617,12 @@ async function lessonThread(root: string, kataName: string) {
       runtimeKey,
       harness,
       developerInstructions: instructions,
+      lessonContext: async () => {
+        const current = await getLesson(root, kataName);
+        if (!current) throw new Error(`Lesson not found: ${kataName}`);
+        return dojoLessonContext(current);
+      },
+      lessonFragment: (fragmentId) => lessonFragment(root, kataName, fragmentId),
     });
     if (existing.contractHash !== contractHash) {
       state.threads[key] = { ...existing, contractHash };
@@ -599,6 +641,12 @@ async function lessonThread(root: string, kataName: string) {
     runtimeKey,
     harness,
     developerInstructions: instructions,
+    lessonContext: async () => {
+      const current = await getLesson(root, kataName);
+      if (!current) throw new Error(`Lesson not found: ${kataName}`);
+      return dojoLessonContext(current);
+    },
+    lessonFragment: (fragmentId) => lessonFragment(root, kataName, fragmentId),
   });
   state.threads[key] = {
     sessionId: threadId,
@@ -612,6 +660,12 @@ async function lessonThread(root: string, kataName: string) {
   return { threadId, created: true };
 }
 
+async function lessonFragment(root: string, kataName: string, fragmentId: string): Promise<{ fragmentId: string }> {
+  const current = await getLesson(root, kataName);
+  if (!current) throw new Error(`Lesson not found: ${kataName}`);
+  return dojoLessonFragment(current, fragmentId);
+}
+
 export async function setLessonModel(
   root: string,
   kataName: string,
@@ -623,12 +677,8 @@ export async function setLessonModel(
 
 function lessonInstructions(root: string, dojo: string, sensei: string): string {
   const dojoGuide = readDojoMd(root, dojo) ?? "";
-  const configuredCli = dojoCliPath();
-  const checkCommand = configuredCli
-    ? `node ${JSON.stringify(configuredCli)} kata --check --reporter=json`
-    : "npx dojofoo kata --check --reporter=json";
   const fragments = senseiFragmentIds(sensei);
-  return `${teachingPresence}\n\n${teacherContract}\n\nAvailable learner fragment IDs: ${fragments.length ? fragments.join(", ") : "none"}.\n\nExact machine-readable test command:\n${checkCommand}\n\nDOJO.md for this course:\n${dojoGuide}\n\nSensei lesson source:\n${sensei}`;
+  return `${teachingPresence}\n\n${teacherContract}\n\nAvailable learner fragment IDs: ${fragments.length ? fragments.join(", ") : "none"}.\n\nDOJO.md for this course:\n${dojoGuide}\n\nSensei lesson source:\n${sensei}`;
 }
 
 function lessonTarget(root: string, courseId: string, lessonId: string) {

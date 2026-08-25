@@ -1,11 +1,29 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseManifest, resolveConfig, validateManifest } from "../src/config";
+import { loadConfig, parseManifest, resolveConfig, validateManifest } from "../src/config";
 
 describe("configuration defaults", () => {
   it("uses the stable Vercel registry while the custom domain DNS is unavailable", () => {
     expect(resolveConfig({}, "/tmp/dojofoo").registries).toMatchObject({
       dojofoo: "https://dojofoo.vercel.app/r/{name}.json",
     });
+  });
+
+  it("loads the legacy generated config without requiring @dojofoo/config", () => {
+    const root = mkdtempSync(join(tmpdir(), "dojofoo-config-"));
+    try {
+      writeFileSync(resolve(root, "dojo.config.ts"), [
+        'import { defineConfig } from "@dojofoo/config"',
+        "",
+        "export default defineConfig()",
+      ].join("\n"));
+
+      expect(loadConfig(root).katasPath).toBe(resolve(root, "katas"));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

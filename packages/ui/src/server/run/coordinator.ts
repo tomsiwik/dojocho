@@ -4,22 +4,42 @@ export type RunQuestion = {
 };
 
 type QuestionHandler = (question: RunQuestion) => Promise<Record<string, string[]>>;
+type ContextHandler = () => Promise<unknown> | unknown;
+type ShowHandler = (fragmentId: string) => Promise<{ fragmentId: string }> | { fragmentId: string };
+
+type RunHandlers = {
+  ask: QuestionHandler;
+  context: ContextHandler;
+  show: ShowHandler;
+};
 
 export class RunCoordinator {
-  private readonly questions = new Map<string, QuestionHandler>();
+  private readonly runs = new Map<string, RunHandlers>();
 
-  attach(capability: string, handler: QuestionHandler): void {
-    this.questions.set(capability, handler);
+  attach(capability: string, handlers: RunHandlers): void {
+    this.runs.set(capability, handlers);
   }
 
   detach(capability: string): void {
-    this.questions.delete(capability);
+    this.runs.delete(capability);
   }
 
   ask(capability: string, question: RunQuestion): Promise<Record<string, string[]>> {
-    const handler = this.questions.get(capability);
-    if (!handler) return Promise.reject(new Error("The lesson run is no longer active"));
-    return handler(question);
+    const run = this.runs.get(capability);
+    if (!run) return Promise.reject(new Error("The lesson run is no longer active"));
+    return run.ask(question);
+  }
+
+  async context(capability: string): Promise<unknown> {
+    const run = this.runs.get(capability);
+    if (!run) throw new Error("The lesson run is no longer active");
+    return run.context();
+  }
+
+  async show(capability: string, fragmentId: string): Promise<{ fragmentId: string }> {
+    const run = this.runs.get(capability);
+    if (!run) throw new Error("The lesson run is no longer active");
+    return run.show(fragmentId);
   }
 }
 

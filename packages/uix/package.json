@@ -7,12 +7,14 @@
     "**/*.css"
   ],
   "imports": {
+    "#components/motion/popover-position": "./src/components/motion/popover-position.ts",
     "#components/*": "./src/components/*.tsx",
     "#hooks/*": "./src/hooks/*.ts",
     "#lib/*": "./src/lib/*.ts"
   },
   "exports": {
     "./styles.css": "./src/styles.css",
+    "./components/elements/*": "./src/components/elements/*.tsx",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts"

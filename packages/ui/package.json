@@ -43,6 +43,7 @@
     "vite": "^8.2.1"
   },
   "dependencies": {
+    "@dojofoo/avatar": "workspace:*",
     "@a2a-js/sdk": "0.3.14",
     "@agentclientprotocol/codex-acp": "^1.4.0",
     "@agentclientprotocol/sdk": "^1.3.0",
@@ -57,6 +58,9 @@
     "@codemirror/lint": "^6.9.4",
     "@codemirror/view": "^6.43.8",
     "@dojofoo/config": "workspace:*",
+    "@dojofoo/protocol": "workspace:*",
+    "@dojofoo/uix": "workspace:*",
+    "@fontsource/hind": "5.3.0",
     "@fontsource/iosevka": "^5.3.0",
     "@fontsource/khand": "5.3.0",
     "@lezer/highlight": "^1.2.3",
@@ -93,6 +97,7 @@
     "streamdown": "^2.5.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
-    "tokenlens": "^1.3.1"
+    "tokenlens": "^1.3.1",
+    "tw-shimmer": "^0.4.12"
   }
 }

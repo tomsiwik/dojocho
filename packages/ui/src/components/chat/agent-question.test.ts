@@ -18,6 +18,6 @@ describe("agent questions", () => {
   });
 
   it("does not mistake an ordinary tool for a question", () => {
-    expect(isAgentQuestion({ ...choice, name: "check_lesson" })).toBe(false);
+    expect(isAgentQuestion({ ...choice, name: "dojo_lesson_verify" })).toBe(false);
   });
 });

@@ -15,8 +15,8 @@ describe("formatThinkingSteps", () => {
   });
 
   it("preserves ordinary thought content without inventing a label", () => {
-    expect(formatThinkingSteps("**Running check_lesson**\nComparing the latest failures with the previous attempt.")).toEqual([
-      { content: "**Running check_lesson**\nComparing the latest failures with the previous attempt." },
+    expect(formatThinkingSteps("**Running dojo_lesson_verify**\nComparing the latest failures with the previous attempt.")).toEqual([
+      { content: "**Running dojo_lesson_verify**\nComparing the latest failures with the previous attempt." },
     ]);
   });
 });

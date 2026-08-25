@@ -78,11 +78,11 @@ function RegexWorkbench({ attributes }: { attributes: Record<string, string> }) 
   }
   return (
     <figure className="border border-border bg-background p-4 font-sans text-sm text-foreground">
-      <figcaption className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Regex workbench</figcaption>
+      <figcaption className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Regex workbench</figcaption>
       <div className="mt-4 grid gap-px bg-border sm:grid-cols-3">
-        <div className="bg-surface-1 p-3"><span className="block text-[10px] uppercase tracking-wider text-muted-foreground">Input</span><code className="mt-1 block whitespace-pre-wrap">{JSON.stringify(input)}</code></div>
-        <div className="bg-surface-1 p-3"><span className="block text-[10px] uppercase tracking-wider text-muted-foreground">Pattern</span><code className="mt-1 block">/{pattern}/{flags}</code></div>
-        <div className="bg-surface-1 p-3"><span className="block text-[10px] uppercase tracking-wider text-muted-foreground">Output</span><code className="mt-1 block whitespace-pre-wrap">{JSON.stringify(output)}</code></div>
+        <div className="bg-surface-1 p-3"><span className="block font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Input</span><code className="mt-1 block whitespace-pre-wrap">{JSON.stringify(input)}</code></div>
+        <div className="bg-surface-1 p-3"><span className="block font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Pattern</span><code className="mt-1 block">/{pattern}/{flags}</code></div>
+        <div className="bg-surface-1 p-3"><span className="block font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Output</span><code className="mt-1 block whitespace-pre-wrap">{JSON.stringify(output)}</code></div>
       </div>
     </figure>
   );

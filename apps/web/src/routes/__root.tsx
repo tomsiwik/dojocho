@@ -36,7 +36,7 @@ function RootLayout() {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen antialiased flex flex-col" suppressHydrationWarning>
+      <body className="min-h-screen antialiased flex flex-col font-sans" suppressHydrationWarning>
         <RootProvider
           theme={{ defaultTheme: "dark" }}
           search={{ SearchDialog }}

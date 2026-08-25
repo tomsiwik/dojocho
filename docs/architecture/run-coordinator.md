@@ -17,8 +17,18 @@ run. Local tool processes receive an ephemeral capability, not a run or thread I
 The capability is valid only while its harness runtime is attached and lets the
 coordinator route a command to that run.
 
+The server injects a compact, private lesson context into every ACP turn. It contains
+the start/resume phase, course and lesson identity, objective, progress state, learner
+file, and latest check. This bootstrap survives harness compaction because it is owned
+by the server, not chat history. Agents can recover fresh context with `dojo_context`
+(`dojo.context`) and can ask an authored structured question with `dojo_ui_ask`
+(`dojo.ui.ask`). Neither operation requires a session ID.
+Authored `<Present>` content uses `dojo_ui_show` (`dojo.ui.show`). The coordinator
+validates the fragment against the active lesson before the existing chat renderer
+displays it; arbitrary agent-authored content cannot enter that surface.
+
 Structured questions prefer protocol-native elicitation. OpenCode currently rejects
-elicitation initiated by an MCP server, so the `complete_lesson` MCP tool uses the
+elicitation initiated by an MCP server, so the `dojo_lesson_complete` MCP tool uses the
 same coordinator as a compatibility adapter: it blocks while the existing ACP chat
 question component collects an answer, then returns that answer as the MCP tool
 result. This compatibility is isolated from browser routing and persistent state.

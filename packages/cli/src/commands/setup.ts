@@ -1,9 +1,7 @@
 import { existsSync, mkdirSync, lstatSync, readFileSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
-import { execSync } from "node:child_process";
 import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CLI, DOJOS_DIR, readDojoRc, writeDojoRc, type DojoRc } from "../config";
-import { pmCommands } from "../pm";
 import { prompt, invokeAsk } from "../format";
 
 export const AGENTS = {
@@ -99,9 +97,12 @@ Source can be:
 Once a dojo is added, use \`/kata\` in your coding agent to begin.
 `;
 
-const DOJO_CONFIG = `import { defineConfig } from "@dojofoo/config"
+const LEGACY_DOJO_CONFIG = `import { defineConfig } from "@dojofoo/config"
 
 export default defineConfig()
+`;
+
+const DOJO_CONFIG = `export default {}
 `;
 
 
@@ -174,6 +175,8 @@ function scaffold(root: string): void {
   const configPath = resolve(root, "dojo.config.ts");
   if (!existsSync(configPath)) {
     writeFileSync(configPath, DOJO_CONFIG);
+  } else if (readFileSync(configPath, "utf8") === LEGACY_DOJO_CONFIG) {
+    writeFileSync(configPath, DOJO_CONFIG);
   }
 
   const tsconfigPath = resolve(root, "tsconfig.json");
@@ -205,19 +208,6 @@ function scaffold(root: string): void {
     );
   }
 
-
-  const pm = pmCommands(root);
-  console.log("Installing @dojofoo/config...");
-  try {
-    execSync(pm.add("@dojofoo/config"), { cwd: root, stdio: "pipe" });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const firstLine = msg.split("\n").find((l) => l.includes("ERR_") || l.includes("error"))
-      ?? msg.split("\n")[0];
-    console.warn(`! Could not install @dojofoo/config: ${firstLine.trim()}`);
-    console.warn(`  Continuing setup. Install it manually later (e.g. when authoring katas):`);
-    console.warn(`    ${pm.add("@dojofoo/config")}`);
-  }
 }
 
 function symlinkCanonical(root: string, agent: AgentName, name: "dojo" | "kata"): void {

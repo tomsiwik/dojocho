@@ -58,6 +58,8 @@ type RuntimeConfiguration = {
   runtimeKey: string;
   harness?: HarnessKind;
   developerInstructions: string;
+  lessonContext?: () => Promise<unknown> | unknown;
+  lessonFragment?: (fragmentId: string) => Promise<{ fragmentId: string }> | { fragmentId: string };
 };
 
 interface AcpRuntime {
@@ -67,6 +69,8 @@ interface AcpRuntime {
   harness: HarnessKind;
   root: string;
   developerInstructions: string;
+  lessonContext: () => Promise<unknown> | unknown;
+  lessonFragment: (fragmentId: string) => Promise<{ fragmentId: string }> | { fragmentId: string };
   capability: string;
   loadedSessions: Set<string>;
   loadingSessions: Map<string, Promise<void>>;
@@ -93,6 +97,7 @@ export class AcpClient {
   private turnActivity = new Map<string, () => void>();
   private toolCalls = new Map<string, Map<string, {
     command?: string;
+    input: unknown;
     transcriptIndex: number;
     output: string;
     title: string;
@@ -387,13 +392,22 @@ export class AcpClient {
         harness: configuration.harness ?? "codex",
         root: configuration.root,
         developerInstructions: configuration.developerInstructions,
+        lessonContext: configuration.lessonContext ?? (() => ({})),
+        lessonFragment: configuration.lessonFragment ?? ((fragmentId) => ({ fragmentId })),
         capability: crypto.randomUUID(),
         loadedSessions: new Set(),
         loadingSessions: new Map(),
         ready: null,
       };
       this.runtimes.set(configuration.runtimeKey, runtime);
-      runCoordinator.attach(runtime.capability, (question) => this.askRunQuestion(runtime!, question));
+      runCoordinator.attach(runtime.capability, {
+        ask: (question) => this.askRunQuestion(runtime!, question),
+        context: () => runtime!.lessonContext(),
+        show: (fragmentId) => runtime!.lessonFragment(fragmentId),
+      });
+    } else {
+      if (configuration.lessonContext) runtime.lessonContext = configuration.lessonContext;
+      if (configuration.lessonFragment) runtime.lessonFragment = configuration.lessonFragment;
     }
     if (!runtime.ready) runtime.ready = this.initialize(configuration.runtimeKey, runtime);
     await runtime.ready;
@@ -448,6 +462,12 @@ export class AcpClient {
       secret: false,
     }];
     this.callbacks.get(sessionId)?.({
+      type: "tool-input-start",
+      toolCallId: request.toolCall.toolCallId,
+      toolName: "request_permission",
+      dynamic: true,
+    });
+    this.callbacks.get(sessionId)?.({
       type: "tool-input-available",
       toolCallId: request.toolCall.toolCallId,
       toolName: "request_permission",
@@ -486,6 +506,12 @@ export class AcpClient {
     });
     const toolCallId = form.toolCallId ?? crypto.randomUUID();
     this.callbacks.get(sessionId)?.({
+      type: "tool-input-start",
+      toolCallId,
+      toolName: "elicitation",
+      dynamic: true,
+    });
+    this.callbacks.get(sessionId)?.({
       type: "tool-input-available",
       toolCallId,
       toolName: "elicitation",
@@ -501,6 +527,12 @@ export class AcpClient {
     const sessionId = [...runtime.loadedSessions].find((candidate) => this.activeTurns.has(candidate));
     if (!sessionId) return Promise.reject(new Error("The lesson agent is not in an active turn"));
     const toolCallId = crypto.randomUUID();
+    this.callbacks.get(sessionId)?.({
+      type: "tool-input-start",
+      toolCallId,
+      toolName: "elicitation",
+      dynamic: true,
+    });
     this.callbacks.get(sessionId)?.({
       type: "tool-input-available",
       toolCallId,
@@ -567,18 +599,19 @@ export class AcpClient {
     } else if (update.sessionUpdate === "tool_call") {
       this.finishOpenParts(sessionId);
       const command = toolCommand(update);
-      const toolName = isLessonCheckCommand(command) || /(?:^|[._])check_lesson$/u.test(update.title) ? "check_lesson" : update.title;
+      const toolName = isLessonCheckCommand(command) || /(?:^|[._])dojo_lesson_verify$/u.test(update.title) ? "dojo_lesson_verify" : update.title;
+      const input = update.rawInput ?? update;
       callback?.({ type: "tool-input-start", toolCallId: update.toolCallId, toolName, dynamic: true });
-      callback?.({ type: "tool-input-available", toolCallId: update.toolCallId, toolName, input: update, dynamic: true });
+      callback?.({ type: "tool-input-available", toolCallId: update.toolCallId, toolName, input, dynamic: true });
       const transcript = this.transcript(sessionId);
       const transcriptIndex = transcript.push({
         role: "assistant",
         kind: "tool",
-        text: JSON.stringify({ name: toolName, input: update, output: null }),
+        text: JSON.stringify({ name: toolName, input, output: null }),
         startedAt: this.turnStartedAt.get(sessionId) ?? Date.now(),
       }) - 1;
       const calls = this.toolCalls.get(sessionId) ?? new Map();
-      calls.set(update.toolCallId, { command, transcriptIndex, output: "", title: toolName });
+      calls.set(update.toolCallId, { command, input, transcriptIndex, output: "", title: toolName });
       this.toolCalls.set(sessionId, calls);
       this.openParts.delete(sessionId);
       return;
@@ -587,13 +620,13 @@ export class AcpClient {
       if (call) call.output += toolOutputDelta(update);
       if (update.status === "completed" || update.status === "failed") {
         const rawOutput = toolRawOutput(update) || call?.output || "";
-        const report = call?.title === "check_lesson" ? findTestReport(update.rawOutput) ?? parseJsonObject(rawOutput) : null;
+        const report = call?.title === "dojo_lesson_verify" ? findTestReport(update.rawOutput) ?? parseJsonObject(rawOutput) : null;
         const output = report ?? update;
         callback?.({ type: "tool-output-available", toolCallId: update.toolCallId, output, dynamic: true });
         if (call) {
           const entry = this.transcript(sessionId)[call.transcriptIndex];
           if (entry) {
-            entry.text = JSON.stringify({ name: call.title, input: { command: call.command }, output });
+            entry.text = JSON.stringify({ name: call.title, input: call.input, output });
             entry.completedAt = Date.now();
           }
           this.toolCalls.get(sessionId)?.delete(update.toolCallId);
@@ -692,6 +725,7 @@ function decodePromptResource(text: string): string {
 
 function projectDojoResource(uri: string, text: string): UserTextProjection[] {
   if (uri === "dojofoo://sensei/instructions") return [];
+  if (uri.startsWith("dojofoo://courses/") && uri.endsWith("/context")) return [];
   if (uri.startsWith("dojofoo://lessons/") && uri.endsWith("/checks/latest")) {
     return [{ role: "assistant", kind: "reasoning", text }];
   }
@@ -701,7 +735,7 @@ function projectDojoResource(uri: string, text: string): UserTextProjection[] {
       return [{
         role: "assistant",
         kind: "tool",
-        text: JSON.stringify({ name: "check_lesson", input: {}, output: output.report ?? output }),
+        text: JSON.stringify({ name: "dojo_lesson_verify", input: {}, output: output.report ?? output }),
       }];
     } catch {
       return [];

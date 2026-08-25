@@ -21,7 +21,7 @@
       {
         "type": "tool-call",
         "id": "check-latest",
-        "name": "check_lesson",
+        "name": "dojo_lesson_verify",
         "arguments": "{}",
         "input": {},
         "state": "complete",
@@ -47,7 +47,7 @@
           "text": "regex-whitespace"
         },
         "toolCallId": "present-1",
-        "toolName": "present_lesson_fragment"
+        "toolName": "dojo_ui_show"
       },
       {
         "type": "tool-call",
@@ -63,7 +63,7 @@
       {
         "type": "tool-call",
         "id": "check-1",
-        "name": "check_lesson",
+        "name": "dojo_lesson_verify",
         "arguments": "{\"lesson\":\"normalize-handle\"}",
         "input": { "lesson": "normalize-handle" },
         "state": "complete",

@@ -822,10 +822,9 @@ const CardEyebrow = forwardRef<HTMLSpanElement, HTMLAttributes<HTMLSpanElement>>
         data-slot="card-eyebrow"
         className={cn(
           compact ? "text-[11px]" : "text-[12px]",
-          "uppercase tracking-wide text-muted-foreground",
+          "font-display font-medium uppercase tracking-[0.14em] text-muted-foreground",
           className
         )}
-        style={{ fontVariationSettings: fontWeights.semibold }}
         {...props}
       />
     );

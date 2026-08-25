@@ -17,12 +17,14 @@ test("keeps recovered chat history on the first cold session render", async ({ p
   };
   const expectedText = lesson.messages
     .flatMap(({ parts }) => parts)
-    .find(({ content, type }) => type === "text" && content?.trim())?.content?.trim();
+    .find(({ content, type }) => type === "text" && content?.trim() && !content.startsWith("[dojo"))?.content?.trim();
   test.skip(!expectedText, "The resumable session has no visible transcript");
 
   await page.goto(`/session/${course.sessionId}`);
 
-  await expect(page.getByTestId("chat-pane")).toContainText(expectedText!.slice(0, 80));
+  const chat = page.getByTestId("chat-pane");
+  await expect(chat).toContainText(expectedText!.replaceAll("`", "").slice(0, 80));
+  await expect(chat).not.toContainText("dojofoo://lessons/");
 });
 
 test("keeps a completed check turn before and after transcript recovery", async ({ page }) => {
@@ -38,7 +40,7 @@ test("keeps a completed check turn before and after transcript recovery", async 
     `/api/workspaces/${course!.workspaceId}/courses/${course!.dojo}/lessons/${course!.kata}`,
   ).then((response) => response.json()) as { messages: Array<{ parts: Array<{ type: string; name?: string }> }> };
   const recoveredChecks = snapshot.messages.flatMap(({ parts }) => parts)
-    .filter(({ name, type }) => type === "tool-call" && name === "check_lesson").length;
+    .filter(({ name, type }) => type === "tool-call" && name === "dojo_lesson_verify").length;
 
   await page.goto(`/session/${course!.sessionId}`);
   const chat = page.getByTestId("chat-pane");
