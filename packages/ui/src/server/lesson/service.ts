@@ -519,7 +519,7 @@ export async function streamLessonIntroduction(
   if (!snapshot) throw new Error("No lesson selected");
   if (!shouldIntroduceLesson(snapshot)) return;
   const { threadId } = await lessonThread(root, snapshot.kata);
-  const introductionInstruction = "Introduce this lesson in your own words. Explain the goal, present only the prerequisite context needed to begin, and invite the learner to take the first small step. Do not provide solution code.";
+  const introductionInstruction = "The learner can already see the lesson goal and tasks, so do not repeat them. Inspect their solution file, orient them to one useful starting point, and invite one small first step without providing solution code. Point to relevant lines with [highlight:L3] or [highlight:L3-4].";
   await acpClient.send(
     threadId,
     "Begin the lesson.",

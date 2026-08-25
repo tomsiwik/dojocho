@@ -64,17 +64,14 @@ function acpPartEvents(part: AcpStreamPart): StreamChunk[] {
 
 export async function* streamAcpAsAgUi({
   execute,
-  reveal = "immediate",
   runId,
   threadId,
 }: {
   execute: StreamRun;
-  reveal?: "immediate" | "first-assistant-text";
   runId: string;
   threadId: string;
 }): AsyncGenerator<StreamChunk> {
   const queued: StreamChunk[] = [{ type: EventType.RUN_STARTED, runId, threadId }];
-  let revealed = reveal === "immediate";
   let settled = false;
   let wake: (() => void) | undefined;
 
@@ -83,10 +80,6 @@ export async function* streamAcpAsAgUi({
     wake = undefined;
   };
   void execute((part) => {
-    if (!revealed) {
-      if (part.type !== "text-start") return;
-      revealed = true;
-    }
     queued.push(...acpPartEvents(part));
     notify();
   }).then(

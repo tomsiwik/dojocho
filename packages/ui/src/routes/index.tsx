@@ -54,6 +54,7 @@ import { chatAcceptsInput, isInternalLessonMessage, lessonNeedsIntroduction } fr
 import { cn } from "@/lib/utils";
 import { AgentQuestion, isAgentQuestion, parseAgentQuestions } from "@/components/chat/agent-question";
 import { useChatWorkTiming, type ChatWorkTiming } from "@/lib/chat-work-timing";
+import { codeHighlight, codeHighlights, type CodeHighlight } from "@/lib/code-highlight";
 
 const CodeEditor = lazy(() => import("@/components/code-editor"));
 const INTRODUCTION_MESSAGE = "[dojo:begin-lesson]";
@@ -365,6 +366,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   const [coursesReady, setCoursesReady] = useState(false);
   const [workspaceId, setWorkspaceId] = useState("");
   const [code, setCode] = useState("");
+  const [editorHighlight, setEditorHighlight] = useState<(CodeHighlight & { nonce: number }) | undefined>();
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"code" | "tests">("code");
   const [checking, setChecking] = useState(false);
   const [liveTests, setLiveTests] = useState<TestReport["tests"]>([]);
@@ -410,6 +412,10 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   const dirty = lesson ? code !== lesson.code : false;
   messagesRef.current = messages;
   const timelineMessages = useMemo(() => projectChatTimeline(messages, hostChatEvents), [hostChatEvents, messages]);
+  const highlightCode = useCallback((highlight: CodeHighlight) => {
+    setActiveWorkspaceTab("code");
+    setEditorHighlight((current) => ({ ...highlight, nonce: (current?.nonce ?? 0) + 1 }));
+  }, []);
 
   const metadataTarget = useMemo(() => ({ setCode, setLesson }), []);
   const setStreamedMessagesRef = useRef(setStreamedMessages);
@@ -915,6 +921,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                         failedLines={failureLines(lesson.result, lesson.filePath)}
                         filePath={lesson.filePath}
                         language={lesson.language}
+                        highlight={editorHighlight}
                         lineHits={lesson.result?.coverage?.lineHits}
                         key={lesson.kata}
                         onChange={setCode}
@@ -988,6 +995,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                     fragments={lesson.fragments}
                     key={message.id}
                     message={message}
+                    onHighlight={highlightCode}
                     onToolAnswer={answerTool}
                     streaming={chatIsWorking && message.id === messages.at(-1)?.id}
                     timing={message.id === messages.at(-1)?.id ? chatWorkTiming : undefined}
@@ -1249,6 +1257,7 @@ export function StreamedChatMessage({
   fragments,
   message,
   onToolAnswer,
+  onHighlight,
   streaming = false,
   timing,
   workspaceId,
@@ -1256,6 +1265,7 @@ export function StreamedChatMessage({
   fragments: Record<string, string>;
   message: UIMessage;
   onToolAnswer?: (answers: Record<string, AskUserAnswer>) => void | Promise<void>;
+  onHighlight?: (highlight: CodeHighlight) => void;
   streaming?: boolean;
   timing?: ChatWorkTiming;
   workspaceId: string;
@@ -1283,7 +1293,7 @@ export function StreamedChatMessage({
           }
           if (part.type === "text") {
             if (isInternalLessonMessage(part.content)) return null;
-            return <MessageContent fragments={fragments} key={`${part.type}-${index}`} text={part.content} workspaceId={workspaceId} />;
+            return <MessageContent autoHighlight={streaming} fragments={fragments} key={`${part.type}-${index}`} onHighlight={onHighlight} text={part.content} workspaceId={workspaceId} />;
           }
           if (part.type === "ui-resource" && part.resource.uri.startsWith("dojofoo://lessons/")) {
             return <MessageContent fragments={fragments} key={`${part.type}-${index}`} kind="lesson-fragment" text={part.resource.text ?? ""} workspaceId={workspaceId} />;
@@ -1531,16 +1541,31 @@ function inlineCode(value: string) {
 }
 
 function MessageContent({
+  autoHighlight = false,
   fragments,
   kind,
+  onHighlight,
   text,
   workspaceId,
 }: {
+  autoHighlight?: boolean;
   fragments?: Record<string, string>;
   kind?: "message" | "commentary" | "reasoning" | "tool" | "checkpoint" | "lesson-fragment";
+  onHighlight?: (highlight: CodeHighlight) => void;
   text: string;
   workspaceId?: string;
 }) {
+  const automaticHighlight = useRef("");
+  useEffect(() => {
+    if (!autoHighlight || !onHighlight) return;
+    const highlight = codeHighlights(text).at(-1);
+    if (!highlight) return;
+    const signature = `${highlight.from}:${highlight.to}`;
+    if (automaticHighlight.current === signature) return;
+    automaticHighlight.current = signature;
+    onHighlight(highlight);
+  }, [autoHighlight, onHighlight, text]);
+
   if (kind === "lesson-fragment") {
     const fragment = fragments?.[text];
     return fragment
@@ -1551,7 +1576,7 @@ function MessageContent({
     return (
       <div className="w-full border-l border-dashed pl-3 text-sm text-muted-foreground">
         <p className="mb-1 font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Agent note</p>
-        <MarkdownText text={text} />
+        <MarkdownText onHighlight={onHighlight} text={text} />
       </div>
     );
   }
@@ -1571,13 +1596,13 @@ function MessageContent({
             </CodeBlock>
           );
         }
-        return part.trim() ? <MarkdownText key={index} text={part} /> : null;
+        return part.trim() ? <MarkdownText key={index} onHighlight={onHighlight} text={part} /> : null;
       })}
     </div>
   );
 }
 
-function MarkdownText({ text }: { text: string }) {
+function MarkdownText({ onHighlight, text }: { onHighlight?: (highlight: CodeHighlight) => void; text: string }) {
   const lines = text.split("\n");
   const blocks: React.ReactNode[] = [];
   let index = 0;
@@ -1600,26 +1625,39 @@ function MarkdownText({ text }: { text: string }) {
       const List = ordered ? "ol" : "ul";
       blocks.push(
         <List className={`${ordered ? "list-decimal" : "list-disc"} space-y-1 pl-7`} key={`list-${index}`}>
-          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMessage(item)}</li>)}
+          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMessage(item, onHighlight)}</li>)}
         </List>,
       );
       continue;
     }
     const heading = line.match(/^(#{1,3})\s+(.*)$/);
     if (heading) {
-      blocks.push(<p className="font-semibold text-foreground" key={`heading-${index}`}>{inlineMessage(heading[2])}</p>);
+      blocks.push(<p className="font-semibold text-foreground" key={`heading-${index}`}>{inlineMessage(heading[2], onHighlight)}</p>);
     } else if (line.startsWith("> ")) {
-      blocks.push(<blockquote className="border-l border-dashed pl-3 text-muted-foreground" key={index}>{inlineMessage(line.slice(2))}</blockquote>);
+      blocks.push(<blockquote className="border-l border-dashed pl-3 text-muted-foreground" key={index}>{inlineMessage(line.slice(2), onHighlight)}</blockquote>);
     } else {
-      blocks.push(<p className="whitespace-pre-wrap" key={index}>{inlineMessage(line)}</p>);
+      blocks.push(<p className="whitespace-pre-wrap" key={index}>{inlineMessage(line, onHighlight)}</p>);
     }
     index += 1;
   }
   return <>{blocks}</>;
 }
 
-function inlineMessage(value: string) {
-  return value.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, index) => {
+function inlineMessage(value: string, onHighlight?: (highlight: CodeHighlight) => void) {
+  return value.split(/(`[^`]+`|\*\*[^*]+\*\*|\[highlight:L\d+(?:-(?:L)?\d+)?\])/giu).map((part, index) => {
+    const highlight = codeHighlight(part);
+    if (highlight) {
+      return (
+        <button
+          className="dojo-inline-code cursor-pointer text-blue-500 hover:text-blue-400"
+          key={index}
+          onClick={() => onHighlight?.(highlight)}
+          type="button"
+        >
+          {part}
+        </button>
+      );
+    }
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code className="dojo-inline-code" key={index}>{part.slice(1, -1)}</code>;
     }
