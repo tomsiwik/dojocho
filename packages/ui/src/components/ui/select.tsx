@@ -230,6 +230,7 @@ const triggerVariants = cva(
 interface SelectTriggerProps
   extends Omit<HTMLAttributes<HTMLButtonElement>, "children">,
     VariantProps<typeof triggerVariants> {
+  displayValue?: ReactNode;
   icon?: IconComponent;
   placeholder?: string;
   error?: string;
@@ -242,6 +243,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
   (
     {
       className,
+      displayValue,
       variant,
       icon: Icon,
       placeholder = "Select…",
@@ -281,14 +283,9 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
                 className="shrink-0 text-muted-foreground transition-[color,stroke-width] duration-80 group-hover:text-foreground group-hover:stroke-[2]"
               />
             )}
-            <SelectPrimitive.Value
-              placeholder={placeholder}
-              // py-1/-my-1: truncate's overflow:hidden clips at the padding
-              // box, and the trimmed box excludes ascenders/descenders — the
-              // padding gives glyphs room while the negative margin keeps the
-              // trimmed layout box.
-              className="min-w-0 flex-1 text-left truncate [text-box:trim-both_cap_alphabetic] py-1 -my-1 data-[placeholder]:text-muted-foreground"
-            />
+            <span className="min-w-0 flex-1 truncate py-1 -my-1 text-left [text-box:trim-both_cap_alphabetic]">
+              {displayValue ?? <SelectPrimitive.Value placeholder={placeholder} />}
+            </span>
           </span>
 
           <svg

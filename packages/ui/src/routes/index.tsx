@@ -79,6 +79,11 @@ type ActiveCourse = {
   sessions: Array<{ lessonId: string; sessionId: string }>;
 };
 
+type CourseGroup = {
+  dojo: string;
+  workspaces: ActiveCourse[];
+};
+
 type LessonCheckEvent = {
   lesson: LessonSnapshot;
   observation: import("@/server/lesson/service").CheckObservation;
@@ -100,6 +105,9 @@ function CourseIndex() {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [courseChoice, setCourseChoice] = useState<CourseGroup | null>(null);
+  const [choiceWorkspaceId, setChoiceWorkspaceId] = useState("");
+  const [choiceSessionId, setChoiceSessionId] = useState("current");
 
   useEffect(() => {
     fetch("/api/control/courses")
@@ -111,23 +119,26 @@ function CourseIndex() {
       .catch((cause: Error) => setError(cause.message));
   }, []);
 
-  const languages = [...new Set(courses.map((course) => course.language))].sort();
-  const visibleCourses = courses
-    .filter((course) => language === "all" || course.language === language)
+  const groups = groupCourses(courses);
+  const languages = [...new Set(groups.flatMap((group) => group.workspaces.map((course) => course.language)))].sort();
+  const visibleCourses = groups
+    .filter((group) => language === "all" || group.workspaces.some((course) => course.language === language))
     .sort((left, right) => {
-      if (sortBy === "oldest") return left.lastSeenAt - right.lastSeenAt;
+      const leftSeen = courseGroupLastSeen(left);
+      const rightSeen = courseGroupLastSeen(right);
+      if (sortBy === "oldest") return leftSeen - rightSeen;
       if (sortBy === "name") return humanTitle(left.dojo).localeCompare(humanTitle(right.dojo));
-      return right.lastSeenAt - left.lastSeenAt;
+      return rightSeen - leftSeen;
     });
 
-  async function openCourse(course: ActiveCourse) {
+  async function openCourse(course: ActiveCourse, sessionId = course.sessionId) {
     window.localStorage.setItem("dojofoo.workspace", course.workspaceId);
     if (course.mode === "interactive") {
       await navigate({ to: "/interactive" });
       return;
     }
-    if (course.sessionId) {
-      await navigate({ to: "/session/$sessionId", params: { sessionId: course.sessionId } });
+    if (sessionId) {
+      await navigate({ to: "/session/$sessionId", params: { sessionId } });
       return;
     }
     if (course.kata) {
@@ -139,6 +150,19 @@ function CourseIndex() {
     }
     await navigate({ to: "/course/$workspaceId", params: { workspaceId: course.workspaceId } });
   }
+
+  function chooseCourse(group: CourseGroup) {
+    if (group.workspaces.length === 1) {
+      void openCourse(group.workspaces[0]);
+      return;
+    }
+    const workspace = preferredWorkspace(group);
+    setCourseChoice(group);
+    setChoiceWorkspaceId(workspace.workspaceId);
+    setChoiceSessionId(workspace.sessionId ?? "current");
+  }
+
+  const choiceWorkspace = courseChoice?.workspaces.find((course) => course.workspaceId === choiceWorkspaceId) ?? null;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -177,26 +201,29 @@ function CourseIndex() {
             </div>
             {error && <p className="mt-8 border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-300">{error}</p>}
             <div className="mt-10 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {visibleCourses.map((course) => (
+          {visibleCourses.map((group) => {
+              const course = preferredWorkspace(group);
+              return (
               <CourseCard
                 description={course.description}
                 eyebrow={course.language}
                 footer={(
                   <>
                   <div className="min-w-0">
-                    <p className="truncate text-xs text-muted-foreground">{course.mode === "interactive" ? "Interactive lesson" : humanTitle(course.kata ?? "Not started")}</p>
-                    <p className="mt-1 truncate font-mono text-[11px]">{course.sessionId ? middleEllipsis(course.sessionId) : "Not started"}</p>
+                    <p className="truncate text-xs text-muted-foreground">{group.workspaces.length > 1 ? `${group.workspaces.length} workspaces` : course.mode === "interactive" ? "Interactive lesson" : humanTitle(course.kata ?? "Not started")}</p>
+                    <p className="mt-1 truncate font-mono text-[11px]">{group.workspaces.length > 1 ? "Choose where to continue" : course.sessionId ? middleEllipsis(course.sessionId) : "Not started"}</p>
                   </div>
                   <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={18} />
                   </>
                 )}
                 footerClassName="items-end justify-between gap-4"
-                key={course.workspaceId}
+                key={group.dojo}
                 label={`Open ${humanTitle(course.dojo)}`}
-                onClick={() => void openCourse(course)}
+                onClick={() => chooseCourse(group)}
                 title={humanTitle(course.dojo)}
               />
-          ))}
+              );
+          })}
               <a className="group flex min-h-[10.5rem] flex-col items-center justify-center border border-dashed border-border/80 bg-surface-1 p-5 text-center transition-colors duration-80 hover:border-primary" href="https://dojo.foo" rel="noreferrer" target="_blank">
                 <Plus className="mb-3 text-muted-foreground transition-colors group-hover:text-primary" size={22} />
                 <h2 className="text-[15px] font-semibold">Add a dojo</h2>
@@ -206,8 +233,91 @@ function CourseIndex() {
           </div>
         </div>
       </section>
+      <Dialog open={Boolean(courseChoice)} onOpenChange={(open) => { if (!open) setCourseChoice(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Continue {humanTitle(courseChoice?.dojo ?? "course")}</DialogTitle>
+            <DialogDescription>Choose the workspace first. Sessions stay attached to its files and harness transcript.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-5 py-2">
+            <label className="grid gap-2">
+              <span className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Workspace</span>
+              <Select
+                onValueChange={(workspaceId) => {
+                  const workspace = courseChoice?.workspaces.find((candidate) => candidate.workspaceId === workspaceId);
+                  setChoiceWorkspaceId(workspaceId);
+                  setChoiceSessionId(workspace?.sessionId ?? "current");
+                }}
+                value={choiceWorkspaceId}
+              >
+                <SelectTrigger
+                  aria-label="Course workspace"
+                  displayValue={choiceWorkspace
+                    ? `${choiceWorkspace.workspaceName} · ${humanTitle(choiceWorkspace.kata ?? "Not started")}`
+                    : "Choose workspace"}
+                />
+                <SelectContent>
+                  {courseChoice?.workspaces.map((workspace, index) => (
+                    <SelectItem index={index} key={workspace.workspaceId} value={workspace.workspaceId}>
+                      {workspace.workspaceName} · {humanTitle(workspace.kata ?? "Not started")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {choiceWorkspace && <span className="truncate font-mono text-xs text-muted-foreground">{choiceWorkspace.path}</span>}
+            </label>
+            <label className="grid gap-2">
+              <span className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
+              <Select onValueChange={setChoiceSessionId} value={choiceSessionId}>
+                <SelectTrigger
+                  aria-label="Course session"
+                  displayValue={choiceSessionId === "current"
+                    ? choiceWorkspace?.sessionId ? "Start a new session" : "Start current lesson"
+                    : humanTitle(choiceWorkspace?.sessions.find((session) => session.sessionId === choiceSessionId)?.lessonId ?? "Session") + ` · ${middleEllipsis(choiceSessionId)}`}
+                />
+                <SelectContent>
+                  <SelectItem index={0} value="current">{choiceWorkspace?.sessionId ? "Start a new session" : "Start current lesson"}</SelectItem>
+                  {choiceWorkspace?.sessions.map((session, index) => (
+                    <SelectItem index={index + 1} key={session.sessionId} value={session.sessionId}>
+                      {humanTitle(session.lessonId)} · {middleEllipsis(session.sessionId)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="ghost">Cancel</Button>} />
+            <Button
+              disabled={!choiceWorkspace}
+              onClick={() => {
+                if (!choiceWorkspace) return;
+                setCourseChoice(null);
+                void openCourse(choiceWorkspace, choiceSessionId === "current" ? null : choiceSessionId);
+              }}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
+}
+
+export function groupCourses(courses: ActiveCourse[]): CourseGroup[] {
+  const groups = new Map<string, ActiveCourse[]>();
+  for (const course of courses) groups.set(course.dojo, [...(groups.get(course.dojo) ?? []), course]);
+  return [...groups].map(([dojo, workspaces]) => ({ dojo, workspaces }));
+}
+
+function courseGroupLastSeen(group: CourseGroup): number {
+  return Math.max(...group.workspaces.map((workspace) => workspace.lastSeenAt));
+}
+
+function preferredWorkspace(group: CourseGroup): ActiveCourse {
+  return group.workspaces.find((workspace) => workspace.selected)
+    ?? [...group.workspaces].sort((left, right) => right.lastSeenAt - left.lastSeenAt)[0];
 }
 
 function LocalFilter({ label, allLabel, items, selected, onSelect, className = "" }: {
