@@ -1,4 +1,4 @@
-import { findProjectRoot } from "./config";
+import { dojoDir, findProjectRoot, readDojoRc } from "./config";
 import { observeLocalContext, sessionFromEnvironment } from "@dojofoo/config/local-state";
 import { prepareWorkspace } from "@dojofoo/config/project-preparation";
 import { root } from "./commands/root";
@@ -13,6 +13,7 @@ import { track } from "./commands/track";
 import { update } from "./commands/update";
 import { flushCourseEvents } from "./telemetry";
 import { bootstrapMise } from "./mise-bootstrap";
+import { miseConfigPath } from "@dojofoo/config/project-preparation";
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -21,12 +22,11 @@ process.env.DOJO_PROJECT_ROOT ??= findProjectRoot();
 async function main() {
   const projectRoot = process.env.DOJO_PROJECT_ROOT!;
   const isUiControlCommand = command === "ui" && ["prompt", "--skill"].includes(args[0] ?? "");
-  const isSetupCommand = command === "install" || command === "setup";
+  const isSetupCommand = command === "install" || command === "setup" || command === "add";
+  const needsPreparation = command === "kata" || (command === "ui" && !isUiControlCommand);
   if (
     !process.env.DOJO_SKIP_PREPARE
-    && command
-    && !isUiControlCommand
-    && !["--help", "-h", "install", "setup", "add", "remove", "update"].includes(command)
+    && needsPreparation
   ) {
     await prepareWorkspace(projectRoot);
   }
@@ -44,6 +44,12 @@ async function main() {
     setup(process.cwd(), args);
   } else if (command === "add") {
     await add(process.cwd(), args);
+    const root = findProjectRoot();
+    const active = readDojoRc(root).currentDojo;
+    if (active && miseConfigPath(dojoDir(root, active))) {
+      await bootstrapMise();
+      await prepareWorkspace(root);
+    }
   } else if (command === "remove") {
     remove(findProjectRoot(), args);
   } else if (command === "update") {

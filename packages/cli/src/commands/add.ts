@@ -17,7 +17,7 @@ import {
   type RegistryItem,
 } from "../config";
 import { remove as removeDojo } from "./remove";
-import { configuredAgents } from "./setup";
+import { agentsFromArgs, configuredAgents, detectAgentsFromEnv, ensureProject, setupAgents } from "./setup";
 import { pmCommands } from "../pm";
 import { AGENTS } from "./setup";
 import { queueCourseEvent } from "../telemetry";
@@ -30,7 +30,11 @@ import {
 } from "../source";
 
 export async function add(root: string, args: string[]): Promise<void> {
-  const source = args.find((a) => !a.startsWith("--"));
+  ensureProject(root);
+  const requestedAgents = agentsFromArgs(args);
+  const agents = requestedAgents.length > 0 ? requestedAgents : detectAgentsFromEnv();
+  if (agents.length > 0) setupAgents(root, agents);
+  const source = positionalArgs(args)[0];
   const force = args.includes("--force");
   if (!source) {
     throw new Error(`Usage: ${CLI} add <source>
@@ -43,7 +47,8 @@ Source can be:
   GitHub:       ${CLI} add owner/repository
 
 Flags:
-  --force       Overwrite existing dojo`);
+  --force                  Overwrite existing dojo
+  --agent <name[,name]>    Install support for codex, opencode, claude, gemini, or pi`);
   }
 
   const sourceType = classifySource(source);
@@ -54,6 +59,19 @@ Flags:
     case "url":      addUrl(root, source, force); break;
     case "registry": await addFromRegistry(root, source, force); break;
   }
+}
+
+function positionalArgs(args: string[]): string[] {
+  const positional: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index] ?? "";
+    if (argument === "--agent") {
+      index += 1;
+    } else if (!argument.startsWith("--")) {
+      positional.push(argument);
+    }
+  }
+  return positional;
 }
 
 export function classifySource(source: string): "local" | "npm" | "github" | "url" | "registry" {

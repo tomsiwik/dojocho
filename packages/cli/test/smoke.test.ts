@@ -4,7 +4,7 @@ import { rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
+import { agentsFromArgs, setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
 import { intro } from "../src/commands/intro";
 import { kata } from "../src/commands/kata";
 import { journalPath, appendNote, readLearnings } from "../src/journal";
@@ -90,6 +90,33 @@ describe("dojo setup", () => {
     captureLog(() => setup(root, ["--codex"]));
 
     expect(readFileSync(resolve(root, "dojo.config.ts"), "utf8")).toBe("export default {}\n");
+  });
+
+  it("accepts the conventional --agent option", () => {
+    captureLog(() => setup(root, ["--agent", "opencode"]));
+
+    expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(true);
+  });
+
+  it("scaffolds the project before asking which agent to configure", () => {
+    const envKeys = Object.values(AGENTS).flatMap((cfg) => cfg.envVars);
+    for (const key of envKeys) vi.stubEnv(key, "");
+    try {
+      captureLog(() => setup(root, []));
+      expect(existsSync(resolve(root, ".dojorc"))).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});
+
+describe("agent arguments", () => {
+  it.each([
+    [["--agent", "opencode"], ["opencode"]],
+    [["--agent=codex,pi"], ["codex", "pi"]],
+    [["--claude"], ["claude"]],
+  ] as const)("parses %j", (args, expected) => {
+    expect(agentsFromArgs([...args])).toEqual([...expected]);
   });
 });
 

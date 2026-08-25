@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readDojoRc } from "@dojofoo/config";
-import { dojoLessonFragment, getLesson, writeLessonFile } from "./service";
+import { dojoLessonFragment, getLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
 
 const roots: string[] = [];
 
@@ -38,6 +38,11 @@ function freshCourse(): string {
 }
 
 describe("fresh lesson state", () => {
+  it("retries an introduction until the lifecycle marks it complete", () => {
+    expect(shouldIntroduceLesson({ introduced: false })).toBe(true);
+    expect(shouldIntroduceLesson({ introduced: true })).toBe(false);
+  });
+
   it("presents the first lesson without requiring mutable current-kata state", async () => {
     const lesson = await getLesson(freshCourse(), "001-first");
 

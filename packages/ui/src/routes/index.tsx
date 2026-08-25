@@ -51,7 +51,7 @@ import type { JsonRpcRequest } from "@/server/session/protocol";
 import { formatThinkingSteps } from "@/lib/thinking-steps-format";
 import { applyLessonMetadata, hydrateLesson } from "@/lib/lesson-snapshot";
 import { projectChatTimeline, type AnchoredChatEvent } from "@/lib/chat-timeline";
-import { chatAcceptsInput, isInternalLessonMessage } from "@/lib/chat-internal";
+import { chatAcceptsInput, isInternalLessonMessage, lessonNeedsIntroduction } from "@/lib/chat-internal";
 import { cn } from "@/lib/utils";
 import { AgentQuestion, isAgentQuestion, parseAgentQuestions } from "@/components/chat/agent-question";
 import { useChatWorkTiming, type ChatWorkTiming } from "@/lib/chat-work-timing";
@@ -469,7 +469,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   }, [chatStatus, pendingCheckObservation, sendMessage]);
 
   useEffect(() => {
-    if (!apiBase || !lesson || lesson.sessionId || lesson.messages.length > 0) return;
+    if (!apiBase || !lesson || !lessonNeedsIntroduction(messages)) return;
     if (introductions.current.has(apiBase)) return;
     introductions.current.add(apiBase);
     setBusy("Sensei is introducing the lesson…");
@@ -498,7 +498,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         setError(cause instanceof Error ? cause.message : String(cause));
       })
       .finally(() => { forwardedProps.current = {}; });
-  }, [apiBase, lesson, navigate, sendMessage, updateMetadata]);
+  }, [apiBase, lesson, messages, navigate, sendMessage, updateMetadata]);
 
   async function sendQuestion(message = question.trim()) {
     if (!message) return;

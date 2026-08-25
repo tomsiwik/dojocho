@@ -116,6 +116,10 @@ export function dojoLessonFragment(snapshot: LessonSnapshot, fragmentId: string)
   return { fragmentId };
 }
 
+export function shouldIntroduceLesson(snapshot: Pick<LessonSnapshot, "introduced">): boolean {
+  return !snapshot.introduced;
+}
+
 function dojoContextResource(snapshot: LessonSnapshot) {
   return {
     uri: `dojofoo://courses/${encodeURIComponent(snapshot.dojo)}/lessons/${encodeURIComponent(snapshot.kata)}/context`,
@@ -538,7 +542,7 @@ export async function streamLessonIntroduction(
 ): Promise<void> {
   const snapshot = await getLesson(root, lessonId);
   if (!snapshot) throw new Error("No lesson selected");
-  if (snapshot.messages.length > 0) return;
+  if (!shouldIntroduceLesson(snapshot)) return;
   const { threadId } = await lessonThread(root, snapshot.kata);
   const introductionInstruction = "Introduce this lesson in your own words. Explain the goal, present only the prerequisite context needed to begin, and invite the learner to take the first small step. Do not provide solution code.";
   await acpClient.send(
