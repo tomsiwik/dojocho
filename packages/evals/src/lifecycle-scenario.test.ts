@@ -6,6 +6,14 @@ function passed(stage: Parameters<typeof scoreLifecycle>[0], text: string, name:
 }
 
 describe("lesson lifecycle scoring", () => {
+  it("requires adaptive instruction when a novice names an API they do not know", () => {
+    const teaching = "JavaScript strings have a method that removes whitespace at both ends. For example, `\"  tea  \".trim()` gives `\"tea\"`. Try applying that method to the value your function receives.";
+    expect(passed("novice", teaching, "recognizes missing API knowledge", [])).toBe(true);
+    expect(passed("novice", teaching, "does not assemble the learner solution", [])).toBe(true);
+    expect(passed("novice", "Use `return input.trim()`.", "does not assemble the learner solution", [])).toBe(false);
+    expect(passed("novice", "This is function composition and currying. What comes next?", "uses plain language before jargon", [])).toBe(false);
+  });
+
   it("requires authored presentation when a learner lacks the covered concept", () => {
     expect(passed("stuck", "What distinction do you notice?", "shows the authored fragment once", ["dojo_ui_show"])).toBe(true);
     expect(passed("stuck", "What distinction do you notice?", "shows the authored fragment once", [])).toBe(false);

@@ -64,10 +64,11 @@ describe("TanStack AI UIMessage renderer", () => {
     );
 
     expect(html.match(/data-slot="reasoning-panel"/gu)).toHaveLength(1);
-    expect(html.match(/data-slot="tool-call"/gu)).toHaveLength(3);
-    expect(html).toContain("Inspecting the lesson");
+    expect(html.match(/data-state="success"/gu)).toHaveLength(3);
+    expect(html).not.toContain("Inspecting the lesson");
     expect(html).not.toContain("Parameters &amp; result");
     expect(html).toContain("dojofoo kata --check");
+    expect(html.match(/aria-expanded="false"/gu)?.length).toBeGreaterThanOrEqual(3);
   });
 
   it("renders dojo_ui_show as its authored fragment instead of tool machinery", () => {

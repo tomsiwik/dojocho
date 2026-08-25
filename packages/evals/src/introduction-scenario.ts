@@ -12,6 +12,7 @@ export interface IntroductionScenario {
   instructions: string;
   lesson: string;
   platform: string;
+  style: string;
   prompt: string;
   skill: string;
   solution: string;
@@ -20,8 +21,9 @@ export interface IntroductionScenario {
 export async function introductionScenario(): Promise<IntroductionScenario> {
   const workspace = resolve(import.meta.dirname, "../../..");
   const courseRoot = resolve(workspace, ".dojos/starter-kata");
-  const [dojofoo, dojo, sensei, skill] = await Promise.all([
+  const [dojofoo, style, dojo, sensei, skill] = await Promise.all([
     readFile(resolve(workspace, "DOJOFOO.md"), "utf8"),
+    readFile(resolve(workspace, "teaching-styles/KATAS.md"), "utf8"),
     readFile(resolve(courseRoot, "DOJO.md"), "utf8"),
     readFile(resolve(courseRoot, "katas/002-validate-registration/SENSEI.md"), "utf8"),
     readFile(resolve(workspace, "packages/cli/skills/dojofoo/SKILL.md"), "utf8"),
@@ -53,6 +55,7 @@ export async function introductionScenario(): Promise<IntroductionScenario> {
     course: dojo,
     instructions: [
       "<dojofoo>", dojofoo, "</dojofoo>",
+      "<teaching-style>", style, "</teaching-style>",
       "<course>", dojo, "</course>",
       "<lesson>", sensei, "</lesson>",
     ].join("\n\n"),
@@ -60,6 +63,7 @@ export async function introductionScenario(): Promise<IntroductionScenario> {
     skill,
     lesson: sensei,
     platform: dojofoo,
+    style,
     solution,
   };
 }

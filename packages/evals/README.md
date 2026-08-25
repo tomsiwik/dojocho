@@ -59,12 +59,12 @@ pnpm --filter @dojofoo/evals eval:transformation
 The scenario uses the harness's normal file-reading and web-fetching tools.
 Dojofoo contributes only the same lesson capabilities registered in production.
 
-The lifecycle matrix evaluates fresh introduction, repeated failure requiring an
-authored fragment, successful completion, and resume from server-supplied compacted
-context:
+The lifecycle matrix evaluates fresh introduction, adapting to a novice API gap,
+repeated failure requiring an authored fragment, successful completion, substantive
+review, and resume from server-supplied compacted context:
 
 ```sh
 pnpm --filter @dojofoo/evals eval:lifecycle
 ```
 
-Use `DOJOFOO_EVAL_STAGE=start|stuck|complete|resume` to run one stage.
+Use `DOJOFOO_EVAL_STAGE=start|novice|stuck|complete|review|resume` to run one stage.

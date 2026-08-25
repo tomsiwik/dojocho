@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Composer, ComposerActions, ComposerBar, ComposerContext, ComposerSend, ComposerToolbar } from "../components/elements/composer";
 import { ReasoningPanel } from "../components/elements/reasoning-panel";
 import { ThinkingIndicator } from "../components/elements/thinking-indicator";
-import { ToolCall } from "../components/elements/tool-call";
+import { ToolResult, ToolResultOutput } from "../components/agents/tool-result";
 import { ApprovalCard } from "../components/elements/approval-card";
 import { ElicitationForm } from "../components/elements/elicitation-form";
 import { AgentPlan } from "../components/elements/agent-plan";
@@ -65,40 +65,39 @@ function AutoStart({ enabled }: { enabled: boolean }) {
 }
 
 function ReasoningPart({ text, status }: ReasoningMessagePartProps) {
-  const [open, setOpen] = useState(true);
   const streaming = status.type === "running";
   return (
     <ReasoningPanel
       className="max-w-none"
+      disclosure={false}
       steps={[{ title: "Analyzing lesson state", body: text }]}
       visibleSteps={1}
       streaming={streaming}
-      open={open}
-      onOpenChange={setOpen}
+      open={false}
+      onOpenChange={() => undefined}
       restingLabel="Worked"
     />
   );
 }
 
 function ToolPart({ toolName, args, result, status }: ToolCallMessagePartProps) {
-  const [open, setOpen] = useState(true);
   const running = status.type === "running";
   const renderedResult = result === undefined ? "Waiting for result…" : typeof result === "string" ? result : JSON.stringify(result, null, 2);
   const failed = /(?:error|failed|timed out)/iu.test(renderedResult);
   const completion = toolName === "dojofoo_dojo_lesson_complete";
+  const output = `Request\n${JSON.stringify(args, null, 2)}\n\nResult\n${renderedResult}`;
   return (
-    <ToolCall
+    <ToolResult
       className="max-w-none"
-      label={failed ? "Completion prompt failed" : completion ? "Asked how to continue" : "Checked lesson"}
-      activeLabel={completion ? "Asking how to continue" : "Checking lesson"}
-      query={toolName}
-      request={JSON.stringify(args, null, 2)}
-      result={renderedResult}
-      running={running}
-      error={failed}
-      open={open}
-      onOpenChange={setOpen}
-    />
+      collapseOnComplete
+      defaultOpen={false}
+      kind="request"
+      status={running ? "running" : failed ? "error" : "success"}
+      title={running ? (completion ? "Asking how to continue" : "Checking lesson") : failed ? "Completion prompt failed" : completion ? "Asked how to continue" : "Checked lesson"}
+      tool={toolName}
+    >
+      <ToolResultOutput language="json">{output}</ToolResultOutput>
+    </ToolResult>
   );
 }
 

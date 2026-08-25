@@ -9,7 +9,7 @@ interface OpenCodeEvent {
   part?: { type?: string; text?: string; tool?: string; toolName?: string; name?: string };
 }
 
-const allStages: LifecycleStage[] = ["start", "stuck", "complete", "review", "resume"];
+const allStages: LifecycleStage[] = ["start", "novice", "stuck", "complete", "review", "resume"];
 const requested = process.env.DOJOFOO_EVAL_STAGE;
 if (requested && !allStages.includes(requested as LifecycleStage)) {
   throw new Error(`Unknown lifecycle stage: ${requested}`);
@@ -17,8 +17,9 @@ if (requested && !allStages.includes(requested as LifecycleStage)) {
 const stages = requested ? [requested as LifecycleStage] : allStages;
 const workspace = resolve(import.meta.dirname, "../../..");
 const fixture = resolve(import.meta.dirname, "../courses/kata-capabilities");
-const [platform, course, lesson, skill] = await Promise.all([
+const [platform, style, course, lesson, skill] = await Promise.all([
   readFile(resolve(workspace, "DOJOFOO.md"), "utf8"),
+  readFile(resolve(workspace, "teaching-styles/KATAS.md"), "utf8"),
   readFile(resolve(fixture, "DOJO.md"), "utf8"),
   readFile(resolve(fixture, "katas/001-transformation/SENSEI.md"), "utf8"),
   readFile(resolve(workspace, "packages/cli/skills/dojofoo/SKILL.md"), "utf8"),
@@ -37,7 +38,7 @@ try {
       "dojofoo-eval": {
         mode: "primary",
         description: "Evaluate the Dojofoo lesson lifecycle.",
-        prompt: [platform, course, lesson].join("\n\n"),
+        prompt: [platform, style, course, lesson].join("\n\n"),
         permission: {
           read: "allow", glob: "allow", grep: "allow", list: "allow", skill: "allow",
           webfetch: "allow", bash: "deny", edit: "deny", external_directory: "deny",

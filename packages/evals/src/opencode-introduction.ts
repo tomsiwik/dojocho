@@ -19,8 +19,8 @@ const scenario = await introductionScenario();
 const variants = [
   { id: "lesson", instructions: scenario.lesson, skill: false },
   { id: "lesson+skill", instructions: scenario.lesson, skill: true },
-  { id: "platform+lesson+skill", instructions: [scenario.platform, scenario.lesson].join("\n\n"), skill: true },
-  { id: "course+lesson+skill", instructions: [scenario.course, scenario.lesson].join("\n\n"), skill: true },
+  { id: "platform+lesson+skill", instructions: [scenario.platform, scenario.style, scenario.lesson].join("\n\n"), skill: true },
+  { id: "course+lesson+skill", instructions: [scenario.style, scenario.course, scenario.lesson].join("\n\n"), skill: true },
   { id: "full", instructions: scenario.instructions, skill: true },
 ] as const;
 const requestedVariant = process.env.DOJOFOO_EVAL_VARIANT;

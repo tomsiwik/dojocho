@@ -383,6 +383,10 @@ describe("AcpClient projection", () => {
     const parts: AcpStreamPart[] = [];
     (client as unknown as { callbacks: Map<string, (part: AcpStreamPart) => void> })
       .callbacks.set("session-1", (part) => parts.push(part));
+    receive(client, {
+      sessionId: "session-1",
+      update: { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "Choosing a completion prompt" } },
+    });
     const promise = (client as unknown as {
       createElicitation(value: import("@agentclientprotocol/sdk").CreateElicitationRequest): Promise<import("@agentclientprotocol/sdk").CreateElicitationResponse>;
     }).createElicitation({
@@ -407,7 +411,7 @@ describe("AcpClient projection", () => {
       },
     });
 
-    expect(parts).toEqual([
+    expect(parts.slice(-2)).toEqual([
       expect.objectContaining({
         type: "tool-input-start",
         toolCallId: "choice-1",
@@ -429,6 +433,16 @@ describe("AcpClient projection", () => {
     ]);
     client.answerUserInput("session-1", { next: ["Move on"] });
     await expect(promise).resolves.toEqual({ action: "accept", content: { next: "Move on" } });
+    expect(parts.at(-1)).toEqual(expect.objectContaining({
+      type: "tool-output-available",
+      toolCallId: "choice-1",
+      output: { answers: { next: ["Move on"] } },
+    }));
+    receive(client, {
+      sessionId: "session-1",
+      update: { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "Continuing from the learner's choice" } },
+    });
+    expect(parts.filter((part) => part.type === "reasoning-start")).toHaveLength(2);
   });
 
   it("suppresses the internal silent sentinel while preserving completed thinking", async () => {

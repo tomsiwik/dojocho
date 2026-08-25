@@ -1,6 +1,6 @@
 import type { Assertion } from "./introduction-scenario";
 
-export type LifecycleStage = "start" | "stuck" | "complete" | "review" | "resume";
+export type LifecycleStage = "start" | "novice" | "stuck" | "complete" | "review" | "resume";
 
 const internalNarration = /dojofoo|sensei\.md|dojo\.md|protocol|harness|tool call|called (?:the |a )?tool|context resource|(?:put|showed) (?:the |a ).*(?:card|panel)/iu;
 
@@ -18,6 +18,14 @@ export function scoreLifecycle(stage: LifecycleStage, text: string, tools: strin
     ...common,
     { name: "introduces without lesson actions", passed: tools.length === 0, evidence: tools.join(", ") },
     { name: "offers a concrete first move", passed: /first|begin|start|look|try|consider/iu.test(text) },
+  ];
+  if (stage === "novice") return [
+    ...common,
+    { name: "recognizes missing API knowledge", passed: /string|method|trim|remove|whitespace/iu.test(text) },
+    { name: "uses plain language before jargon", passed: !/currying|composition|higher-order|monad/iu.test(text) },
+    { name: "teaches with a transferable example", passed: /example|different domain|for instance|gives?|becomes?|→|["'][^"']+["']\s*\.\s*trim/iu.test(text) },
+    { name: "does not assemble the learner solution", passed: !/input\s*\.\s*trim\s*\(|return\s+input/iu.test(text) },
+    { name: "asks the learner to apply the idea", passed: /try|apply|change|use|what would/iu.test(text) },
   ];
   if (stage === "stuck") return [
     ...common,
@@ -70,6 +78,8 @@ export function lifecyclePrompt(stage: LifecycleStage): string {
   };
   const event = stage === "start"
     ? "Begin the lesson."
+    : stage === "novice"
+      ? "The learner replied: I don't know what function trims it. trim(input)? Respond to that learner now."
     : stage === "stuck"
       ? "The third unchanged check failed. I still do not understand what a whitespace run means."
       : stage === "complete" || stage === "review"
@@ -82,6 +92,11 @@ export function lifecyclePrompt(stage: LifecycleStage): string {
 }
 
 export function lifecycleSolution(stage: LifecycleStage): string {
+  if (stage === "novice") return [
+    "export function normalizeHandle(input: string): string {",
+    "  return input;",
+    "}",
+  ].join("\n");
   const replacement = stage === "complete" || stage === "review"
     ? ".replace(/\\s+/g, '-')"
     : ".replace(' ', '-')";

@@ -20,7 +20,7 @@ import {
 } from "@/components/ai-elements/test-results";
 import { ToolOutput } from "@/components/ai-elements/tool";
 import { ReasoningPanel } from "@dojofoo/uix/components/elements/reasoning-panel";
-import { ToolCall as AssistantToolCall } from "@dojofoo/uix/components/elements/tool-call";
+import { ToolResult, ToolResultOutput } from "@dojofoo/uix/components/agents/tool-result";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
@@ -1222,6 +1222,7 @@ function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; st
   return (
     <ReasoningPanel
       className="max-w-none"
+      disclosure={false}
       elapsed={elapsed}
       onOpenChange={setOpen}
       open={open}
@@ -1236,21 +1237,22 @@ function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; st
 function GenericToolActivity({ part }: { part: ToolCallPart }) {
   const running = isActiveThinkingActivity(part);
   const failed = toolFailed(part);
-  const [open, setOpen] = useState(running || failed);
   const command = activityCommand(part);
+  const request = serializeToolValue(part.input);
+  const result = part.output === undefined ? "Waiting for result…" : serializeToolValue(part.output);
+  const output = `Request\n${request}\n\nResult\n${result}`;
   return (
-    <AssistantToolCall
-      activeLabel={toolActivityLabel(part.name)}
+    <ToolResult
       className="max-w-none"
-      error={failed}
-      label={failed ? `${toolResultLabel(part.name)} failed` : toolResultLabel(part.name)}
-      onOpenChange={setOpen}
-      open={open}
-      query={command ?? part.name}
-      request={serializeToolValue(part.input)}
-      result={part.output === undefined ? "Waiting for result…" : serializeToolValue(part.output)}
-      running={running}
-    />
+      collapseOnComplete
+      defaultOpen={false}
+      kind={command ? "terminal" : "request"}
+      status={running ? "running" : failed ? "error" : "success"}
+      title={running ? toolActivityLabel(part.name) : failed ? `${toolResultLabel(part.name)} failed` : toolResultLabel(part.name)}
+      tool={command ?? part.name}
+    >
+      <ToolResultOutput language={command ? "bash" : "json"}>{output}</ToolResultOutput>
+    </ToolResult>
   );
 }
 

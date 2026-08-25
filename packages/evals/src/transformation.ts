@@ -10,8 +10,9 @@ interface OpenCodeEvent {
 
 const workspace = resolve(import.meta.dirname, "../../..");
 const fixture = resolve(import.meta.dirname, "../courses/kata-capabilities");
-const [platform, course, lesson, skill] = await Promise.all([
+const [platform, style, course, lesson, skill] = await Promise.all([
   readFile(resolve(workspace, "DOJOFOO.md"), "utf8"),
+  readFile(resolve(workspace, "teaching-styles/KATAS.md"), "utf8"),
   readFile(resolve(fixture, "DOJO.md"), "utf8"),
   readFile(resolve(fixture, "katas/001-transformation/SENSEI.md"), "utf8"),
   readFile(resolve(workspace, "packages/cli/skills/dojofoo/SKILL.md"), "utf8"),
@@ -31,7 +32,7 @@ try {
   await mkdir(skillDirectory, { recursive: true });
   await writeFile(join(skillDirectory, "SKILL.md"), skill);
 
-  const instructions = [platform, course, lesson].join("\n\n");
+  const instructions = [platform, style, course, lesson].join("\n\n");
   const config = {
     default_agent: "dojofoo-eval",
     agent: {
