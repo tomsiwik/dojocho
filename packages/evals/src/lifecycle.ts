@@ -93,6 +93,7 @@ try {
     process.stdout.write(`${JSON.stringify({
       scenario: `kata-capabilities/001/lifecycle/${stage}`,
       harness: "opencode-local",
+      model: process.env.DOJOFOO_EVAL_MODEL ?? "configured-default",
       durationMs: Date.now() - startedAt,
       response: text,
       toolNames: tools,

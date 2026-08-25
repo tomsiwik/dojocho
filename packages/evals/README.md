@@ -28,9 +28,10 @@ The OpenCode runner creates and removes a disposable workspace and reuses the
 local OpenCode provider login. It shares the scenario and assertions with the
 HarnessAgent runner; only the execution adapter differs.
 
-By default it runs a context ablation matrix: lesson only, lesson plus skill,
-platform plus lesson and skill, course plus lesson and skill, and the complete
-stack. Run one cell with `DOJOFOO_EVAL_VARIANT`, for example:
+By default it gates the complete production stack. Set `DOJOFOO_EVAL_ABLATION=1`
+to compare lesson only, lesson plus skill, platform plus lesson and skill,
+course plus lesson and skill, and the complete stack. Run one cell with
+`DOJOFOO_EVAL_VARIANT`, for example:
 
 ```sh
 DOJOFOO_EVAL_VARIANT=lesson+skill pnpm --filter @dojofoo/evals eval:introduction:opencode
@@ -68,3 +69,17 @@ pnpm --filter @dojofoo/evals eval:lifecycle
 ```
 
 Use `DOJOFOO_EVAL_STAGE=start|novice|stuck|complete|review|resume` to run one stage.
+
+Run the high-signal lifecycle stages and documented-source scenario across a
+strong, average, and deliberately weaker OpenCode Go model:
+
+```sh
+pnpm --filter @dojofoo/evals eval:matrix
+```
+
+Override the matrix with comma-separated `DOJOFOO_EVAL_MODELS` or
+`DOJOFOO_EVAL_STAGES`. Every cell receives a fresh harness process and temporary
+workspace.
+
+The model matrix is deliberately opt-in because it can be slow and expensive.
+Do not use it as the routine development gate.

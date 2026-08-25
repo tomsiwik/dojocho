@@ -24,7 +24,11 @@ const variants = [
   { id: "full", instructions: scenario.instructions, skill: true },
 ] as const;
 const requestedVariant = process.env.DOJOFOO_EVAL_VARIANT;
-const selectedVariants = requestedVariant ? variants.filter((variant) => variant.id === requestedVariant) : variants;
+const selectedVariants = requestedVariant
+  ? variants.filter((variant) => variant.id === requestedVariant)
+  : process.env.DOJOFOO_EVAL_ABLATION === "1"
+    ? variants
+    : variants.filter((variant) => variant.id === "full");
 if (selectedVariants.length === 0) throw new Error(`Unknown eval variant: ${requestedVariant}`);
 
 for (const variant of selectedVariants) {
@@ -36,6 +40,7 @@ async function runVariant(variant: (typeof variants)[number]): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), "dojofoo-eval-"));
   try {
   const skillDirectory = join(root, ".opencode/skills/dojofoo");
+  const courseSkillDirectory = join(root, ".opencode/skills/starter-sensei");
   const callsFile = join(root, "tool-calls.jsonl");
   await writeFile(join(root, "solution.ts"), scenario.solution);
   await writeFile(callsFile, "");
@@ -44,6 +49,9 @@ async function runVariant(variant: (typeof variants)[number]): Promise<void> {
     await writeFile(join(skillDirectory, "SKILL.md"), scenario.skill);
     await chmod(join(skillDirectory, "SKILL.md"), 0o600);
   }
+  await mkdir(courseSkillDirectory, { recursive: true });
+  await writeFile(join(courseSkillDirectory, "SKILL.md"), scenario.courseSkill);
+  await chmod(join(courseSkillDirectory, "SKILL.md"), 0o600);
 
   const config = {
     default_agent: "dojofoo-eval",
@@ -94,7 +102,12 @@ async function runVariant(variant: (typeof variants)[number]): Promise<void> {
   if (exitCode !== 0) throw new Error(`OpenCode exited with status ${exitCode ?? "unknown"}`);
 
   const events = output.split(/\r?\n/u).filter(Boolean).map((line) => JSON.parse(line) as OpenCodeEvent);
-  const text = events
+  const askIndex = events.findIndex((event) => {
+    const name = event.part?.tool ?? event.part?.toolName ?? event.part?.name ?? "";
+    return event.part?.type === "tool" && name.endsWith("dojo_ui_ask");
+  });
+  const introductionEvents = askIndex >= 0 ? events.slice(0, askIndex) : events;
+  const text = introductionEvents
     .filter((event) => event.type === "text" && typeof event.part?.text === "string")
     .map((event) => event.part!.text)
     .join("")

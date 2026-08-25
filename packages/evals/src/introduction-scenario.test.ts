@@ -6,9 +6,11 @@ function result(name: string, text: string, tools: string[]) {
 }
 
 describe("introduction scoring", () => {
-  it("does not invoke lesson actions during an introduction", () => {
-    expect(result("does not invoke lesson actions during introduction", "Let's begin with one small step.", [])?.passed).toBe(true);
-    expect(result("does not invoke lesson actions during introduction", "Let's begin with one small step.", ["dojo_lesson_verify"])?.passed).toBe(false);
+  it("does not mutate lesson state during an introduction", () => {
+    const name = "does not mutate lesson state during introduction";
+    expect(result(name, "Let's begin with one small step.", [])?.passed).toBe(true);
+    expect(result(name, "Let's begin with one small step.", ["dojo_ui_ask"])?.passed).toBe(true);
+    expect(result(name, "Let's begin with one small step.", ["dojo_lesson_verify"])?.passed).toBe(false);
   });
 
   it("detects redundant discovery when the lesson context already contains the learner file", () => {

@@ -49,12 +49,18 @@ logic does not repeatedly account for equivalent input forms.
 
 When the learner chooses Review, always clarify method chaining versus currying,
 then choose two connected topics below. Ground them in the learner's actual
-expression instead of reciting the whole checklist.
+expression instead of reciting the whole checklist. Use at most three short
+paragraphs. Do not introduce a fourth topic.
+
+Accuracy constraint: `/\s+/g` replaces each complete whitespace run once. A
+leading or trailing run becomes exactly one boundary hyphen, never one hyphen
+per character in that run.
 
 - The sequence is method chaining and a transformation pipeline, not currying.
   Currying converts a multi-argument function into nested one-argument functions.
 - Ordering is observable: trimming before replacement prevents boundary
-  whitespace from becoming separators.
+  whitespace from becoming separators. A whole leading or trailing whitespace
+  run would become one boundary hyphen, regardless of its length.
 - `toLowerCase()` is preferable for a stable machine identifier;
   `toLocaleLowerCase()` intentionally varies for locale-sensitive human text.
 - The normalizer is idempotent: normalizing an already canonical value should

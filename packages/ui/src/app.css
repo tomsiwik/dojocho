@@ -207,6 +207,10 @@
   font-family: "Iosevka", monospace;
 }
 
+.font-prose :where(ol, ul) {
+  padding-inline-start: 1.75rem;
+}
+
 .font-prose :where(pre, code) {
   font-size: 14px;
 }

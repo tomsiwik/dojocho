@@ -80,20 +80,24 @@ try {
   const builtinTools = events
     .filter((event) => event.type === "tool_use" || event.part?.type === "tool")
     .map((event) => event.part?.tool ?? event.part?.toolName ?? event.part?.name ?? "unknown");
+  const harnessTools = builtinTools.filter((tool) => !tool.startsWith("dojofoo_"));
   const calls = (await readFile(callsFile, "utf8")).split(/\r?\n/u).filter(Boolean)
     .map((line) => JSON.parse(line) as { name: string; input: unknown });
   const sourceUrls = [...text.matchAll(/https:\/\/[^\s)]+/gu)].map((match) => match[0].replace(/[.,]$/u, ""));
   const lessonActionNames = calls.map((call) => call.name);
   const assertions = [
-    { name: "inspects learner code", passed: builtinTools.includes("read"), evidence: builtinTools },
-    { name: "retrieves authoritative documentation", passed: builtinTools.includes("webfetch"), evidence: builtinTools },
+    { name: "inspects learner code", passed: harnessTools.includes("read"), evidence: harnessTools },
+    { name: "retrieves authoritative documentation", passed: harnessTools.includes("webfetch"), evidence: harnessTools },
     { name: "cites a retrieved source", passed: sourceUrls.some((url) => url.includes("developer.mozilla.org")), evidence: sourceUrls },
     { name: "does not expose the final expression", passed: !/replace\s*\(\s*\/\\s\+\/g?\s*,/u.test(text) },
-    { name: "does not edit learner work", passed: !builtinTools.some((tool) => tool === "edit" || tool === "write"), evidence: builtinTools },
+    { name: "describes literal replacement accurately", passed: !/red {2}-blue/iu.test(text) },
+    { name: "does not edit learner work", passed: !harnessTools.some((tool) => tool === "edit" || tool === "write"), evidence: harnessTools },
     {
       name: "uses only relevant lesson actions",
-      passed: lessonActionNames.every((name) => name === "dojo_lesson_verify")
-        && lessonActionNames.filter((name) => name === "dojo_lesson_verify").length <= 1,
+      passed: lessonActionNames.every((name) => name === "dojo_context" || name === "dojo_lesson_verify" || name === "dojo_ui_show")
+        && lessonActionNames.filter((name) => name === "dojo_context").length <= 1
+        && lessonActionNames.filter((name) => name === "dojo_lesson_verify").length <= 1
+        && lessonActionNames.filter((name) => name === "dojo_ui_show").length <= 1,
       evidence: calls,
     },
     {
@@ -101,16 +105,18 @@ try {
       passed: !/let me (?:look|inspect|check|run|fetch)|I (?:read|ran|checked|fetched)|tool|command/iu.test(text),
     },
     { name: "keeps the response focused", passed: (text.match(/\?/gu) ?? []).length <= 2 },
+    { name: "keeps documentation help concise", passed: text.length <= 1400, evidence: `${text.length}/1400 characters` },
   ];
   process.stdout.write(`${JSON.stringify({
     scenario: "kata-capabilities/001/documented-api-gap",
     harness: "opencode-local",
+    model: process.env.DOJOFOO_EVAL_MODEL ?? "configured-default",
     durationMs: Date.now() - startedAt,
     response: {
       characters: text.length,
       preview: text.slice(0, 1600),
     },
-    toolNames: [...builtinTools, ...calls.map((call) => call.name)],
+    toolNames: [...harnessTools, ...calls.map((call) => call.name)],
     score: assertions.filter((assertion) => assertion.passed).length / assertions.length,
     assertions,
   }, null, 2)}\n`);

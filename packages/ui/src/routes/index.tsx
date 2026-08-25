@@ -1489,7 +1489,7 @@ function MarkdownText({ text }: { text: string }) {
       }
       const List = ordered ? "ol" : "ul";
       blocks.push(
-        <List className={`${ordered ? "list-decimal" : "list-disc"} space-y-1 pl-5`} key={`list-${index}`}>
+        <List className={`${ordered ? "list-decimal" : "list-disc"} space-y-1 pl-7`} key={`list-${index}`}>
           {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMessage(item)}</li>)}
         </List>,
       );

@@ -6,7 +6,9 @@
   "scripts": {
     "eval:introduction": "tsx src/introduction.ts",
     "eval:introduction:opencode": "tsx src/opencode-introduction.ts",
+    "eval:all": "pnpm eval:introduction:opencode && pnpm eval:lifecycle && pnpm eval:transformation",
     "eval:lifecycle": "tsx src/lifecycle.ts",
+    "eval:matrix": "tsx src/model-matrix.ts",
     "eval:transformation": "tsx src/transformation.ts",
     "test": "vitest run",
     "types:check": "tsc --noEmit"
