@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readDojoRc } from "@dojofoo/config";
-import { getLesson, writeLessonFile } from "./service";
+import { dojoLessonFragment, getLesson, writeLessonFile } from "./service";
 
 const roots: string[] = [];
 
@@ -61,5 +61,16 @@ describe("fresh lesson state", () => {
     });
     expect(readFileSync(resolve(root, "katas", "001-first", "solution.ts"), "utf8"))
       .toBe("export const answer = 1;\n");
+  });
+
+  it("allows only authored fragments from the active lesson", async () => {
+    const root = freshCourse();
+    const lessonPath = resolve(root, ".dojos", "starter", "katas", "001-first", "SENSEI.md");
+    writeFileSync(lessonPath, '# First lesson\n\n<Present id="example">Visible material</Present>');
+    const lesson = await getLesson(root, "001-first");
+    expect(lesson).not.toBeNull();
+
+    expect(dojoLessonFragment(lesson!, "example")).toEqual({ fragmentId: "example" });
+    expect(() => dojoLessonFragment(lesson!, "invented")).toThrow("Lesson fragment not found");
   });
 });

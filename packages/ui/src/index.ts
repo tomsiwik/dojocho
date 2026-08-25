@@ -5,6 +5,7 @@ export * from "./components/ui/button";
 export * from "./components/ui/card";
 export * from "./components/ui/chat-message";
 export * from "./components/ui/chat-container";
+export * from "./components/ui/course-card";
 export * from "./components/ui/dialog";
 export * from "./components/ui/input-copy";
 export * from "./components/ui/input-message";

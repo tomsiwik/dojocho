@@ -28,6 +28,10 @@ describe("ACP harness adapters", () => {
       command: "/opt/opencode",
       args: ["acp", "--cwd", "/tmp/lesson"],
     }));
+    const environment = adapter.process({ root: "/tmp/lesson", developerInstructions: "Teach" }).environment;
+    expect(JSON.parse(environment.OPENCODE_CONFIG_CONTENT ?? "{}")).toMatchObject({
+      experimental: { mcp_timeout: 600_000 },
+    });
     expect(adapter.encodeResource({ uri: "dojofoo://lesson", text: "private" }))
       .toBe('<context ref="dojofoo://lesson">\nprivate\n</context>');
     await adapter.configureSession(connection as never, "session-1");
@@ -35,6 +39,17 @@ describe("ACP harness adapters", () => {
       sessionId: "session-1",
       configId: "model",
       value: "anthropic/claude",
+    });
+  });
+
+  it("preserves an explicit OpenCode MCP timeout", () => {
+    const adapter = createOpenCodeHarnessAdapter({
+      OPENCODE_CONFIG_CONTENT: JSON.stringify({ experimental: { mcp_timeout: 42_000 } }),
+    });
+    const environment = adapter.process({ root: "/tmp/lesson", developerInstructions: "Teach" }).environment;
+
+    expect(JSON.parse(environment.OPENCODE_CONFIG_CONTENT ?? "{}")).toMatchObject({
+      experimental: { mcp_timeout: 42_000 },
     });
   });
 

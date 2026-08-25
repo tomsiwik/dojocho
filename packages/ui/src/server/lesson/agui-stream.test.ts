@@ -11,8 +11,8 @@ describe("ACP to AG-UI stream", () => {
         write({ type: "reasoning-start", id: "reasoning-1" });
         write({ type: "reasoning-delta", id: "reasoning-1", delta: "Inspecting" });
         write({ type: "reasoning-end", id: "reasoning-1" });
-        write({ type: "tool-input-start", toolCallId: "tool-1", toolName: "check_lesson", dynamic: true });
-        write({ type: "tool-input-available", toolCallId: "tool-1", toolName: "check_lesson", input: {}, dynamic: true });
+        write({ type: "tool-input-start", toolCallId: "tool-1", toolName: "dojo_lesson_verify", dynamic: true });
+        write({ type: "tool-input-available", toolCallId: "tool-1", toolName: "dojo_lesson_verify", input: {}, dynamic: true });
         write({ type: "tool-output-available", toolCallId: "tool-1", output: { passed: 1 }, dynamic: true });
         write({ type: "text-start", id: "message-1" });
         write({ type: "text-delta", id: "message-1", delta: "Done" });

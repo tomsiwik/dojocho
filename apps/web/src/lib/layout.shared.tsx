@@ -1,4 +1,5 @@
 import { GithubIcon } from '@/components/github-icon'
+import { BrandLogo } from '@dojofoo/ui/brand-logo'
 import type { BaseLayoutProps } from '@/components/layout/shared'
 
 export const gitConfig = {
@@ -13,7 +14,7 @@ export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       // SVG wordmark — the variant designed for the docs nav.
-      title: <img src="/dojofoo.svg" alt="dojofoo" className="h-7 w-auto" />,
+      title: <BrandLogo className="h-7" />,
       url: '/',
     },
     // Explicit links list (instead of the `githubUrl` shortcut) so we can use

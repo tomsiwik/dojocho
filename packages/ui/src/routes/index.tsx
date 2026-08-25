@@ -18,12 +18,14 @@ import {
   TestSuiteName,
   TestSuiteStats,
 } from "@/components/ai-elements/test-results";
-import { Tool, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
+import { ToolOutput } from "@/components/ai-elements/tool";
+import { ReasoningPanel } from "@dojofoo/uix/components/elements/reasoning-panel";
+import { ToolCall as AssistantToolCall } from "@dojofoo/uix/components/elements/tool-call";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
-import { ChatMessage } from "@dojofoo/ui/chat-message";
 import { ChatContainer, ChatContainerContent, ChatContainerFooter, ChatContainerHeader } from "@dojofoo/ui/chat-container";
+import { CourseCard } from "@dojofoo/ui/course-card";
 import {
   Dialog,
   DialogClose,
@@ -38,7 +40,6 @@ import { ScrollArea } from "@dojofoo/ui/scroll-area";
 import { SiteNavigation } from "@dojofoo/ui/site-navigation";
 import { ThinkingIndicator } from "@dojofoo/ui/thinking-indicator";
 import { ThemeToggle } from "@dojofoo/ui/theme-toggle";
-import { ThinkingStep, ThinkingSteps, ThinkingStepsContent, ThinkingStepsHeader } from "@dojofoo/ui/thinking-steps";
 import {
   Select,
   SelectContent,
@@ -50,6 +51,7 @@ import type { JsonRpcRequest } from "@/server/session/protocol";
 import { formatThinkingSteps } from "@/lib/thinking-steps-format";
 import { applyLessonMetadata, hydrateLesson } from "@/lib/lesson-snapshot";
 import { projectChatTimeline, type AnchoredChatEvent } from "@/lib/chat-timeline";
+import { chatAcceptsInput, isInternalLessonMessage } from "@/lib/chat-internal";
 import { cn } from "@/lib/utils";
 import { AgentQuestion, isAgentQuestion, parseAgentQuestions } from "@/components/chat/agent-question";
 import { useChatWorkTiming, type ChatWorkTiming } from "@/lib/chat-work-timing";
@@ -175,32 +177,26 @@ function CourseIndex() {
             </div>
             {error && <p className="mt-8 border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-300">{error}</p>}
             <div className="mt-10 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {visibleCourses.map((course) => {
-            const content = (
-              <article className="group flex min-h-[10.5rem] flex-col border border-border/60 bg-surface-1 p-4 transition-colors duration-80 hover:border-primary">
-                <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{course.language}</p>
-                <h2 className="mt-3 text-[15px] font-semibold">{humanTitle(course.dojo)}</h2>
-                <p className="mt-2 line-clamp-2 pb-5 font-prose text-sm text-muted-foreground">{course.description}</p>
-                <div className="mt-auto flex items-end justify-between gap-4 border-t border-dashed border-border pt-3">
+          {visibleCourses.map((course) => (
+              <CourseCard
+                description={course.description}
+                eyebrow={course.language}
+                footer={(
+                  <>
                   <div className="min-w-0">
                     <p className="truncate text-xs text-muted-foreground">{course.mode === "interactive" ? "Interactive lesson" : humanTitle(course.kata ?? "Not started")}</p>
                     <p className="mt-1 truncate font-mono text-[11px]">{course.sessionId ? middleEllipsis(course.sessionId) : "Not started"}</p>
                   </div>
                   <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={18} />
-                </div>
-              </article>
-            );
-            return (
-              <button
-                className="text-left"
+                  </>
+                )}
+                footerClassName="items-end justify-between gap-4"
                 key={course.workspaceId}
+                label={`Open ${humanTitle(course.dojo)}`}
                 onClick={() => void openCourse(course)}
-                type="button"
-              >
-                {content}
-              </button>
-            );
-          })}
+                title={humanTitle(course.dojo)}
+              />
+          ))}
               <a className="group flex min-h-[10.5rem] flex-col items-center justify-center border border-dashed border-border/80 bg-surface-1 p-5 text-center transition-colors duration-80 hover:border-primary" href="https://dojo.foo" rel="noreferrer" target="_blank">
                 <Plus className="mb-3 text-muted-foreground transition-colors group-hover:text-primary" size={22} />
                 <h2 className="text-[15px] font-semibold">Add a dojo</h2>
@@ -294,10 +290,12 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   } = useChat({
     // A Chat owns its request lifecycle. Recreate it when the REST resource
     // changes so a submitted/error state from another lesson cannot strand
-    // this lesson's observation queue.
+    // this lesson's observation queue. The harness session ID arrives inside
+    // that resource's snapshot; using it here would recreate the Chat during
+    // hydration and discard the recovered transcript we just supplied.
     connection: chatConnection,
     persistence: false,
-    threadId: lesson?.sessionId ?? (apiBase || "dojo-unavailable"),
+    threadId: apiBase || "dojo-unavailable",
   });
   const dirty = lesson ? code !== lesson.code : false;
   messagesRef.current = messages;
@@ -427,7 +425,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
               parts: [{
                 type: "tool-call",
                 id: `check:${params.observation!.id}`,
-                name: "check_lesson",
+                name: "dojo_lesson_verify",
                 arguments: "{}",
                 input: {},
                 state: "complete",
@@ -537,24 +535,27 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   async function answerTool(answers: Record<string, AskUserAnswer>) {
     setBusy("Continuing lesson…");
     if (!apiBase) return;
-    const response = await fetch(`${apiBase}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        answers: Object.fromEntries(Object.values(answers).map((answer) => [
-          answer.questionId,
-          answer.otherText ? [...answer.selectedIds, answer.otherText] : answer.selectedIds,
-        ])),
-      }),
-    });
-    const body = await response.json() as LessonSnapshot | { ok: true } | { error: string };
-    if (!response.ok || "error" in body) {
+    try {
+      const response = await fetch(`${apiBase}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: Object.fromEntries(Object.values(answers).map((answer) => [
+            answer.questionId,
+            answer.otherText ? [...answer.selectedIds, answer.otherText] : answer.selectedIds,
+          ])),
+        }),
+      });
+      const body = await response.json() as LessonSnapshot | { ok: true } | { error: string };
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : `Could not answer the sensei (${response.status})`);
+      }
+      if ("kata" in body) await viewLesson(body.kata, body.dojo);
+      else setBusy("");
+    } catch (cause) {
       setBusy("");
-      setError("error" in body ? body.error : `Could not answer the sensei (${response.status})`);
-      return;
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
-    if ("kata" in body) hydrate(body);
-    else setBusy("");
   }
 
   async function check() {
@@ -583,6 +584,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   }
 
   const chatIsWorking = chatStatus === "submitted" || chatStatus === "streaming";
+  const chatCanAcceptInput = chatAcceptsInput(chatStatus);
   const chatWorkTiming = useChatWorkTiming(chatIsWorking, lesson?.sessionId ?? apiBase);
   const latestMessageHasStreamingOutput = chatIsWorking
     && messages.at(-1)?.role === "assistant"
@@ -605,13 +607,13 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
     }
   }
 
-  async function viewLesson(name: string) {
+  async function viewLesson(name: string, courseId?: string) {
     const course = courses.find((candidate) => candidate.workspaceId === workspaceId);
     if (!course) return setError("Course not found");
     setActiveWorkspaceTab("code");
     await navigate({
       to: "/course/$workspaceId/$courseId/lesson/$lessonId",
-      params: { workspaceId, courseId: course.dojo, lessonId: name },
+      params: { workspaceId, courseId: courseId ?? course.dojo, lessonId: name },
     });
   }
 
@@ -843,7 +845,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
           <ChatContainerContent>
               {timelineMessages
                 .filter((message) => message.parts.some((part) => part.type !== "text"
-                  || (part.content !== INTRODUCTION_MESSAGE && part.content !== CHECK_OBSERVATION_MESSAGE)))
+                  || !isInternalLessonMessage(part.content)))
                 .map((message) => (
                   <StreamedChatMessage
                     fragments={lesson.fragments}
@@ -868,15 +870,18 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
           <ChatContainerFooter data-testid="chat-composer">
               <label className="sr-only" htmlFor="sensei-composer">Message the sensei</label>
               <InputMessage
-                disabled={chatStatus !== "ready"}
+                disabled={!chatCanAcceptInput}
                 history={messages
                   .filter((item) => item.role === "user")
-                  .map((item) => item.parts.filter((part) => part.type === "text").map((part) => part.content).join(""))}
+                  .map((item) => item.parts.flatMap((part) =>
+                    part.type === "text" && !isInternalLessonMessage(part.content) ? [part.content] : []
+                  ).join(""))
+                  .filter(Boolean)}
                 onSend={(message) => void sendQuestion(message)}
                 onValueChange={setQuestion}
                 leftSlot={lesson.model && (
                   <Select
-                    disabled={modelChanging || chatStatus !== "ready"}
+                    disabled={modelChanging || !chatCanAcceptInput}
                     onValueChange={(value) => void changeModel(value)}
                     size="compact"
                     value={lesson.model.currentValue}
@@ -1118,91 +1123,38 @@ export function StreamedChatMessage({
   timing?: ChatWorkTiming;
   workspaceId: string;
 }) {
-  const hasAgentQuestion = message.parts.some((part) => part.type === "tool-call" && isAgentQuestion(part));
-  const hasThinkingActivity = message.parts.some(isThinkingActivity);
-  const hasTestResults = message.parts.some((part) => part.type === "tool-call" && part.name === "check_lesson");
-  const hasOnlyToolActivity = message.parts.some((part) => part.type === "tool-call")
-    && message.parts.every((part) =>
-      (part.type === "tool-call" && isThinkingActivity(part)) || part.type === "tool-result"
-    );
+  const assistant = message.role === "assistant";
   return (
-    <ChatMessage
+    <div
       className={cn(
-        "dojo-chat-message font-prose",
-        (hasAgentQuestion || hasThinkingActivity || hasTestResults) && "w-full max-w-full [&>div:first-of-type]:w-full",
+        "dojo-chat-message flex min-w-0 max-w-full font-prose",
+        assistant ? "w-full flex-col items-start" : "justify-end self-end",
       )}
-      data-testid={message.role === "assistant" ? "sensei-streaming-message" : "senpai-streaming-message"}
-      from={message.role === "assistant" ? "assistant" : "user"}
+      data-testid={assistant ? "sensei-streaming-message" : "senpai-streaming-message"}
     >
-      <div className="min-w-0 w-full max-w-full space-y-2 overflow-hidden">
+      <div className={cn(
+        "min-w-0 max-w-full space-y-2 overflow-hidden",
+        assistant ? "w-full" : "bg-muted px-3 py-2 text-sm",
+      )}>
         {message.parts.map((part, index) => {
-          if (hasOnlyToolActivity && part.type === "tool-call") {
-            return (
-              <Tool
-                data-tool-state={part.state}
-                key={`${part.type}-${part.id}`}
-                label={toolDisclosureLabel(part)}
-              >
-                <ToolContent forceMount>
-                  <ToolInput input={part.input} />
-                  <ToolOutput
-                    errorText={part.state === "error" ? "Tool execution failed" : undefined}
-                    output={part.output}
-                  />
-                </ToolContent>
-              </Tool>
-            );
-          }
-          if (isThinkingActivity(part)) {
-            if (index > 0 && isThinkingSequencePart(message.parts[index - 1])) return null;
-            const sequence = message.parts.slice(index).findIndex((candidate) => !isThinkingSequencePart(candidate));
-            const activities = message.parts
-              .slice(index, sequence === -1 ? undefined : index + sequence)
-              .filter(isThinkingActivity) as ThinkingActivityPart[];
-            const active = streaming || activities.some(isActiveThinkingActivity);
-            return (
-              <ThinkingSteps className="text-muted-foreground" defaultOpen={active} key={`thinking-${index}`}>
-                <ThinkingStepsHeader active={active} completedAt={timing?.completedAt} startedAt={timing?.startedAt}>Thinking</ThinkingStepsHeader>
-                <ThinkingStepsContent>
-                  {activities.map((activity, activityIndex) => {
-                    const next = activities[activityIndex + 1];
-                    const pairedLabel = activity.type === "thinking" ? standaloneThoughtLabel(activity) : undefined;
-                    if (pairedLabel && next?.type === "tool-call") {
-                      return (
-                        <ThinkingActivity
-                          activity={next}
-                          fragments={fragments}
-                          isLast={activityIndex + 1 === activities.length - 1}
-                          key={`paired-${next.id}`}
-                          label={pairedLabel}
-                          workspaceId={workspaceId}
-                        />
-                      );
-                    }
-                    const previous = activities[activityIndex - 1];
-                    if (activity.type === "tool-call" && previous?.type === "thinking" && standaloneThoughtLabel(previous)) return null;
-                    return (
-                      <ThinkingActivity
-                        activity={activity}
-                        fragments={fragments}
-                        isLast={activityIndex === activities.length - 1}
-                        key={`${activity.type}-${activityIndex}`}
-                        workspaceId={workspaceId}
-                      />
-                    );
-                  })}
-                </ThinkingStepsContent>
-              </ThinkingSteps>
-            );
+          if (part.type === "thinking") {
+            return <ReasoningActivity key={`${part.type}-${index}`} part={part} streaming={streaming} timing={timing} />;
           }
           if (part.type === "text") {
+            if (isInternalLessonMessage(part.content)) return null;
             return <MessageContent fragments={fragments} key={`${part.type}-${index}`} text={part.content} workspaceId={workspaceId} />;
           }
           if (part.type === "ui-resource" && part.resource.uri.startsWith("dojofoo://lessons/")) {
             return <MessageContent fragments={fragments} key={`${part.type}-${index}`} kind="lesson-fragment" text={part.resource.text ?? ""} workspaceId={workspaceId} />;
           }
           if (part.type === "tool-call") {
-            if (part.name === "check_lesson") {
+            if (part.name.includes("dojo_ui_show") && part.state === "complete") {
+              const fragmentId = lessonFragmentId(part.input);
+              return fragmentId
+                ? <MessageContent fragments={fragments} key={`${part.type}-${part.id}`} kind="lesson-fragment" text={fragmentId} workspaceId={workspaceId} />
+                : null;
+            }
+            if (part.name === "dojo_lesson_verify") {
               const report = isTestReport(part.output) ? part.output : null;
               const failed = part.state === "error" && !report;
               if (report) return <ChatTestSummary key={`${part.type}-${index}`} report={report} />;
@@ -1225,109 +1177,96 @@ export function StreamedChatMessage({
                 />
               ) : null;
             }
-            return (
-              <div className="w-full" key={`${part.type}-${index}`}>
-                <Tool data-tool-state={part.state} label={part.name.replaceAll("_", " ")}>
-                  <ToolContent forceMount>
-                    <ToolInput input={part.input} />
-                    <ToolOutput
-                      errorText={part.state === "error" ? "Tool execution failed" : undefined}
-                      output={part.output}
-                    />
-                  </ToolContent>
-                </Tool>
-              </div>
-            );
+            if (part.name.includes("dojo_lesson_complete") && !toolFailed(part)) return null;
+            return <GenericToolActivity key={`${part.type}-${part.id}`} part={part} />;
           }
           return null;
         })}
       </div>
-    </ChatMessage>
+    </div>
   );
 }
 
-type ChatPart = UIMessage["parts"][number];
-type ThinkingActivityPart = ToolCallPart | ThinkingPart;
-
-function isThinkingActivity(part: ChatPart | undefined): boolean {
-  if (!part) return false;
-  if (part.type === "thinking") return true;
-  return part.type === "tool-call"
-    && part.name !== "elicitation"
-    && part.name !== "request_permission"
-    && part.name !== "check_lesson";
+function lessonFragmentId(input: unknown): string | undefined {
+  if (!input || typeof input !== "object" || !("fragmentId" in input)) return undefined;
+  return typeof input.fragmentId === "string" ? input.fragmentId : undefined;
 }
 
-function isThinkingSequencePart(part: ChatPart | undefined): boolean {
-  return part?.type === "tool-result" || isThinkingActivity(part);
-}
-
-function isActiveThinkingActivity(activity: ThinkingActivityPart): boolean {
+function isActiveThinkingActivity(activity: ToolCallPart): boolean {
   return activity.type === "tool-call"
     && (activity.state === "awaiting-input" || activity.state === "input-streaming" || activity.state === "input-complete");
 }
 
-function ThinkingActivity({
-  activity,
-  fragments,
-  isLast,
-  label,
-  workspaceId,
-}: {
-  activity: ThinkingActivityPart;
-  fragments: Record<string, string>;
-  isLast: boolean;
-  label?: string;
-  workspaceId: string;
-}) {
-  const active = isActiveThinkingActivity(activity);
-  if (activity.type === "thinking") {
-    const steps = formatThinkingSteps(activity.content);
-    return steps.map((step, index) => (
-      <ThinkingStep
-        icon="brain"
-        isLast={isLast && index === steps.length - 1}
-        key={`${step.label}-${index}`}
-        label={formatThinkingLabel(step.label)}
-        status={active && index === steps.length - 1 ? "active" : "complete"}
-      >
-        {step.content && <div className="text-muted-foreground [&_*]:text-muted-foreground"><MessageContent fragments={fragments} text={step.content} workspaceId={workspaceId} /></div>}
-      </ThinkingStep>
-    ));
-  }
-  if (activity.name === "check_lesson") {
-    const report = isTestReport(activity.output) ? activity.output : null;
-    return (
-      <ThinkingStep
-        icon="check"
-        isLast={isLast}
-        label={label ?? (report ? `Lesson checks · ${report.passed}/${report.total} passed` : "Running lesson checks")}
-        status={active ? "active" : "complete"}
-      >
-        {report && <ChatTestSummary report={report} />}
-        {activity.output !== undefined && !report && <ToolOutput errorText={undefined} output={activity.output} />}
-      </ThinkingStep>
-    );
-  }
-  const command = activityCommand(activity);
-  const disclosureLabel = label
-    ? formatThinkingLabel(label)
-    : command
-      ? inlineThinkingCode(command)
-      : toolDisclosureLabel(activity);
+function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; streaming: boolean; timing?: ChatWorkTiming }) {
+  const [open, setOpen] = useState(streaming);
+  const steps = formatThinkingSteps(part.content).map((step) => ({
+    title: step.label ?? "Reasoning",
+    body: step.content ?? "",
+  }));
+  const elapsed = timing?.startedAt !== undefined && timing.completedAt !== undefined
+    ? formatElapsed(timing.completedAt - timing.startedAt)
+    : undefined;
   return (
-    <ThinkingStep icon={toolIcon(activity.name)} isLast={isLast} status={active ? "active" : "complete"}>
-      <Tool data-tool-state={activity.state} label={disclosureLabel}>
-        <ToolContent forceMount>
-          <ToolInput input={activity.input} />
-          <ToolOutput
-            errorText={activity.state === "error" ? "Tool execution failed" : undefined}
-            output={activity.output}
-          />
-        </ToolContent>
-      </Tool>
-    </ThinkingStep>
+    <ReasoningPanel
+      className="max-w-none"
+      elapsed={elapsed}
+      onOpenChange={setOpen}
+      open={open}
+      restingLabel="Worked"
+      steps={steps}
+      streaming={streaming}
+      visibleSteps={steps.length}
+    />
   );
+}
+
+function GenericToolActivity({ part }: { part: ToolCallPart }) {
+  const running = isActiveThinkingActivity(part);
+  const failed = toolFailed(part);
+  const [open, setOpen] = useState(running || failed);
+  const command = activityCommand(part);
+  return (
+    <AssistantToolCall
+      activeLabel={toolActivityLabel(part.name)}
+      className="max-w-none"
+      error={failed}
+      label={failed ? `${toolResultLabel(part.name)} failed` : toolResultLabel(part.name)}
+      onOpenChange={setOpen}
+      open={open}
+      query={command ?? part.name}
+      request={serializeToolValue(part.input)}
+      result={part.output === undefined ? "Waiting for result…" : serializeToolValue(part.output)}
+      running={running}
+    />
+  );
+}
+
+function serializeToolValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value ?? {}, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function toolFailed(part: ToolCallPart): boolean {
+  if (part.state === "error") return true;
+  return /(?:"status"\s*:\s*"failed"|request timed out|mcp error)/iu.test(serializeToolValue(part.output));
+}
+
+function toolActivityLabel(name: string): string {
+  if (name.includes("dojo_lesson_complete")) return "Asking how to continue";
+  return `Running ${name.replaceAll("_", " ")}`;
+}
+
+function toolResultLabel(name: string): string {
+  if (name.includes("dojo_lesson_complete")) return "Completion prompt";
+  return name.replaceAll("_", " ");
+}
+
+function formatElapsed(durationMs: number): string {
+  return durationMs < 1_000 ? "<1s" : `${Math.round(durationMs / 1_000)}s`;
 }
 
 function activityCommand(activity: ToolCallPart): string | undefined {
@@ -1341,44 +1280,6 @@ function activityCommand(activity: ToolCallPart): string | undefined {
   return undefined;
 }
 
-function inlineThinkingCode(value: string): ReactNode {
-  return <span className="font-semibold">{value}</span>;
-}
-
-function toolDisclosureLabel(activity: ToolCallPart): ReactNode {
-  const command = activityCommand(activity);
-  if (command) return inlineThinkingCode(command);
-  const input = activity.input && typeof activity.input === "object"
-    ? activity.input as Record<string, unknown>
-    : undefined;
-  const path = input && typeof input.path === "string" ? input.path : undefined;
-  if (/read/iu.test(activity.name) && path) return <>Reading file {inlineThinkingCode(path)}</>;
-  if (/search|find/iu.test(activity.name) && path) return <>Searching {inlineThinkingCode(path)}</>;
-  return formatThinkingLabel(activity.name.replaceAll("_", " "));
-}
-
-function formatThinkingLabel(label?: string): ReactNode {
-  if (!label) return undefined;
-  const reading = label.match(/^(Reading file\s+)(.+)$/u);
-  if (reading) return <>{reading[1]}{inlineThinkingCode(reading[2].replace(/^`|`$/gu, ""))}</>;
-  const parts = label.split(/(`[^`]+`)/u);
-  if (parts.length === 1) return label;
-  return <>{parts.map((part, index) => part.startsWith("`") && part.endsWith("`")
-    ? <span key={index}>{inlineThinkingCode(part.slice(1, -1))}</span>
-    : part)}</>;
-}
-
-function standaloneThoughtLabel(activity: ThinkingPart): string | undefined {
-  const steps = formatThinkingSteps(activity.content);
-  return steps.length === 1 && steps[0].label && !steps[0].content ? steps[0].label : undefined;
-}
-
-function toolIcon(toolName: string): "monitor" | "pencil" | "search" | "settings" {
-  if (/read|search|find|list/iu.test(toolName)) return "search";
-  if (/edit|write|patch/iu.test(toolName)) return "pencil";
-  if (/exec|shell|terminal|command/iu.test(toolName)) return "monitor";
-  return "settings";
-}
 
 function isTestReport(value: unknown): value is TestReport {
   if (!value || typeof value !== "object") return false;

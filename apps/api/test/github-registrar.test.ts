@@ -126,7 +126,7 @@ describe("GitHubCourseRegistrar", () => {
     });
 
     expect(registered).toMatchObject({ mode: "interactive", katas: [], hash: "interactive-sha" });
-    expect(registered?.files.map(({ path }) => path)).toEqual([...files.keys()].sort());
+    expect(registered?.files?.map(({ path }) => path)).toEqual([...files.keys()].sort());
     expect(upsert).toHaveBeenCalledWith(registered);
   });
 

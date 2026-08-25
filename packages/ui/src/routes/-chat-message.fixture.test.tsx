@@ -44,7 +44,7 @@ describe("TanStack AI UIMessage renderer", () => {
     expect(html).not.toContain("Parameters");
   });
 
-  it("keeps chained tool calls in one reasoning disclosure across tool-result parts", () => {
+  it("renders reasoning and each chained tool call with the Assistant UI disclosures", () => {
     const message = {
       id: "assistant-tools",
       role: "assistant",
@@ -63,10 +63,37 @@ describe("TanStack AI UIMessage renderer", () => {
       <StreamedChatMessage fragments={{}} message={message} streaming workspaceId="fixture-workspace" />,
     );
 
-    expect(html.match(/Working/gu)).toHaveLength(1);
+    expect(html.match(/data-slot="reasoning-panel"/gu)).toHaveLength(1);
+    expect(html.match(/data-slot="tool-call"/gu)).toHaveLength(3);
     expect(html).toContain("Inspecting the lesson");
-    expect(html).toContain("Searching");
     expect(html).not.toContain("Parameters &amp; result");
     expect(html).toContain("dojofoo kata --check");
+  });
+
+  it("renders dojo_ui_show as its authored fragment instead of tool machinery", () => {
+    const message = {
+      id: "assistant-fragment",
+      role: "assistant",
+      parts: [{
+        type: "tool-call",
+        id: "show-1",
+        name: "dojofoo_dojo_ui_show",
+        state: "complete",
+        input: { fragmentId: "regex-whitespace" },
+        output: { fragmentId: "regex-whitespace" },
+      }],
+    } as UIMessage;
+
+    const html = renderToStaticMarkup(
+      <StreamedChatMessage
+        fragments={{ "regex-whitespace": "Whitespace runs use the **one-or-more** quantifier." }}
+        message={message}
+        workspaceId="fixture-workspace"
+      />,
+    );
+
+    expect(html).toContain("Whitespace runs use the");
+    expect(html).not.toContain("dojo_ui_show");
+    expect(html).not.toContain("data-slot=\"tool-call\"");
   });
 });

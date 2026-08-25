@@ -407,19 +407,26 @@ describe("AcpClient projection", () => {
       },
     });
 
-    expect(parts).toContainEqual(expect.objectContaining({
-      type: "tool-input-available",
-      toolCallId: "choice-1",
-      toolName: "elicitation",
-      input: { questions: [expect.objectContaining({
-        id: "next",
-        options: [
-          { id: "Review", title: "Review" },
-          { id: "Move on", title: "Move on" },
-          { id: "Pause", title: "Pause" },
-        ],
-      })] },
-    }));
+    expect(parts).toEqual([
+      expect.objectContaining({
+        type: "tool-input-start",
+        toolCallId: "choice-1",
+        toolName: "elicitation",
+      }),
+      expect.objectContaining({
+        type: "tool-input-available",
+        toolCallId: "choice-1",
+        toolName: "elicitation",
+        input: { questions: [expect.objectContaining({
+          id: "next",
+          options: [
+            { id: "Review", title: "Review" },
+            { id: "Move on", title: "Move on" },
+            { id: "Pause", title: "Pause" },
+          ],
+        })] },
+      }),
+    ]);
     client.answerUserInput("session-1", { next: ["Move on"] });
     await expect(promise).resolves.toEqual({ action: "accept", content: { next: "Move on" } });
   });
@@ -546,6 +553,27 @@ describe("AcpClient projection", () => {
     expect(await visibleHistory(client, "session-1")).toEqual([]);
   });
 
+  it("does not project the private lesson bootstrap context into chat history", async () => {
+    const client = new AcpClient();
+
+    receive(client, {
+      sessionId: "session-1",
+      update: {
+        sessionUpdate: "user_message_chunk",
+        content: {
+          type: "resource",
+          resource: {
+            uri: "dojofoo://courses/starter/lessons/normalize-handle/context",
+            mimeType: "application/json",
+            text: JSON.stringify({ phase: "resume", lesson: { id: "normalize-handle" } }),
+          },
+        },
+      },
+    });
+
+    expect(await visibleHistory(client, "session-1")).toEqual([]);
+  });
+
   it("projects an agent-run JSON kata check as the lesson-check tool", async () => {
     const client = new AcpClient();
     const parts: AcpStreamPart[] = [];
@@ -575,14 +603,14 @@ describe("AcpClient projection", () => {
     });
 
     expect(parts).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: "tool-input-available", toolName: "check_lesson" }),
+      expect.objectContaining({ type: "tool-input-available", toolName: "dojo_lesson_verify" }),
       expect.objectContaining({ type: "tool-output-available", output: expect.objectContaining({ passed: 2, total: 4 }) }),
     ]));
     expect(await client.history("session-1")).toEqual([
       expect.objectContaining({
         role: "assistant",
         kind: "tool",
-        text: expect.stringContaining('"name":"check_lesson"'),
+        text: expect.stringContaining('"name":"dojo_lesson_verify"'),
       }),
     ]);
   });

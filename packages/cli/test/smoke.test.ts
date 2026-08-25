@@ -170,7 +170,7 @@ describe("setupSkills", () => {
     setupSkills(root, ["opencode", "codex"]);
 
     const canonical = resolve(root, ".agents/skills/dojofoo/SKILL.md");
-    expect(readFileSync(canonical, "utf8")).toContain("check_lesson");
+    expect(readFileSync(canonical, "utf8")).toContain("dojo_lesson_verify");
     expect(lstatSync(resolve(root, ".opencode/skills/dojofoo")).isSymbolicLink()).toBe(true);
     expect(lstatSync(resolve(root, ".codex/skills/dojofoo")).isSymbolicLink()).toBe(true);
     expect(existsSync(resolve(root, ".agents/commands"))).toBe(false);

@@ -20,10 +20,19 @@ export function opencodeRuntimeEnvironment(
   const agents = configured.agent && typeof configured.agent === "object" && !Array.isArray(configured.agent)
     ? configured.agent as Record<string, unknown>
     : {};
+  const experimental = configured.experimental && typeof configured.experimental === "object" && !Array.isArray(configured.experimental)
+    ? configured.experimental as Record<string, unknown>
+    : {};
   return {
     ...baseEnvironment,
     OPENCODE_CONFIG_CONTENT: JSON.stringify({
       ...configured,
+      experimental: {
+        ...experimental,
+        // Lesson tools may intentionally wait for learner input. OpenCode's
+        // short default expires the MCP request before the UI can answer it.
+        mcp_timeout: typeof experimental.mcp_timeout === "number" ? experimental.mcp_timeout : 600_000,
+      },
       default_agent: "dojofoo",
       agent: {
         ...agents,

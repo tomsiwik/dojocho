@@ -126,9 +126,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-.font-prose :where(blockquote, q, pre, code, a, button, [role="button"]),
+.font-prose :where(pre, code),
 .font-prose :where(ol, ul) > li::marker {
   font-family: "Iosevka", monospace;
+}
+
+.font-prose :where(pre, code) {
+  font-size: 15px;
 }
 
 :root {

@@ -1,5 +1,8 @@
 @import "tailwindcss";
+@import "tw-shimmer";
 @import "./styles.css";
+
+@source "../../uix/src/**/*.{ts,tsx}";
 
 @font-face {
   font-family: "Iosevka";
@@ -199,9 +202,13 @@
   }
 }
 
-.font-prose :where(blockquote, q, pre, code, a, button, [role="button"]),
+.font-prose :where(pre, code),
 .font-prose :where(ol, ul) > li::marker {
   font-family: "Iosevka", monospace;
+}
+
+.font-prose :where(pre, code) {
+  font-size: 14px;
 }
 
 .dojo-chat-message :where(code):not(:where(pre *)),

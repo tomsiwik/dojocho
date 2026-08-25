@@ -55,6 +55,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@dojofoo/protocol": "workspace:*",
     "@dojofoo/ui": "workspace:*",
     "tsup": "^8.0.0",
     "vitest": "^4.1.10"

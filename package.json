@@ -6,6 +6,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "assets:logo": "node scripts/assets/apply-svg-perspective.mjs --fills-only assets/brand/dojofoo-flat.svg assets/brand/dojofoo-perspective.af packages/ui/public/brand/dojofoo.svg apps/web/public/dojofoo.svg",
     "build": "turbo build",
     "e2e:up": "docker compose up -d --wait --build",
     "e2e:down": "docker compose down -v --remove-orphans",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
+    "@xmldom/xmldom": "^0.9.12",
     "turbo": "^2.10.9",
     "vitest": "^4.1.10",
     "youch": "^4.1.1"

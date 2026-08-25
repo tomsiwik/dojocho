@@ -13,15 +13,7 @@ const useIsoLayoutEffect =
 // Edge spring for the selected-bg merge/split: spring.moderate (critically
 // damped) so converging edges meet exactly instead of overshooting. On a merge
 // the inner corners trail by `cornerDelay`, staying rounded until the halves meet.
-const mergeSpring = spring.moderate;
 const cornerDelay = 0.07;
-// A boundary resolves after its motion finishes (merge → swap to one block;
-// split → drop), driven by a duration timer rather than onAnimationComplete —
-// framer skips that callback when an animation's target equals its current value
-// (which spam-toggling produces), which would otherwise strand a half. The
-// buffer biases late, by which point the halves have met/parted, so it's unseen.
-const convergeMs = (mergeSpring.duration + cornerDelay) * 1000 + 80;
-const splitMs = mergeSpring.duration * 1000 + 80;
 
 // A selected-background block for one render. A run is normally one block; mid
 // merge/split it is drawn as two abutting halves with sharp inner corners.
@@ -82,6 +74,12 @@ export function useMergeSplitBlocks(
   itemRects: ItemRect[],
   R: number
 ): SelBlock[] {
+  // Read the token when the hook runs rather than during module evaluation.
+  // The production SSR bundle may place this hook and the token in mutually
+  // importing chunks; a top-level read observes the binding before it is ready.
+  const mergeSpring = spring.moderate;
+  const convergeMs = (mergeSpring.duration + cornerDelay) * 1000 + 80;
+  const splitMs = mergeSpring.duration * 1000 + 80;
   const [boundaries, setBoundaries] = useState<Boundary[]>([]);
   const prevRunsRef = useRef<Run[]>([]);
   const tidRef = useRef(0);
@@ -324,6 +322,7 @@ export function SelectionBackgrounds({
 }: {
   blocks: SelBlock[];
 }) {
+  const mergeSpring = spring.moderate;
   return (
     <AnimatePresence>
       {blocks.map((b) => {
