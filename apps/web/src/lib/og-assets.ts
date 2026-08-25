@@ -8,6 +8,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import logoWordmark from '../../../../assets/brand/dojofoo-flat.svg?raw'
 
 const cache = new Map<string, string>()
 
@@ -27,4 +28,4 @@ export const getOgBackgroundDataUrl = () =>
 
 /** Wide "DOJO.FOO" wordmark — the single brand mark. */
 export const getLogoWordmarkDataUrl = () =>
-  dataUrl('public/dojofoo.svg', 'image/svg+xml')
+  Promise.resolve(`data:image/svg+xml;base64,${Buffer.from(logoWordmark).toString('base64')}`)

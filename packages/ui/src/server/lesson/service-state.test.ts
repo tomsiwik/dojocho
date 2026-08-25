@@ -1,13 +1,16 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readDojoRc } from "@dojofoo/config";
-import { dojoLessonContext, dojoLessonFragment, getLesson, nextLesson, shouldIntroduceLesson, writeLessonFile } from "./service";
+import { dojoLessonContext, dojoLessonFragment, getLesson, nextLesson, shouldIntroduceLesson, startLessonSession, writeLessonFile } from "./service";
+import { dojofooHarness } from "../harness/registry";
+import { acpClient } from "./codex-client";
 
 const roots: string[] = [];
 
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
@@ -96,6 +99,37 @@ describe("fresh lesson state", () => {
     expect(next).toMatchObject({ kata: "002-second", isCurrent: true, state: "ongoing" });
     expect(readFileSync(resolve(root, "katas/002-second/solution.ts"), "utf8"))
       .toBe("export const second = 0;\n");
+  });
+
+  it("starts a distinct session while retaining the previous session as history", async () => {
+    const root = freshCourse();
+    mkdirSync(resolve(root, ".dojo"), { recursive: true });
+    writeFileSync(resolve(root, ".dojo", "web.json"), JSON.stringify({
+      version: 4,
+      threads: {
+        "starter/001-first": {
+          sessionId: "old-session",
+          harness: dojofooHarness(),
+          contractHash: "old-contract",
+          aliases: [],
+        },
+      },
+      results: {},
+      checkpoints: {},
+      observations: {},
+    }));
+    vi.spyOn(acpClient, "startThread").mockResolvedValue("new-session");
+    vi.spyOn(acpClient, "resumeThread").mockResolvedValue();
+    vi.spyOn(acpClient, "history").mockResolvedValue([]);
+
+    const lesson = await startLessonSession(root, "001-first");
+    const state = JSON.parse(readFileSync(resolve(root, ".dojo", "web.json"), "utf8"));
+
+    expect(lesson.sessionId).toBe("new-session");
+    expect(state.threads["starter/001-first"]).toMatchObject({
+      sessionId: "new-session",
+      aliases: ["old-session"],
+    });
   });
 
   it("allows only authored fragments from the active lesson", async () => {

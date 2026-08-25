@@ -579,14 +579,14 @@ export function wantsNextLesson(answers: Record<string, string[]>): boolean {
   );
 }
 
-async function lessonThread(root: string, kataName: string) {
+async function lessonThread(root: string, kataName: string, options: { forceNew?: boolean } = {}) {
   const rc = readDojoRc(root);
   const key = lessonKey(rc.currentDojo, kataName);
   const state = readWebState(root);
   const existing = state.threads[key];
   const harness = dojofooHarness();
   const runtimeKey = lessonRuntimeKey(root, key, harness);
-  if (existing && existing.harness === harness && !existing.resumeFailed) {
+  if (!options.forceNew && existing && existing.harness === harness && !existing.resumeFailed) {
     const catalog = readCatalog(root, rc.currentDojo);
     const kata = findKataByIdOrName(resolveAllKatas(root, rc, catalog), kataName);
     if (!kata) throw new Error(`Kata not found: ${kataName}`);
@@ -654,6 +654,16 @@ export async function setLessonModel(
 ): Promise<SessionModelConfiguration> {
   const { threadId } = await lessonThread(root, kataName);
   return acpClient.setModel(threadId, value);
+}
+
+export async function startLessonSession(
+  root: string,
+  kataName: string,
+): Promise<LessonSnapshot> {
+  await lessonThread(root, kataName, { forceNew: true });
+  const lesson = await getLesson(root, kataName);
+  if (!lesson) throw new Error(`Lesson not found: ${kataName}`);
+  return lesson;
 }
 
 function lessonInstructions(root: string, dojo: string, sensei: string): string {

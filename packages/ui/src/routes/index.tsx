@@ -132,14 +132,24 @@ function CourseIndex() {
       return rightSeen - leftSeen;
     });
 
-  async function openCourse(course: ActiveCourse, sessionId = course.sessionId) {
+  async function openCourse(course: ActiveCourse, sessionId?: string | null) {
     window.localStorage.setItem("dojofoo.workspace", course.workspaceId);
     if (course.mode === "interactive") {
       await navigate({ to: "/interactive" });
       return;
     }
-    if (sessionId) {
-      await navigate({ to: "/session/$sessionId", params: { sessionId } });
+    if (sessionId === null && course.kata) {
+      const response = await fetch(`${lessonApi(course.workspaceId, course.dojo, course.kata)}/sessions`, { method: "POST" });
+      await assertResponse(response);
+      const started = await response.json() as LessonSnapshot;
+      if (started.sessionId) {
+        await navigate({ to: "/session/$sessionId", params: { sessionId: started.sessionId } });
+        return;
+      }
+    }
+    const existingSession = sessionId === undefined ? course.sessionId : sessionId;
+    if (existingSession) {
+      await navigate({ to: "/session/$sessionId", params: { sessionId: existingSession } });
       return;
     }
     if (course.kata) {
@@ -484,7 +494,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         }
         if (body && !("error" in body)) {
           hydrate(body);
-          if (body.sessionId && body.sessionId !== requestedSessionId) {
+          if (!requestedLessonId && body.sessionId && body.sessionId !== requestedSessionId) {
             await navigate({
               to: "/session/$sessionId",
               params: { sessionId: body.sessionId },
@@ -792,7 +802,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
     <main className="grid h-screen min-h-[42rem] grid-cols-[19rem_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
       <LessonNavigation
         lesson={lesson}
-        onOpenLesson={viewLesson}
+        workspaceId={workspaceId}
       />
 
       <section className="grid min-h-0 min-w-0 grid-cols-[minmax(30rem,1.618fr)_minmax(22rem,1fr)]">
@@ -1061,17 +1071,12 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
 
 function LessonNavigation({
   lesson,
-  onOpenLesson,
+  workspaceId,
 }: {
   lesson: LessonSnapshot;
-  onOpenLesson: (name: string) => void | Promise<void>;
+  workspaceId: string;
 }) {
   const [expandedLesson, setExpandedLesson] = useState(lesson.kata);
-  const openLessonRef = useRef(onOpenLesson);
-  openLessonRef.current = onOpenLesson;
-  const openLesson = useCallback((name: string) => {
-    void openLessonRef.current(name);
-  }, []);
 
   useEffect(() => {
     setExpandedLesson(lesson.kata);
@@ -1080,7 +1085,9 @@ function LessonNavigation({
   return (
     <aside className="flex min-h-0 flex-col border-r border-dashed bg-surface-1" data-testid="lesson-navigation">
       <div className="border-b border-dashed px-5 pb-5 pt-5">
-        <BrandLogo alt="Dojofoo wordmark" className="h-6" />
+        <a aria-label="Back to your dojos" className="inline-flex" href="/">
+          <BrandLogo alt="Dojofoo wordmark" className="h-6" />
+        </a>
         <h1 className="mt-1.5 text-xl font-semibold">{humanTitle(lesson.dojo)}</h1>
         <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Chapters</h2>
       </div>
@@ -1094,8 +1101,8 @@ function LessonNavigation({
                 item={item}
                 key={item.name}
                 last={index === lesson.lessons.length - 1}
+                lessonHref={`/course/${encodeURIComponent(workspaceId)}/${encodeURIComponent(lesson.dojo)}/lesson/${encodeURIComponent(item.name)}`}
                 onExpandedChange={setExpandedLesson}
-                onOpenLesson={openLesson}
               />
             );
           })}
@@ -1174,15 +1181,15 @@ const LessonNavigationItem = memo(function LessonNavigationItem({
   expanded,
   item,
   last,
+  lessonHref,
   onExpandedChange,
-  onOpenLesson,
 }: {
   currentKata: string;
   expanded: boolean;
   item: LessonSnapshot["lessons"][number];
   last: boolean;
+  lessonHref: string;
   onExpandedChange: (name: string) => void;
-  onOpenLesson: (name: string) => void;
 }) {
   const accessible = item.state === "completed" || item.isCurrent;
   return (
@@ -1198,25 +1205,38 @@ const LessonNavigationItem = memo(function LessonNavigationItem({
         value={item.name}
       >
         <AccordionPrimitive.Header>
-          <AccordionPrimitive.Trigger
-            aria-description={!accessible ? "Upcoming lesson; expand to preview its goal" : undefined}
-            className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
-            data-navigation-disabled={!accessible || undefined}
-            onClick={() => accessible && item.name !== currentKata && onOpenLesson(item.name)}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="truncate">{item.title}</span>
-            </span>
-            <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
-          </AccordionPrimitive.Trigger>
+          {accessible && item.name !== currentKata ? (
+            <a
+              className="flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
+              href={lessonHref}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="truncate">{item.title}</span>
+              </span>
+              <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
+            </a>
+          ) : (
+            <AccordionPrimitive.Trigger
+              aria-description={!accessible ? "Upcoming lesson; expand to preview its goal" : undefined}
+              className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
+              data-navigation-disabled={!accessible || undefined}
+            >
+              <>
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate">{item.title}</span>
+                </span>
+                <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
+              </>
+            </AccordionPrimitive.Trigger>
+          )}
         </AccordionPrimitive.Header>
         <LessonAccordionContent>
           <div>
             <p className="font-prose leading-5">{item.summary}</p>
             {accessible && item.name !== currentKata && (
-              <button className="mt-2 text-xs font-medium text-foreground underline underline-offset-4" onClick={() => onOpenLesson(item.name)} type="button">
+              <a className="mt-2 inline-block text-xs font-medium text-foreground underline underline-offset-4" href={lessonHref}>
                 Open lesson
-              </button>
+              </a>
             )}
           </div>
         </LessonAccordionContent>
