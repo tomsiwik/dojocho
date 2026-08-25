@@ -343,8 +343,11 @@ export function transcriptToUIMessages(transcript: TranscriptMessage[], sessionI
       continue;
     }
     if (entry.kind === "reasoning" && entry.text.trim().startsWith("Introduce this lesson in your own words.")) continue;
+    const durationMs = entry.startedAt !== undefined && entry.completedAt !== undefined
+      ? Math.max(0, entry.completedAt - entry.startedAt)
+      : undefined;
     const part = entry.kind === "reasoning"
-      ? { type: "thinking" as const, content: visibleText }
+      ? { type: "thinking" as const, content: visibleText, ...(durationMs === undefined ? {} : { durationMs }) }
       : entry.kind === "tool" && visibleText.startsWith("{")
         ? (() => {
             const tool = JSON.parse(visibleText) as { name: string; input: unknown; output: unknown };
@@ -357,6 +360,7 @@ export function transcriptToUIMessages(transcript: TranscriptMessage[], sessionI
                 arguments: jsonText(tool.input),
                 input: tool.input,
                 output: tool.output,
+                ...(durationMs === undefined ? {} : { durationMs }),
               };
             }
             return {
@@ -367,6 +371,7 @@ export function transcriptToUIMessages(transcript: TranscriptMessage[], sessionI
               arguments: jsonText(tool.input),
               input: tool.input,
               output: tool.output,
+              ...(durationMs === undefined ? {} : { durationMs }),
             };
           })()
       : { type: "text" as const, content: visibleText };

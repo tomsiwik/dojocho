@@ -23,6 +23,7 @@ import { MessageQueue } from "../components/elements/message-queue";
 import { ConnectionState } from "../components/elements/connection-state";
 import { StreamingText } from "../components/elements/streaming-text";
 import { TerminalBlock } from "../components/elements/terminal-block";
+import { ToolTimeline } from "../components/elements/tool-timeline";
 import { AgentCard } from "../components/elements/agent-card";
 import { CodeDiff } from "../components/elements/code-diff";
 import { InlineCitation } from "../components/elements/inline-citation";
@@ -215,6 +216,53 @@ function LongRunning({ speed }: ChatShowcaseProps) {
   );
 }
 
+function LessonWorkTimeline({ speed }: ChatShowcaseProps) {
+  const frame = useFrame(speed, 6);
+  const [open, setOpen] = useState(false);
+  const finished = frame >= 5;
+  const seconds = Math.max(1, frame * 2);
+  const steps = [
+    { verb: "Thinking", status: "success" as const },
+    { verb: "Loaded skill", chip: "dojofoo", status: "success" as const },
+    { verb: "Searched files", chip: "katas/001", status: "success" as const },
+    { verb: "Ran lesson checks", status: finished ? "success" as const : "running" as const },
+  ];
+  const lines = ["✓ trims outer whitespace", "✓ lowercases input", "✓ collapses whitespace runs", "✓ preserves empty input"];
+  return (
+    <StoryFrame>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-5">
+            <p className="ml-auto bg-muted max-w-[85%] px-3 py-2 text-sm">Check my latest attempt.</p>
+            <ToolTimeline
+              activeLabel={`Working · ${seconds}s`}
+              className="max-w-none"
+              onOpenChange={setOpen}
+              open={open}
+              restingLabel={`Worked · ${seconds}s`}
+              stats={[]}
+              steps={steps}
+              streaming={!finished}
+              visibleSteps={Math.min(frame + 1, steps.length)}
+            />
+            {frame >= 2 && (
+              <TerminalBlock
+                className="max-w-none"
+                command="Running lesson checks"
+                done={finished}
+                lines={lines}
+                visibleCount={Math.min(Math.max(0, frame - 1), lines.length)}
+              />
+            )}
+            {finished && <p className="text-sm leading-relaxed">The normalization boundary now behaves consistently. What changed in how adjacent spaces are handled?</p>}
+          </div>
+        </div>
+        <div className="bg-background shrink-0 px-5 pb-5 pt-3"><Composer className="mx-auto max-w-xl"><ComposerBar><div className="text-foreground/35 min-h-11 px-3 py-3 text-[15px]">Message the sensei…</div><ComposerToolbar><span /><ComposerSend streaming={!finished} idle /></ComposerToolbar></ComposerBar></Composer></div>
+      </div>
+    </StoryFrame>
+  );
+}
+
 function HumanInTheLoop({ speed }: ChatShowcaseProps) {
   const frame = useFrame(speed, 4);
   const [approved, setApproved] = useState(false);
@@ -287,5 +335,6 @@ export const CapturedCompletionTimeout: Story = {
   render: (args) => <ProtocolChat {...args} cassette={SESSION_COMPLETION_TIMEOUT_CASSETTE} />,
 };
 export const LongRunningAgent: Story = { render: (args) => <LongRunning {...args} /> };
+export const LessonActivityTimeline: Story = { render: (args) => <LessonWorkTimeline {...args} /> };
 export const HumanInputAndApproval: Story = { render: (args) => <HumanInTheLoop {...args} /> };
 export const RichLessonOutput: Story = { render: (args) => <RichLessonArtifacts {...args} /> };

@@ -3,7 +3,7 @@ import { fetchServerSentEvents, useChat, type UIMessage } from "@tanstack/ai-rea
 import type { ThinkingPart, ToolCallPart } from "@tanstack/ai-client";
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { BundledLanguage } from "shiki";
-import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Undo2, XCircle } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, Loader2, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Undo2, XCircle } from "lucide-react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { CodeBlock, CodeBlockCopyButton } from "@/components/ai-elements/code-block";
 import { CourseContent } from "@/components/course-content";
@@ -19,8 +19,8 @@ import {
   TestSuiteStats,
 } from "@/components/ai-elements/test-results";
 import { ToolOutput } from "@/components/ai-elements/tool";
-import { ReasoningPanel } from "@dojofoo/uix/components/elements/reasoning-panel";
-import { ToolResult, ToolResultOutput } from "@dojofoo/uix/components/agents/tool-result";
+import { TerminalBlock } from "@dojofoo/uix/components/elements/terminal-block";
+import { ToolTimeline, type TimelineStep } from "@dojofoo/uix/components/elements/tool-timeline";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
@@ -48,7 +48,6 @@ import {
 } from "@dojofoo/ui/select";
 import type { LessonSnapshot, TestReport } from "@/server/lesson/service";
 import type { JsonRpcRequest } from "@/server/session/protocol";
-import { formatThinkingSteps } from "@/lib/thinking-steps-format";
 import { applyLessonMetadata, hydrateLesson } from "@/lib/lesson-snapshot";
 import { projectChatTimeline, type AnchoredChatEvent } from "@/lib/chat-timeline";
 import { chatAcceptsInput, isInternalLessonMessage, lessonNeedsIntroduction } from "@/lib/chat-internal";
@@ -671,6 +670,8 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
 
   const completed = lesson.result?.complete === true || lesson.state === "completed";
   const thinking = chatStatus === "submitted" || chatStatus === "streaming";
+  const nextLesson = lesson.lessons[lesson.lessons.findIndex((item) => item.name === lesson.kata) + 1];
+  const nextLessonPending = busy === "Preparing the next lesson…";
   return (
     <main className="grid h-screen min-h-[42rem] grid-cols-[19rem_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
       <LessonNavigation
@@ -779,6 +780,19 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                       Reset lesson
                     </Button>
                   </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={nextLessonPending} onOpenChange={() => undefined}>
+                <DialogContent>
+                  <div className="flex items-start gap-4 py-2">
+                    <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-blue-500 motion-reduce:animate-none" />
+                    <DialogHeader>
+                      <DialogTitle>Opening {nextLesson?.title ?? "the next lesson"}</DialogTitle>
+                      <DialogDescription className="font-prose">
+                        Preparing its scaffold and lesson context…
+                      </DialogDescription>
+                    </DialogHeader>
+                  </div>
                 </DialogContent>
               </Dialog>
               <div className="aspect-video min-h-0 overflow-hidden" data-testid="lesson-canvas">
@@ -1149,9 +1163,13 @@ export function StreamedChatMessage({
         "min-w-0 max-w-full space-y-2 overflow-hidden",
         assistant ? "w-full" : "bg-muted px-3 py-2 text-sm",
       )}>
-        {message.parts.map((part, index) => {
+        {groupMessageParts(message.parts).map((group, index) => {
+          if (group.kind === "activity") {
+            return <ActivityTimeline activities={group.parts} key={`activity-${index}`} streaming={streaming} timing={timing} />;
+          }
+          const part = group.part;
           if (part.type === "thinking") {
-            return <ReasoningActivity key={`${part.type}-${index}`} part={part} streaming={streaming} timing={timing} />;
+            return null;
           }
           if (part.type === "text") {
             if (isInternalLessonMessage(part.content)) return null;
@@ -1170,7 +1188,8 @@ export function StreamedChatMessage({
             if (part.name === "dojo_lesson_verify") {
               const report = isTestReport(part.output) ? part.output : null;
               const failed = part.state === "error" && !report;
-              if (report) return <ChatTestSummary key={`${part.type}-${index}`} report={report} />;
+              if (report) return <ChatTestTerminal key={`${part.type}-${index}`} report={report} />;
+              if (isActiveThinkingActivity(part)) return <ChatTestTerminal key={`${part.type}-${index}`} />;
               if (failed) {
                 return (
                   <div className="w-full" key={`${part.type}-${index}`}>
@@ -1191,13 +1210,38 @@ export function StreamedChatMessage({
               ) : null;
             }
             if (part.name.includes("dojo_lesson_complete") && !toolFailed(part)) return null;
-            return <GenericToolActivity key={`${part.type}-${part.id}`} part={part} />;
+            return null;
           }
           return null;
         })}
       </div>
     </div>
   );
+}
+
+type MessagePart = UIMessage["parts"][number];
+type ActivityPart = ThinkingPart | ToolCallPart;
+type MessagePartGroup = { kind: "activity"; parts: ActivityPart[] } | { kind: "part"; part: MessagePart };
+
+function groupMessageParts(parts: UIMessage["parts"]): MessagePartGroup[] {
+  const groups: MessagePartGroup[] = [];
+  for (const part of parts) {
+    if (part.type === "tool-result") continue;
+    if (isTimelineActivity(part)) {
+      const previous = groups.at(-1);
+      if (previous?.kind === "activity") previous.parts.push(part);
+      else groups.push({ kind: "activity", parts: [part] });
+    } else groups.push({ kind: "part", part });
+  }
+  return groups;
+}
+
+function isTimelineActivity(part: MessagePart): part is ActivityPart {
+  if (part.type === "thinking") return true;
+  if (part.type !== "tool-call") return false;
+  if (part.name === "dojo_lesson_verify" || isAgentQuestion(part)) return false;
+  if (part.name.includes("dojo_ui_show") || (part.name.includes("dojo_lesson_complete") && !toolFailed(part))) return false;
+  return true;
 }
 
 function lessonFragmentId(input: unknown): string | undefined {
@@ -1210,23 +1254,28 @@ function isActiveThinkingActivity(activity: ToolCallPart): boolean {
     && (activity.state === "awaiting-input" || activity.state === "input-streaming" || activity.state === "input-complete");
 }
 
-function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; streaming: boolean; timing?: ChatWorkTiming }) {
-  const [open, setOpen] = useState(streaming);
-  const steps = formatThinkingSteps(part.content).map((step) => ({
-    title: step.label ?? "Reasoning",
-    body: step.content ?? "",
-  }));
-  const elapsed = timing?.startedAt !== undefined && timing.completedAt !== undefined
-    ? formatElapsed(timing.completedAt - timing.startedAt)
-    : undefined;
+function ActivityTimeline({ activities, streaming, timing }: { activities: ActivityPart[]; streaming: boolean; timing?: ChatWorkTiming }) {
+  const [open, setOpen] = useState(false);
+  const steps = activities.map<TimelineStep>((activity) => {
+    if (activity.type === "thinking") return { verb: "Thinking", status: streaming ? "running" : "success" };
+    const running = isActiveThinkingActivity(activity);
+    return {
+      verb: running ? toolActivityLabel(activity.name) : toolFailed(activity) ? `${toolResultLabel(activity.name)} failed` : toolResultLabel(activity.name),
+      chip: activityCommand(activity) ?? toolTarget(activity),
+      status: running ? "running" : toolFailed(activity) ? "error" : "success",
+    };
+  });
+  const elapsedMs = activityDuration(activities, timing);
+  const elapsed = elapsedMs === undefined ? undefined : formatElapsed(elapsedMs);
+  const suffix = elapsed ? ` · ${elapsed}` : "";
   return (
-    <ReasoningPanel
+    <ToolTimeline
+      activeLabel={`Working${suffix}`}
       className="max-w-none"
-      disclosure={false}
-      elapsed={elapsed}
       onOpenChange={setOpen}
       open={open}
-      restingLabel="Worked"
+      restingLabel={`Worked${suffix}`}
+      stats={[]}
       steps={steps}
       streaming={streaming}
       visibleSteps={steps.length}
@@ -1234,26 +1283,22 @@ function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; st
   );
 }
 
-function GenericToolActivity({ part }: { part: ToolCallPart }) {
-  const running = isActiveThinkingActivity(part);
-  const failed = toolFailed(part);
-  const command = activityCommand(part);
-  const request = serializeToolValue(part.input);
-  const result = part.output === undefined ? "Waiting for result…" : serializeToolValue(part.output);
-  const output = `Request\n${request}\n\nResult\n${result}`;
-  return (
-    <ToolResult
-      className="max-w-none"
-      collapseOnComplete
-      defaultOpen={false}
-      kind={command ? "terminal" : "request"}
-      status={running ? "running" : failed ? "error" : "success"}
-      title={running ? toolActivityLabel(part.name) : failed ? `${toolResultLabel(part.name)} failed` : toolResultLabel(part.name)}
-      tool={command ?? part.name}
-    >
-      <ToolResultOutput language={command ? "bash" : "json"}>{output}</ToolResultOutput>
-    </ToolResult>
-  );
+function activityDuration(activities: ActivityPart[], timing?: ChatWorkTiming): number | undefined {
+  if (timing?.startedAt !== undefined) return (timing.completedAt ?? Date.now()) - timing.startedAt;
+  const values = activities.flatMap((activity) => {
+    const duration = (activity as ActivityPart & { durationMs?: number }).durationMs;
+    return duration === undefined ? [] : [duration];
+  });
+  return values.length ? Math.max(...values) : undefined;
+}
+
+function toolTarget(part: ToolCallPart): string | undefined {
+  if (!part.input || typeof part.input !== "object") return undefined;
+  const input = part.input as Record<string, unknown>;
+  for (const key of ["path", "file", "name", "query"]) {
+    if (typeof input[key] === "string") return input[key];
+  }
+  return undefined;
 }
 
 function serializeToolValue(value: unknown): string {
@@ -1475,44 +1520,26 @@ function inlineMessage(value: string) {
   });
 }
 
-function ChatTestSummary({ report }: { report: TestReport }) {
-  const passedPercentage = report.total > 0 ? (report.passed / report.total) * 100 : 0;
-  const failedPercentage = report.total > 0 ? (report.failed / report.total) * 100 : 0;
+function ChatTestTerminal({ report }: { report?: TestReport }) {
+  const lines = report?.tests.flatMap((test) => [
+    `${test.status === "passed" ? "✓" : test.status === "failed" ? "×" : "-"} ${test.name}`,
+    ...test.failureMessages.slice(0, 1).map((failure) => `  ${failure.split("\n")[0]}`),
+  ]) ?? [];
   return (
-    <div className="w-full py-2.5">
-      <div className="flex items-baseline justify-between gap-3 text-xs">
-        <span className="font-medium text-foreground">{report.passed} of {report.total} tests passed</span>
-        {report.durationMs !== undefined && (
-          <span className="font-mono text-[10px] text-muted-foreground">{Math.round(report.durationMs)}ms</span>
-        )}
-      </div>
-      <div
-        aria-label={`${report.passed} passed, ${report.failed} failed, ${report.skipped} skipped`}
-        className="mt-2 flex h-1.5 w-full overflow-hidden bg-border"
-        role="img"
-      >
-        <span className="bg-emerald-500" style={{ width: `${passedPercentage}%` }} />
-        <span className="bg-red-500" style={{ width: `${failedPercentage}%` }} />
-      </div>
-    </div>
+    <TerminalBlock
+      className="max-w-none"
+      command={report ? `${report.passed}/${report.total} lesson checks passed` : "Running lesson checks"}
+      done={Boolean(report)}
+      failed={Boolean(report?.failed)}
+      lines={lines}
+      visibleCount={lines.length}
+    />
   );
 }
 
 function LiveCheckSummary({ tests }: { tests: TestReport["tests"] }) {
-  const passed = tests.filter((test) => test.status === "passed").length;
-  const failed = tests.filter((test) => test.status === "failed").length;
-  return (
-    <div aria-busy="true" aria-live="polite" className="w-full py-2.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-foreground">Running lesson checks</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{tests.length} finished</span>
-      </div>
-      <div className="mt-2 flex h-1.5 w-full overflow-hidden bg-border">
-        {passed > 0 && <span className="bg-emerald-500" style={{ flex: passed }} />}
-        {failed > 0 && <span className="bg-red-500" style={{ flex: failed }} />}
-      </div>
-    </div>
-  );
+  const lines = tests.map((test) => `${test.status === "passed" ? "✓" : "×"} ${test.name}`);
+  return <TerminalBlock className="max-w-none" command="Running lesson checks" done={false} lines={lines} visibleCount={lines.length} />;
 }
 
 function RunningTestResults({ tests }: { tests: TestReport["tests"] }) {
