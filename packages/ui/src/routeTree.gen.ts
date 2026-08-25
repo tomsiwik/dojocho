@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as AvatarRouteImport } from './routes/avatar'
 import { Route as InteractiveRouteImport } from './routes/interactive'
 import { Route as CourseWorkspaceIdRouteImport } from './routes/course.$workspaceId'
 import { Route as KataNameRouteImport } from './routes/kata.$name'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvatarRoute = AvatarRouteImport.update({
+  id: '/avatar',
+  path: '/avatar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InteractiveRoute = InteractiveRouteImport.update({
@@ -57,6 +63,7 @@ const CourseWorkspaceIdCourseIdLessonLessonIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/avatar': typeof AvatarRoute
   '/interactive': typeof InteractiveRoute
   '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/avatar': typeof AvatarRoute
   '/interactive': typeof InteractiveRoute
   '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/avatar': typeof AvatarRoute
   '/interactive': typeof InteractiveRoute
   '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/avatar'
     | '/interactive'
     | '/course/$workspaceId'
     | '/kata/$name'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/avatar'
     | '/interactive'
     | '/course/$workspaceId'
     | '/kata/$name'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/avatar'
     | '/interactive'
     | '/course/$workspaceId'
     | '/kata/$name'
@@ -115,6 +127,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  AvatarRoute: typeof AvatarRoute
   InteractiveRoute: typeof InteractiveRoute
   CourseWorkspaceIdRoute: typeof CourseWorkspaceIdRouteWithChildren
   KataNameRoute: typeof KataNameRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avatar': {
+      id: '/avatar'
+      path: '/avatar'
+      fullPath: '/avatar'
+      preLoaderRoute: typeof AvatarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interactive': {
@@ -190,6 +210,7 @@ const CourseWorkspaceIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  AvatarRoute: AvatarRoute,
   InteractiveRoute: InteractiveRoute,
   CourseWorkspaceIdRoute: CourseWorkspaceIdRouteWithChildren,
   KataNameRoute: KataNameRoute,

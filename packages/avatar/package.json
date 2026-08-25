@@ -1,0 +1,19 @@
+{
+  "name": "@dojofoo/avatar",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": { ".": "./src/index.tsx" },
+  "scripts": {
+    "test": "vitest run",
+    "types:check": "tsc --noEmit"
+  },
+  "peerDependencies": { "react": "^19.2.8" },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "react": "^19.2.8",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
+  }
+}
