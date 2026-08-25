@@ -2,14 +2,14 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { lifecyclePrompt, scoreLifecycle, type LifecycleStage } from "./lifecycle-scenario";
+import { lifecyclePrompt, lifecycleSolution, scoreLifecycle, type LifecycleStage } from "./lifecycle-scenario";
 
 interface OpenCodeEvent {
   type?: string;
   part?: { type?: string; text?: string; tool?: string; toolName?: string; name?: string };
 }
 
-const allStages: LifecycleStage[] = ["start", "stuck", "complete", "resume"];
+const allStages: LifecycleStage[] = ["start", "novice", "stuck", "complete", "review", "resume"];
 const requested = process.env.DOJOFOO_EVAL_STAGE;
 if (requested && !allStages.includes(requested as LifecycleStage)) {
   throw new Error(`Unknown lifecycle stage: ${requested}`);
@@ -17,8 +17,9 @@ if (requested && !allStages.includes(requested as LifecycleStage)) {
 const stages = requested ? [requested as LifecycleStage] : allStages;
 const workspace = resolve(import.meta.dirname, "../../..");
 const fixture = resolve(import.meta.dirname, "../courses/kata-capabilities");
-const [platform, course, lesson, skill] = await Promise.all([
+const [platform, style, course, lesson, skill] = await Promise.all([
   readFile(resolve(workspace, "DOJOFOO.md"), "utf8"),
+  readFile(resolve(workspace, "teaching-styles/KATAS.md"), "utf8"),
   readFile(resolve(fixture, "DOJO.md"), "utf8"),
   readFile(resolve(fixture, "katas/001-transformation/SENSEI.md"), "utf8"),
   readFile(resolve(workspace, "packages/cli/skills/dojofoo/SKILL.md"), "utf8"),
@@ -27,11 +28,7 @@ const root = await mkdtemp(join(tmpdir(), "dojofoo-lifecycle-eval-"));
 
 try {
   const callsFile = join(root, "tool-calls.jsonl");
-  await writeFile(join(root, "solution.ts"), [
-    "export function normalizeHandle(input: string): string {",
-    "  return input.trim().toLowerCase().replace(' ', '-');",
-    "}",
-  ].join("\n"));
+  await writeFile(join(root, "solution.ts"), lifecycleSolution("stuck"));
   const skillDirectory = join(root, ".opencode/skills/dojofoo");
   await mkdir(skillDirectory, { recursive: true });
   await writeFile(join(skillDirectory, "SKILL.md"), skill);
@@ -41,7 +38,7 @@ try {
       "dojofoo-eval": {
         mode: "primary",
         description: "Evaluate the Dojofoo lesson lifecycle.",
-        prompt: [platform, course, lesson].join("\n\n"),
+        prompt: [platform, style, course, lesson].join("\n\n"),
         permission: {
           read: "allow", glob: "allow", grep: "allow", list: "allow", skill: "allow",
           webfetch: "allow", bash: "deny", edit: "deny", external_directory: "deny",
@@ -53,7 +50,7 @@ try {
         type: "local",
         command: [join(import.meta.dirname, "../node_modules/.bin/tsx"), join(import.meta.dirname, "eval-mcp.ts")],
         enabled: true,
-        environment: { DOJOFOO_EVAL_CALLS: callsFile },
+        environment: { DOJOFOO_EVAL_CALLS: callsFile, DOJOFOO_EVAL_COMPLETION_DECISIONS: "Pause" },
       },
     },
   };
@@ -61,12 +58,20 @@ try {
 
   for (const stage of stages) {
     await writeFile(callsFile, "");
+    await writeFile(join(root, "solution.ts"), lifecycleSolution(stage));
+    config.mcp.dojofoo.environment.DOJOFOO_EVAL_COMPLETION_DECISIONS = stage === "review" ? "Review,Pause" : "Pause";
     const startedAt = Date.now();
     const child = spawn(command, [
       "run", "--format", "json", "--pure", "--auto", "--dir", root, "--agent", "dojofoo-eval",
       ...(process.env.DOJOFOO_EVAL_MODEL ? ["--model", process.env.DOJOFOO_EVAL_MODEL] : []),
       lifecyclePrompt(stage),
-    ], { env: { ...process.env, OPENCODE_CONFIG_CONTENT: JSON.stringify(config) }, stdio: ["ignore", "pipe", "inherit"] });
+    ], {
+      env: {
+        ...process.env,
+        OPENCODE_CONFIG_CONTENT: JSON.stringify(config),
+      },
+      stdio: ["ignore", "pipe", "inherit"],
+    });
     let output = "";
     const timeout = setTimeout(() => child.kill("SIGTERM"), 90_000);
     child.stdout.setEncoding("utf8");
@@ -88,6 +93,7 @@ try {
     process.stdout.write(`${JSON.stringify({
       scenario: `kata-capabilities/001/lifecycle/${stage}`,
       harness: "opencode-local",
+      model: process.env.DOJOFOO_EVAL_MODEL ?? "configured-default",
       durationMs: Date.now() - startedAt,
       response: text,
       toolNames: tools,

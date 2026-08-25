@@ -7,6 +7,8 @@ import { z } from "zod";
 const callsFile = process.env.DOJOFOO_EVAL_CALLS;
 if (!callsFile) throw new Error("DOJOFOO_EVAL_CALLS is required");
 const callsPath = callsFile;
+const completionDecisions = (process.env.DOJOFOO_EVAL_COMPLETION_DECISIONS ?? "Pause").split(",");
+let completionIndex = 0;
 
 const server = new McpServer({ name: "dojofoo-eval", version: "0.0.1" });
 
@@ -32,7 +34,7 @@ server.registerTool(lessonCapabilities.context.tool, {
     phase: "resume",
     course: { id: "kata-capabilities" },
     lesson: { id: "001-transformation", title: "Transform a Display Name", objective: "Normalize varied whitespace.", state: "ongoing" },
-    learner: { file: { path: "solution.ts", language: "typescript" }, latestCheck: null },
+    learner: { file: { path: "solution.ts", language: "typescript", content: "" }, latestCheck: null },
   };
   return { content: [{ type: "text", text: JSON.stringify(context) }], structuredContent: context };
 });
@@ -62,7 +64,9 @@ server.registerTool(lessonCapabilities.complete.tool, {
   inputSchema: {},
 }, async () => {
   await record(lessonCapabilities.complete.tool);
-  return { content: [{ type: "text", text: "Pause" }], structuredContent: { decision: "Pause" } };
+  const decision = completionDecisions[Math.min(completionIndex, completionDecisions.length - 1)] ?? "Pause";
+  completionIndex += 1;
+  return { content: [{ type: "text", text: decision }], structuredContent: { decision } };
 });
 
 await server.connect(new StdioServerTransport());

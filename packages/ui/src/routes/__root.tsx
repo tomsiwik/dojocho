@@ -9,7 +9,7 @@ import stylesUrl from "../app.css?url";
 import { ShapeProvider } from "@dojofoo/ui";
 import type { ReactNode } from "react";
 
-const themeScript = `try{document.documentElement.classList.toggle("dark",localStorage.getItem("dojofoo.theme")!=="light")}catch{}`;
+const themeScript = `document.documentElement.classList.add("dark")`;
 
 export const Route = createRootRoute({
   head: () => ({

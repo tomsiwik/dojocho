@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon, type LucideIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, Loader2Icon, XIcon, type LucideIcon } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,8 +12,9 @@ import { take } from "./range";
 
 export interface TimelineStep {
   verb: string;
-  chip: string;
-  icon: LucideIcon;
+  chip?: string;
+  icon?: LucideIcon;
+  status?: "running" | "success" | "error";
 }
 
 export interface TimelineStat {
@@ -52,7 +53,7 @@ export function ToolTimeline({
       onOpenChange={onOpenChange}
       className={cn("w-full max-w-sm", className)}
     >
-      <CollapsibleTrigger className="group/trigger text-foreground/55 hover:text-foreground/90 flex items-center gap-1.5 rounded-md py-1 text-[13.5px] transition-colors outline-none">
+      <CollapsibleTrigger className="group/trigger text-foreground/55 hover:text-foreground/90 flex items-center gap-1.5 py-1 text-[13.5px] transition-colors outline-none">
         <ChevronRightIcon className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-open/trigger:rotate-90 group-data-panel-open/trigger:rotate-90 motion-reduce:transition-none" />
         <SwapLabel
           active={streaming ? 0 : 1}
@@ -75,19 +76,25 @@ export function ToolTimeline({
 
             return (
               <div
-                key={step.chip}
+                key={`${index}-${step.verb}-${step.chip ?? ""}`}
                 className="fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-foreground/55 flex items-center gap-2 text-[13.5px] duration-300"
               >
-                <Icon className="text-foreground/35 size-3.5 shrink-0" />
+                {step.status === "running"
+                  ? <Loader2Icon className="size-3.5 shrink-0 animate-spin text-foreground/35 motion-reduce:animate-none" />
+                  : step.status === "error"
+                    ? <XIcon className="size-3.5 shrink-0 text-red-500" />
+                    : step.status === "success"
+                      ? <CheckIcon className="size-3.5 shrink-0 text-emerald-500" />
+                      : Icon
+                        ? <Icon className="text-foreground/35 size-3.5 shrink-0" />
+                        : null}
                 <ShimmerLabel
                   active={active}
                   className="relative inline-block leading-none"
                 >
                   {step.verb}
                 </ShimmerLabel>
-                <span className="bg-foreground/[0.06] text-foreground/70 rounded-md px-1.5 py-0.5 font-mono text-[11px]">
-                  {step.chip}
-                </span>
+                {step.chip && <span className="text-foreground/60 font-mono text-[11px]">{step.chip}</span>}
               </div>
             );
           })}
@@ -96,7 +103,7 @@ export function ToolTimeline({
               {stats.map((stat) => (
                 <span
                   key={stat.file}
-                  className="bg-foreground/[0.06] text-foreground/70 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px]"
+                    className="bg-foreground/[0.06] text-foreground/70 inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px]"
                 >
                   <span>{stat.file}</span>
                   {stat.added !== undefined && (

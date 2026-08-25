@@ -16,6 +16,7 @@ import { Route as InteractiveRouteImport } from './routes/interactive'
 import { Route as CourseWorkspaceIdRouteImport } from './routes/course.$workspaceId'
 import { Route as KataNameRouteImport } from './routes/kata.$name'
 import { Route as SessionSessionIdRouteImport } from './routes/session.$sessionId'
+import { Route as CourseWorkspaceIdIndexRouteImport } from './routes/course.$workspaceId.index'
 import { Route as CourseWorkspaceIdCourseIdLessonLessonIdRouteImport } from './routes/course.$workspaceId.$courseId.lesson.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const SessionSessionIdRoute = SessionSessionIdRouteImport.update({
   path: '/session/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CourseWorkspaceIdIndexRoute = CourseWorkspaceIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CourseWorkspaceIdRoute,
+} as any)
 const CourseWorkspaceIdCourseIdLessonLessonIdRoute =
   CourseWorkspaceIdCourseIdLessonLessonIdRouteImport.update({
     id: '/$courseId/lesson/$lessonId',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
+  '/course/$workspaceId/': typeof CourseWorkspaceIdIndexRoute
   '/course/$workspaceId/$courseId/lesson/$lessonId': typeof CourseWorkspaceIdCourseIdLessonLessonIdRoute
 }
 export interface FileRoutesByTo {
@@ -75,9 +82,9 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/avatar': typeof AvatarRoute
   '/interactive': typeof InteractiveRoute
-  '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
+  '/course/$workspaceId': typeof CourseWorkspaceIdIndexRoute
   '/course/$workspaceId/$courseId/lesson/$lessonId': typeof CourseWorkspaceIdCourseIdLessonLessonIdRoute
 }
 export interface FileRoutesById {
@@ -89,6 +96,7 @@ export interface FileRoutesById {
   '/course/$workspaceId': typeof CourseWorkspaceIdRouteWithChildren
   '/kata/$name': typeof KataNameRoute
   '/session/$sessionId': typeof SessionSessionIdRoute
+  '/course/$workspaceId/': typeof CourseWorkspaceIdIndexRoute
   '/course/$workspaceId/$courseId/lesson/$lessonId': typeof CourseWorkspaceIdCourseIdLessonLessonIdRoute
 }
 export interface FileRouteTypes {
@@ -101,6 +109,7 @@ export interface FileRouteTypes {
     | '/course/$workspaceId'
     | '/kata/$name'
     | '/session/$sessionId'
+    | '/course/$workspaceId/'
     | '/course/$workspaceId/$courseId/lesson/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,9 +117,9 @@ export interface FileRouteTypes {
     | '/$'
     | '/avatar'
     | '/interactive'
-    | '/course/$workspaceId'
     | '/kata/$name'
     | '/session/$sessionId'
+    | '/course/$workspaceId'
     | '/course/$workspaceId/$courseId/lesson/$lessonId'
   id:
     | '__root__'
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/course/$workspaceId'
     | '/kata/$name'
     | '/session/$sessionId'
+    | '/course/$workspaceId/'
     | '/course/$workspaceId/$courseId/lesson/$lessonId'
   fileRoutesById: FileRoutesById
 }
@@ -185,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/course/$workspaceId/': {
+      id: '/course/$workspaceId/'
+      path: '/'
+      fullPath: '/course/$workspaceId/'
+      preLoaderRoute: typeof CourseWorkspaceIdIndexRouteImport
+      parentRoute: typeof CourseWorkspaceIdRoute
+    }
     '/course/$workspaceId/$courseId/lesson/$lessonId': {
       id: '/course/$workspaceId/$courseId/lesson/$lessonId'
       path: '/$courseId/lesson/$lessonId'
@@ -196,10 +213,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface CourseWorkspaceIdRouteChildren {
+  CourseWorkspaceIdIndexRoute: typeof CourseWorkspaceIdIndexRoute
   CourseWorkspaceIdCourseIdLessonLessonIdRoute: typeof CourseWorkspaceIdCourseIdLessonLessonIdRoute
 }
 
 const CourseWorkspaceIdRouteChildren: CourseWorkspaceIdRouteChildren = {
+  CourseWorkspaceIdIndexRoute: CourseWorkspaceIdIndexRoute,
   CourseWorkspaceIdCourseIdLessonLessonIdRoute:
     CourseWorkspaceIdCourseIdLessonLessonIdRoute,
 }

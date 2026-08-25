@@ -17,7 +17,7 @@ const AGENTS_SKILLS_DIR = ".agents/skills";
 
 export type AgentName = keyof typeof AGENTS;
 
-function detectAgentsFromEnv(): AgentName[] {
+export function detectAgentsFromEnv(): AgentName[] {
   return (Object.keys(AGENTS) as AgentName[]).filter((a) =>
     AGENTS[a].envVars.some((v) => Boolean(process.env[v])),
   );
@@ -114,13 +114,12 @@ const DEFAULT_RC: DojoRc = {
 };
 
 export function setup(root: string, args: string[]): void {
-  const explicit = (Object.keys(AGENTS) as AgentName[]).filter(
-    (a) => args.includes(`--${a}`),
-  );
+  const explicit = agentsFromArgs(args);
   const skillsOnly = args.includes("--skills");
   const configured = skillsOnly ? configuredAgents(root) : [];
   const detected = explicit.length > 0 ? explicit : configured.length > 0 ? configured : detectAgentsFromEnv();
 
+  ensureProject(root);
   if (detected.length === 0) {
     promptAgents();
     return;
@@ -132,7 +131,6 @@ export function setup(root: string, args: string[]): void {
     return;
   }
 
-  scaffold(root);
   setupAgents(root, detected);
 
   const kataCmd = detected.length === 1 ? `${detected[0]} "/kata"` : "/kata in your agent prompt";
@@ -145,21 +143,21 @@ export function setup(root: string, args: string[]): void {
 
 function promptAgents(): void {
   const options = [
-    `- "Claude Code" → --claude`,
-    `- "OpenCode" → --opencode`,
-    `- "Codex" → --codex`,
-    `- "Gemini CLI" → --gemini`,
-    `- "Pi" → --pi`,
+    `- "Claude Code" → claude`,
+    `- "OpenCode" → opencode`,
+    `- "Codex" → codex`,
+    `- "Gemini CLI" → gemini`,
+    `- "Pi" → pi`,
   ].join("\n");
 
   console.log(prompt(`${invokeAsk("multiSelect")} to ask the student:
 Which coding agents do you use?
 ${options}
 
-Then run: ${CLI} install --<agent1> --<agent2> ...`));
+Then run: ${CLI} install --agent <agent1,agent2,...>`));
 }
 
-function scaffold(root: string): void {
+export function ensureProject(root: string): void {
   const rcPath = resolve(root, ".dojorc");
   if (!existsSync(rcPath)) {
     writeDojoRc(root, DEFAULT_RC);
@@ -208,6 +206,22 @@ function scaffold(root: string): void {
     );
   }
 
+}
+
+export function agentsFromArgs(args: string[]): AgentName[] {
+  const values = new Set<string>();
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index] ?? "";
+    if (argument === "--agent") {
+      for (const value of (args[index + 1] ?? "").split(",")) values.add(value);
+      index += 1;
+    } else if (argument.startsWith("--agent=")) {
+      for (const value of argument.slice("--agent=".length).split(",")) values.add(value);
+    } else if (argument.startsWith("--")) {
+      values.add(argument.slice(2));
+    }
+  }
+  return (Object.keys(AGENTS) as AgentName[]).filter((agent) => values.has(agent));
 }
 
 function symlinkCanonical(root: string, agent: AgentName, name: "dojo" | "kata"): void {

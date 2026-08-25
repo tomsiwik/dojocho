@@ -25,7 +25,7 @@ describe("TanStack AI UIMessage renderer", () => {
       "Help me understand this failure.",
       "Worked",
       "Trimming now works",
-      "2 of 3 tests passed",
+      "2/3 lesson checks passed",
       "Whitespace runs use the",
       "All checks pass",
     ];
@@ -44,7 +44,7 @@ describe("TanStack AI UIMessage renderer", () => {
     expect(html).not.toContain("Parameters");
   });
 
-  it("renders reasoning and each chained tool call with the Assistant UI disclosures", () => {
+  it("groups reasoning and chained tool calls into one collapsed timeline", () => {
     const message = {
       id: "assistant-tools",
       role: "assistant",
@@ -63,11 +63,23 @@ describe("TanStack AI UIMessage renderer", () => {
       <StreamedChatMessage fragments={{}} message={message} streaming workspaceId="fixture-workspace" />,
     );
 
-    expect(html.match(/data-slot="reasoning-panel"/gu)).toHaveLength(1);
-    expect(html.match(/data-slot="tool-call"/gu)).toHaveLength(3);
-    expect(html).toContain("Inspecting the lesson");
+    expect(html.match(/data-slot="tool-timeline"/gu)).toHaveLength(1);
+    expect(html).not.toContain("Inspecting the lesson");
     expect(html).not.toContain("Parameters &amp; result");
-    expect(html).toContain("dojofoo kata --check");
+    expect(html.match(/aria-expanded="false"/gu)).toHaveLength(1);
+  });
+
+  it("retains persisted work duration in the collapsed timeline label", () => {
+    const message = {
+      id: "timed-work",
+      role: "assistant",
+      parts: [{ type: "thinking", content: "private", state: "complete", durationMs: 3_700 }],
+    } as unknown as UIMessage;
+    const html = renderToStaticMarkup(
+      <StreamedChatMessage fragments={{}} message={message} workspaceId="fixture-workspace" />,
+    );
+    expect(html).toContain("Worked · 4s");
+    expect(html).not.toContain("private");
   });
 
   it("renders dojo_ui_show as its authored fragment instead of tool machinery", () => {

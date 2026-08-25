@@ -24,6 +24,7 @@ export interface ReasoningPanelProps {
   restingLabel: string;
   elapsed?: string;
   className?: string;
+  disclosure?: boolean;
 }
 
 export function ReasoningPanel({
@@ -35,8 +36,27 @@ export function ReasoningPanel({
   restingLabel,
   elapsed,
   className,
+  disclosure = true,
 }: ReasoningPanelProps) {
   const shown = take(steps, visibleSteps);
+
+  const label = (
+    <>
+      <SwapLabel active={streaming ? 0 : 1} className="text-start">
+        <>
+          <ShimmerLabel active={streaming} className="relative inline-block leading-none">
+            Thinking
+          </ShimmerLabel>
+          {elapsed !== undefined && <span className={cn(mono, "text-foreground/30 tabular-nums")}>{elapsed}</span>}
+        </>
+        <>{restingLabel}</>
+      </SwapLabel>
+    </>
+  );
+
+  if (!disclosure) {
+    return <div data-slot="reasoning-panel" className={cn("flex w-full items-center gap-1.5 py-1 text-[13.5px] text-foreground/55", className)}>{label}</div>;
+  }
 
   return (
     <Collapsible
@@ -46,22 +66,7 @@ export function ReasoningPanel({
       className={cn("w-full max-w-sm", className)}
     >
       <CollapsibleTrigger className="group/trigger text-foreground/55 hover:text-foreground/90 flex items-center gap-1.5 py-1 text-[13.5px] transition-[color,scale] outline-none active:scale-[0.98]">
-        <SwapLabel active={streaming ? 0 : 1} className="text-start">
-          <>
-            <ShimmerLabel
-              active={streaming}
-              className="relative inline-block leading-none"
-            >
-              Thinking
-            </ShimmerLabel>
-            {elapsed !== undefined && (
-              <span className={cn(mono, "text-foreground/30 tabular-nums")}>
-                {elapsed}
-              </span>
-            )}
-          </>
-          <>{restingLabel}</>
-        </SwapLabel>
+        {label}
         <ChevronDownIcon className="size-3.5 shrink-0 opacity-60 transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-open/trigger:rotate-180 group-data-panel-open/trigger:rotate-180 motion-reduce:transition-none" />
       </CollapsibleTrigger>
       <CollapsibleContent className={cn(collapsePanel, "outline-none")}>

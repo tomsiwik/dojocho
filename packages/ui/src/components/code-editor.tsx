@@ -6,7 +6,10 @@ import { codeFolding, foldGutter, HighlightStyle, syntaxHighlighting } from "@co
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
 import { Decoration, EditorView, GutterMarker, gutterLineClass, keymap, ViewPlugin, type DecorationSet } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { StateEffect } from "@codemirror/state";
 import CodeMirror, { RangeSetBuilder, StateField } from "@uiw/react-codemirror";
+import { useEffect, useRef } from "react";
+import type { CodeHighlight } from "@/lib/code-highlight";
 
 const vercelDark = EditorView.theme({
   "&": { backgroundColor: "#0a0a0a", color: "#ededed" },
@@ -16,6 +19,14 @@ const vercelDark = EditorView.theme({
     backgroundColor: "#ffffff1a",
   },
   ".cm-activeLine": { backgroundColor: "#ffffff1a" },
+  ".cm-line-flash": {
+    animation: "dojofoo-line-flash 1.2s ease-out",
+    backgroundColor: "#0070f34d",
+  },
+  "@keyframes dojofoo-line-flash": {
+    "0%, 35%": { backgroundColor: "#0070f366" },
+    "100%": { backgroundColor: "transparent" },
+  },
   ".cm-gutters": {
     backgroundColor: "#0a0a0a",
     borderRight: "1px solid #242424",
@@ -123,6 +134,7 @@ type CodeEditorProps = {
   readOnly: boolean;
   onChange: (code: string) => void;
   onUndoReady?: (undoEditor: () => boolean) => void;
+  highlight?: CodeHighlight & { nonce: number };
 };
 
 export default function CodeEditor({
@@ -136,11 +148,31 @@ export default function CodeEditor({
   readOnly,
   onChange,
   onUndoReady,
+  highlight,
 }: CodeEditorProps) {
+  const editor = useRef<EditorView | null>(null);
   const languageExtension = language === "python"
     ? python()
     : javascript({ jsx: true, typescript: language === "typescript" });
   const languageTools = language === "typescript" ? typescriptLanguageTools(filePath, lessonApiBase) : [];
+
+  useEffect(() => {
+    const view = editor.current;
+    if (!view || !highlight) return;
+    const fromLine = Math.min(highlight.from, view.state.doc.lines);
+    const toLine = Math.min(highlight.to, view.state.doc.lines);
+    const from = view.state.doc.line(fromLine).from;
+    view.dispatch({
+      effects: [
+        flashLines.of({ from: fromLine, to: toLine }),
+        EditorView.scrollIntoView(from, { y: "center" }),
+      ],
+    });
+    const timeout = window.setTimeout(() => {
+      if (editor.current === view) view.dispatch({ effects: flashLines.of(null) });
+    }, 1_200);
+    return () => window.clearTimeout(timeout);
+  }, [highlight]);
 
   return (
     <div
@@ -165,6 +197,7 @@ export default function CodeEditor({
           languageExtension,
           languageTools,
           preciseFolding,
+          flashLineExtension,
           coverageExtension(coverage ? lineHits : undefined, failedLines),
           EditorView.contentAttributes.of({ "aria-label": "Solution code" }),
           vercelDark,
@@ -172,12 +205,35 @@ export default function CodeEditor({
         ]}
         height="100%"
         onChange={onChange}
-        onCreateEditor={(view) => onUndoReady?.(() => undo(view))}
+        onCreateEditor={(view) => {
+          editor.current = view;
+          onUndoReady?.(() => undo(view));
+        }}
         value={code}
       />
     </div>
   );
 }
+
+const flashLines = StateEffect.define<CodeHighlight | null>();
+const flashLineExtension = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(decorations, transaction) {
+    const effect = transaction.effects.find((candidate) => candidate.is(flashLines));
+    if (effect) {
+      if (!effect.value) return Decoration.none;
+      const ranges = [];
+      for (let line = effect.value.from; line <= effect.value.to; line += 1) {
+        if (line <= transaction.state.doc.lines) {
+          ranges.push(Decoration.line({ class: "cm-line-flash" }).range(transaction.state.doc.line(line).from));
+        }
+      }
+      return Decoration.set(ranges);
+    }
+    return transaction.docChanged ? decorations.map(transaction.changes) : decorations;
+  },
+  provide: (field) => EditorView.decorations.from(field),
+});
 
 type CompletionResponse = {
   from: number;

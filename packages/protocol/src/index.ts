@@ -12,7 +12,7 @@ export const lessonCapabilities = {
   complete: {
     method: "dojo.lesson.complete",
     tool: "dojo_lesson_complete",
-    description: "Finish a completed lesson and ask the learner what to do next. Honor the returned decision; do not ask another continuation question.",
+    description: "Ask how to continue after a completed lesson. Review means give substantive feedback using the authored review topics, then call this tool again. Move on is advanced by the host. Pause ends cleanly.",
   },
 } as const;
 
@@ -39,7 +39,7 @@ export interface DojoLessonContext {
     state: "completed" | "ongoing" | "not-started";
   };
   learner: {
-    file: { path: string; language: string };
+    file: { path: string; language: string; content: string };
     latestCheck: unknown | null;
   };
 }

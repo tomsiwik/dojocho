@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import { CheckIcon, Loader2Icon } from "lucide-react";
+import { CheckIcon, Loader2Icon, XIcon } from "lucide-react";
 import { cn } from "#lib/utils";
 import { mono, paper } from "./surfaces";
 import { take } from "./range";
@@ -11,17 +11,19 @@ export function TerminalBlock({
   lines,
   visibleCount,
   done,
+  failed = false,
   variant = "paper",
   className,
   ...props
 }: Omit<
   ComponentProps<"div">,
-  "children" | "command" | "lines" | "visibleCount" | "done" | "variant"
+  "children" | "command" | "lines" | "visibleCount" | "done" | "failed" | "variant"
 > & {
   command: string;
   lines: readonly string[];
   visibleCount: number;
   done: boolean;
+  failed?: boolean;
   variant?: "paper" | "ink";
 }) {
   const ink = variant === "ink";
@@ -31,7 +33,7 @@ export function TerminalBlock({
       data-slot="terminal-block"
       className={cn(
         ink ? "bg-foreground dark:bg-popover" : paper,
-        "w-full max-w-md overflow-hidden rounded-2xl font-mono text-xs",
+        "w-full max-w-md overflow-hidden font-mono text-xs",
         className,
       )}
 
@@ -49,7 +51,9 @@ export function TerminalBlock({
         </span>
         {done ? (
           <div className="flex items-center gap-1">
-            <CheckIcon className="size-3 text-emerald-500" />
+            {failed
+              ? <XIcon className="size-3 text-red-500" />
+              : <CheckIcon className="size-3 text-emerald-500" />}
             <span
               className={cn(
                 mono,
@@ -58,7 +62,7 @@ export function TerminalBlock({
                   : "text-foreground/40",
               )}
             >
-              exit 0
+              exit {failed ? 1 : 0}
             </span>
           </div>
         ) : (
@@ -74,7 +78,7 @@ export function TerminalBlock({
       </div>
       <div
         className={cn(
-          "flex min-h-[8.5rem] flex-col gap-1 px-4 pt-1 pb-3.5",
+          "flex flex-col gap-1 px-4 pt-1 pb-3.5",
           ink
             ? "text-background/55 dark:text-foreground/50"
             : "text-foreground/50",

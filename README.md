@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/dojofoo.svg" alt="dojofoo" width="360" />
+  <img src="assets/brand/dojofoo-flat.svg" alt="dojofoo" width="360" />
 </p>
 
 <p align="center">

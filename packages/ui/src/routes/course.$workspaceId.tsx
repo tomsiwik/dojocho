@@ -1,11 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { LessonPage } from "./index";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/course/$workspaceId")({
-  component: CoursePage,
+  component: Outlet,
 });
-
-function CoursePage() {
-  const { workspaceId } = Route.useParams();
-  return <LessonPage requestedWorkspaceId={workspaceId} />;
-}

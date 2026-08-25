@@ -360,6 +360,12 @@ export class AcpClient {
         ? { outcome: "selected", optionId: values[0] ?? "allow_once" }
         : { outcome: "cancelled" } });
     }
+    this.callbacks.get(threadId)?.({
+      type: "tool-output-available",
+      toolCallId: pending.toolCallId,
+      output: { answers },
+      dynamic: true,
+    });
     this.permissions.delete(threadId);
     this.turnActivity.get(threadId)?.();
   }
@@ -454,6 +460,7 @@ export class AcpClient {
 
   private requestPermission(request: acp.RequestPermissionRequest): Promise<acp.RequestPermissionResponse> {
     const sessionId = request.sessionId;
+    this.finishOpenParts(sessionId);
     const questions: UserQuestion[] = [{
       id: "decision",
       title: request.toolCall.title ?? "Allow this action?",
@@ -488,6 +495,7 @@ export class AcpClient {
       requestedSchema: acp.ElicitationSchema;
     };
     const sessionId = form.sessionId;
+    this.finishOpenParts(sessionId);
     const properties = form.requestedSchema.properties ?? {};
     const questions: UserQuestion[] = Object.entries(properties).map(([id, property]) => {
       const choices = "oneOf" in property && Array.isArray(property.oneOf)
@@ -526,6 +534,7 @@ export class AcpClient {
   private askRunQuestion(runtime: AcpRuntime, question: RunQuestion): Promise<Record<string, string[]>> {
     const sessionId = [...runtime.loadedSessions].find((candidate) => this.activeTurns.has(candidate));
     if (!sessionId) return Promise.reject(new Error("The lesson agent is not in an active turn"));
+    this.finishOpenParts(sessionId);
     const toolCallId = crypto.randomUUID();
     this.callbacks.get(sessionId)?.({
       type: "tool-input-start",

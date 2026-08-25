@@ -3,7 +3,7 @@ import { fetchServerSentEvents, useChat, type UIMessage } from "@tanstack/ai-rea
 import type { ThinkingPart, ToolCallPart } from "@tanstack/ai-client";
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { BundledLanguage } from "shiki";
-import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Undo2, XCircle } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, Loader2, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Undo2, XCircle } from "lucide-react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { CodeBlock, CodeBlockCopyButton } from "@/components/ai-elements/code-block";
 import { CourseContent } from "@/components/course-content";
@@ -19,12 +19,12 @@ import {
   TestSuiteStats,
 } from "@/components/ai-elements/test-results";
 import { ToolOutput } from "@/components/ai-elements/tool";
-import { ReasoningPanel } from "@dojofoo/uix/components/elements/reasoning-panel";
-import { ToolCall as AssistantToolCall } from "@dojofoo/uix/components/elements/tool-call";
+import { TerminalBlock } from "@dojofoo/uix/components/elements/terminal-block";
+import { ToolTimeline, type TimelineStep } from "@dojofoo/uix/components/elements/tool-timeline";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
-import { ChatContainer, ChatContainerContent, ChatContainerFooter, ChatContainerHeader } from "@dojofoo/ui/chat-container";
+import { ChatContainer, ChatContainerContent, ChatContainerFooter } from "@dojofoo/ui/chat-container";
 import { CourseCard } from "@dojofoo/ui/course-card";
 import {
   Dialog,
@@ -39,7 +39,6 @@ import { InputMessage } from "@dojofoo/ui/input-message";
 import { ScrollArea } from "@dojofoo/ui/scroll-area";
 import { SiteNavigation } from "@dojofoo/ui/site-navigation";
 import { ThinkingIndicator } from "@dojofoo/ui/thinking-indicator";
-import { ThemeToggle } from "@dojofoo/ui/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -48,13 +47,13 @@ import {
 } from "@dojofoo/ui/select";
 import type { LessonSnapshot, TestReport } from "@/server/lesson/service";
 import type { JsonRpcRequest } from "@/server/session/protocol";
-import { formatThinkingSteps } from "@/lib/thinking-steps-format";
 import { applyLessonMetadata, hydrateLesson } from "@/lib/lesson-snapshot";
 import { projectChatTimeline, type AnchoredChatEvent } from "@/lib/chat-timeline";
-import { chatAcceptsInput, isInternalLessonMessage } from "@/lib/chat-internal";
+import { chatAcceptsInput, isInternalLessonMessage, lessonNeedsIntroduction } from "@/lib/chat-internal";
 import { cn } from "@/lib/utils";
 import { AgentQuestion, isAgentQuestion, parseAgentQuestions } from "@/components/chat/agent-question";
 import { useChatWorkTiming, type ChatWorkTiming } from "@/lib/chat-work-timing";
+import { codeHighlight, codeHighlights, type CodeHighlight } from "@/lib/code-highlight";
 
 const CodeEditor = lazy(() => import("@/components/code-editor"));
 const INTRODUCTION_MESSAGE = "[dojo:begin-lesson]";
@@ -80,6 +79,11 @@ type ActiveCourse = {
   sessions: Array<{ lessonId: string; sessionId: string }>;
 };
 
+type CourseGroup = {
+  dojo: string;
+  workspaces: ActiveCourse[];
+};
+
 type LessonCheckEvent = {
   lesson: LessonSnapshot;
   observation: import("@/server/lesson/service").CheckObservation;
@@ -101,6 +105,9 @@ function CourseIndex() {
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [courseChoice, setCourseChoice] = useState<CourseGroup | null>(null);
+  const [choiceWorkspaceId, setChoiceWorkspaceId] = useState("");
+  const [choiceSessionId, setChoiceSessionId] = useState("current");
 
   useEffect(() => {
     fetch("/api/control/courses")
@@ -112,23 +119,36 @@ function CourseIndex() {
       .catch((cause: Error) => setError(cause.message));
   }, []);
 
-  const languages = [...new Set(courses.map((course) => course.language))].sort();
-  const visibleCourses = courses
-    .filter((course) => language === "all" || course.language === language)
+  const groups = groupCourses(courses);
+  const languages = [...new Set(groups.flatMap((group) => group.workspaces.map((course) => course.language)))].sort();
+  const visibleCourses = groups
+    .filter((group) => language === "all" || group.workspaces.some((course) => course.language === language))
     .sort((left, right) => {
-      if (sortBy === "oldest") return left.lastSeenAt - right.lastSeenAt;
+      const leftSeen = courseGroupLastSeen(left);
+      const rightSeen = courseGroupLastSeen(right);
+      if (sortBy === "oldest") return leftSeen - rightSeen;
       if (sortBy === "name") return humanTitle(left.dojo).localeCompare(humanTitle(right.dojo));
-      return right.lastSeenAt - left.lastSeenAt;
+      return rightSeen - leftSeen;
     });
 
-  async function openCourse(course: ActiveCourse) {
+  async function openCourse(course: ActiveCourse, sessionId?: string | null) {
     window.localStorage.setItem("dojofoo.workspace", course.workspaceId);
     if (course.mode === "interactive") {
       await navigate({ to: "/interactive" });
       return;
     }
-    if (course.sessionId) {
-      await navigate({ to: "/session/$sessionId", params: { sessionId: course.sessionId } });
+    if (sessionId === null && course.kata) {
+      const response = await fetch(`${lessonApi(course.workspaceId, course.dojo, course.kata)}/sessions`, { method: "POST" });
+      await assertResponse(response);
+      const started = await response.json() as LessonSnapshot;
+      if (started.sessionId) {
+        await navigate({ to: "/session/$sessionId", params: { sessionId: started.sessionId } });
+        return;
+      }
+    }
+    const existingSession = sessionId === undefined ? course.sessionId : sessionId;
+    if (existingSession) {
+      await navigate({ to: "/session/$sessionId", params: { sessionId: existingSession } });
       return;
     }
     if (course.kata) {
@@ -141,15 +161,25 @@ function CourseIndex() {
     await navigate({ to: "/course/$workspaceId", params: { workspaceId: course.workspaceId } });
   }
 
+  function chooseCourse(group: CourseGroup) {
+    if (group.workspaces.length === 1) {
+      void openCourse(group.workspaces[0]);
+      return;
+    }
+    const workspace = preferredWorkspace(group);
+    setCourseChoice(group);
+    setChoiceWorkspaceId(workspace.workspaceId);
+    setChoiceSessionId(workspace.sessionId ?? "current");
+  }
+
+  const choiceWorkspace = courseChoice?.workspaces.find((course) => course.workspaceId === choiceWorkspaceId) ?? null;
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <SiteNavigation
         brand={<a aria-label="Dojofoo courses" className="mr-1 flex items-center" href="/"><BrandLogo /></a>}
         actions={(
           <>
-            <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="/avatar">Avatar studio</a>
-            <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="https://dojo.foo" rel="noreferrer" target="_blank">Marketplace</a>
-            <ThemeToggle />
             <a className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" href="https://dojo.foo/docs" rel="noreferrer" target="_blank">Docs</a>
           </>
         )}
@@ -178,26 +208,29 @@ function CourseIndex() {
             </div>
             {error && <p className="mt-8 border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-300">{error}</p>}
             <div className="mt-10 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {visibleCourses.map((course) => (
+          {visibleCourses.map((group) => {
+              const course = preferredWorkspace(group);
+              return (
               <CourseCard
                 description={course.description}
                 eyebrow={course.language}
                 footer={(
                   <>
                   <div className="min-w-0">
-                    <p className="truncate text-xs text-muted-foreground">{course.mode === "interactive" ? "Interactive lesson" : humanTitle(course.kata ?? "Not started")}</p>
-                    <p className="mt-1 truncate font-mono text-[11px]">{course.sessionId ? middleEllipsis(course.sessionId) : "Not started"}</p>
+                    <p className="truncate text-xs text-muted-foreground">{group.workspaces.length > 1 ? `${group.workspaces.length} workspaces` : course.mode === "interactive" ? "Interactive lesson" : humanTitle(course.kata ?? "Not started")}</p>
+                    <p className="mt-1 truncate font-mono text-[11px]">{group.workspaces.length > 1 ? "Choose where to continue" : course.sessionId ? middleEllipsis(course.sessionId) : "Not started"}</p>
                   </div>
                   <ArrowRight className="shrink-0 transition-transform group-hover:translate-x-1" size={18} />
                   </>
                 )}
                 footerClassName="items-end justify-between gap-4"
-                key={course.workspaceId}
+                key={group.dojo}
                 label={`Open ${humanTitle(course.dojo)}`}
-                onClick={() => void openCourse(course)}
+                onClick={() => chooseCourse(group)}
                 title={humanTitle(course.dojo)}
               />
-          ))}
+              );
+          })}
               <a className="group flex min-h-[10.5rem] flex-col items-center justify-center border border-dashed border-border/80 bg-surface-1 p-5 text-center transition-colors duration-80 hover:border-primary" href="https://dojo.foo" rel="noreferrer" target="_blank">
                 <Plus className="mb-3 text-muted-foreground transition-colors group-hover:text-primary" size={22} />
                 <h2 className="text-[15px] font-semibold">Add a dojo</h2>
@@ -207,8 +240,91 @@ function CourseIndex() {
           </div>
         </div>
       </section>
+      <Dialog open={Boolean(courseChoice)} onOpenChange={(open) => { if (!open) setCourseChoice(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Continue {humanTitle(courseChoice?.dojo ?? "course")}</DialogTitle>
+            <DialogDescription>Choose the workspace first. Sessions stay attached to its files and harness transcript.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-5 py-2">
+            <label className="grid gap-2">
+              <span className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Workspace</span>
+              <Select
+                onValueChange={(workspaceId) => {
+                  const workspace = courseChoice?.workspaces.find((candidate) => candidate.workspaceId === workspaceId);
+                  setChoiceWorkspaceId(workspaceId);
+                  setChoiceSessionId(workspace?.sessionId ?? "current");
+                }}
+                value={choiceWorkspaceId}
+              >
+                <SelectTrigger
+                  aria-label="Course workspace"
+                  displayValue={choiceWorkspace
+                    ? `${choiceWorkspace.workspaceName} · ${humanTitle(choiceWorkspace.kata ?? "Not started")}`
+                    : "Choose workspace"}
+                />
+                <SelectContent>
+                  {courseChoice?.workspaces.map((workspace, index) => (
+                    <SelectItem index={index} key={workspace.workspaceId} value={workspace.workspaceId}>
+                      {workspace.workspaceName} · {humanTitle(workspace.kata ?? "Not started")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {choiceWorkspace && <span className="truncate font-mono text-xs text-muted-foreground">{choiceWorkspace.path}</span>}
+            </label>
+            <label className="grid gap-2">
+              <span className="font-display text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
+              <Select onValueChange={setChoiceSessionId} value={choiceSessionId}>
+                <SelectTrigger
+                  aria-label="Course session"
+                  displayValue={choiceSessionId === "current"
+                    ? choiceWorkspace?.sessionId ? "Start a new session" : "Start current lesson"
+                    : humanTitle(choiceWorkspace?.sessions.find((session) => session.sessionId === choiceSessionId)?.lessonId ?? "Session") + ` · ${middleEllipsis(choiceSessionId)}`}
+                />
+                <SelectContent>
+                  <SelectItem index={0} value="current">{choiceWorkspace?.sessionId ? "Start a new session" : "Start current lesson"}</SelectItem>
+                  {choiceWorkspace?.sessions.map((session, index) => (
+                    <SelectItem index={index + 1} key={session.sessionId} value={session.sessionId}>
+                      {humanTitle(session.lessonId)} · {middleEllipsis(session.sessionId)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="ghost">Cancel</Button>} />
+            <Button
+              disabled={!choiceWorkspace}
+              onClick={() => {
+                if (!choiceWorkspace) return;
+                setCourseChoice(null);
+                void openCourse(choiceWorkspace, choiceSessionId === "current" ? null : choiceSessionId);
+              }}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
+}
+
+export function groupCourses(courses: ActiveCourse[]): CourseGroup[] {
+  const groups = new Map<string, ActiveCourse[]>();
+  for (const course of courses) groups.set(course.dojo, [...(groups.get(course.dojo) ?? []), course]);
+  return [...groups].map(([dojo, workspaces]) => ({ dojo, workspaces }));
+}
+
+function courseGroupLastSeen(group: CourseGroup): number {
+  return Math.max(...group.workspaces.map((workspace) => workspace.lastSeenAt));
+}
+
+function preferredWorkspace(group: CourseGroup): ActiveCourse {
+  return group.workspaces.find((workspace) => workspace.selected)
+    ?? [...group.workspaces].sort((left, right) => right.lastSeenAt - left.lastSeenAt)[0];
 }
 
 function LocalFilter({ label, allLabel, items, selected, onSelect, className = "" }: {
@@ -256,6 +372,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   const [coursesReady, setCoursesReady] = useState(false);
   const [workspaceId, setWorkspaceId] = useState("");
   const [code, setCode] = useState("");
+  const [editorHighlight, setEditorHighlight] = useState<(CodeHighlight & { nonce: number }) | undefined>();
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<"code" | "tests">("code");
   const [checking, setChecking] = useState(false);
   const [liveTests, setLiveTests] = useState<TestReport["tests"]>([]);
@@ -301,6 +418,10 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   const dirty = lesson ? code !== lesson.code : false;
   messagesRef.current = messages;
   const timelineMessages = useMemo(() => projectChatTimeline(messages, hostChatEvents), [hostChatEvents, messages]);
+  const highlightCode = useCallback((highlight: CodeHighlight) => {
+    setActiveWorkspaceTab("code");
+    setEditorHighlight((current) => ({ ...highlight, nonce: (current?.nonce ?? 0) + 1 }));
+  }, []);
 
   const metadataTarget = useMemo(() => ({ setCode, setLesson }), []);
   const setStreamedMessagesRef = useRef(setStreamedMessages);
@@ -369,7 +490,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         }
         if (body && !("error" in body)) {
           hydrate(body);
-          if (body.sessionId && body.sessionId !== requestedSessionId) {
+          if (!requestedLessonId && body.sessionId && body.sessionId !== requestedSessionId) {
             await navigate({
               to: "/session/$sessionId",
               params: { sessionId: body.sessionId },
@@ -469,7 +590,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   }, [chatStatus, pendingCheckObservation, sendMessage]);
 
   useEffect(() => {
-    if (!apiBase || !lesson || lesson.sessionId || lesson.messages.length > 0) return;
+    if (!apiBase || !lesson || !lessonNeedsIntroduction(messages)) return;
     if (introductions.current.has(apiBase)) return;
     introductions.current.add(apiBase);
     setBusy("Sensei is introducing the lesson…");
@@ -498,7 +619,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         setError(cause instanceof Error ? cause.message : String(cause));
       })
       .finally(() => { forwardedProps.current = {}; });
-  }, [apiBase, lesson, navigate, sendMessage, updateMetadata]);
+  }, [apiBase, lesson, messages, navigate, sendMessage, updateMetadata]);
 
   async function sendQuestion(message = question.trim()) {
     if (!message) return;
@@ -553,6 +674,22 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
       }
       if ("kata" in body) await viewLesson(body.kata, body.dojo);
       else setBusy("");
+    } catch (cause) {
+      setBusy("");
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  async function continueLesson() {
+    if (!apiBase) return;
+    setBusy("Preparing the next lesson…");
+    try {
+      const response = await fetch(`${apiBase}/progressions`, { method: "POST" });
+      const body = await response.json() as LessonSnapshot | { error: string };
+      if (!response.ok || "error" in body) {
+        throw new Error("error" in body ? body.error : `Could not continue the course (${response.status})`);
+      }
+      await viewLesson(body.kata, body.dojo);
     } catch (cause) {
       setBusy("");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -655,11 +792,13 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
 
   const completed = lesson.result?.complete === true || lesson.state === "completed";
   const thinking = chatStatus === "submitted" || chatStatus === "streaming";
+  const nextLesson = lesson.lessons[lesson.lessons.findIndex((item) => item.name === lesson.kata) + 1];
+  const nextLessonPending = busy === "Preparing the next lesson…";
   return (
     <main className="grid h-screen min-h-[42rem] grid-cols-[19rem_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
       <LessonNavigation
         lesson={lesson}
-        onOpenLesson={viewLesson}
+        workspaceId={workspaceId}
       />
 
       <section className="grid min-h-0 min-w-0 grid-cols-[minmax(30rem,1.618fr)_minmax(22rem,1fr)]">
@@ -765,6 +904,19 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Dialog open={nextLessonPending} onOpenChange={() => undefined}>
+                <DialogContent>
+                  <div className="flex items-start gap-4 py-2">
+                    <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-blue-500 motion-reduce:animate-none" />
+                    <DialogHeader>
+                      <DialogTitle>Opening {nextLesson?.title ?? "the next lesson"}</DialogTitle>
+                      <DialogDescription className="font-prose">
+                        Preparing its scaffold and lesson context…
+                      </DialogDescription>
+                    </DialogHeader>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <div className="aspect-video min-h-0 overflow-hidden" data-testid="lesson-canvas">
                 <div className="h-full" hidden={activeWorkspaceTab !== "code"} id="code-panel" role="tabpanel">
                   <ClientOnly fallback={<div className="h-full animate-pulse bg-[#0a0a0a]" />}>
@@ -775,6 +927,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                         failedLines={failureLines(lesson.result, lesson.filePath)}
                         filePath={lesson.filePath}
                         language={lesson.language}
+                        highlight={editorHighlight}
                         lineHits={lesson.result?.coverage?.lineHits}
                         key={lesson.kata}
                         onChange={setCode}
@@ -798,11 +951,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
               {completed && lesson.isCurrent && (
                 <Button
                   disabled={Boolean(busy)}
-                  onClick={() => {
-                    const index = lesson.lessons.findIndex((candidate) => candidate.name === lesson.kata);
-                    const next = lesson.lessons[index + 1];
-                    if (next) void viewLesson(next.name);
-                  }}
+                  onClick={() => void continueLesson()}
                   type="button"
                   variant="tertiary"
                 >
@@ -820,29 +969,6 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
           data-host-event-count={hostChatEvents.length}
           data-testid="chat-pane"
         >
-          <ChatContainerHeader>
-            <CourseSelector
-              courses={courses}
-              onSelect={(nextWorkspaceId) => {
-                if (dirty && !window.confirm("Switch courses and discard unsaved editor changes?")) return;
-                window.localStorage.setItem("dojofoo.workspace", nextWorkspaceId);
-                const nextCourse = courses.find((course) => course.workspaceId === nextWorkspaceId);
-                if (nextCourse?.sessionId) {
-                  void navigate({ to: "/session/$sessionId", params: { sessionId: nextCourse.sessionId } });
-                } else if (nextCourse?.kata) {
-                  void navigate({
-                    to: "/course/$workspaceId/$courseId/lesson/$lessonId",
-                    params: { workspaceId: nextWorkspaceId, courseId: nextCourse.dojo, lessonId: nextCourse.kata },
-                  });
-                } else {
-                  void navigate({ to: "/course/$workspaceId", params: { workspaceId: nextWorkspaceId } });
-                }
-              }}
-              sessionId={lesson.sessionId}
-              workspaceId={workspaceId}
-            />
-            {lesson.checkpointed && <span className="font-mono text-[10px] font-normal uppercase tracking-wider text-teal-400">Checkpointed</span>}
-          </ChatContainerHeader>
           <ChatContainerContent>
               {timelineMessages
                 .filter((message) => message.parts.some((part) => part.type !== "text"
@@ -852,6 +978,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
                     fragments={lesson.fragments}
                     key={message.id}
                     message={message}
+                    onHighlight={highlightCode}
                     onToolAnswer={answerTool}
                     streaming={chatIsWorking && message.id === messages.at(-1)?.id}
                     timing={message.id === messages.at(-1)?.id ? chatWorkTiming : undefined}
@@ -917,17 +1044,12 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
 
 function LessonNavigation({
   lesson,
-  onOpenLesson,
+  workspaceId,
 }: {
   lesson: LessonSnapshot;
-  onOpenLesson: (name: string) => void | Promise<void>;
+  workspaceId: string;
 }) {
   const [expandedLesson, setExpandedLesson] = useState(lesson.kata);
-  const openLessonRef = useRef(onOpenLesson);
-  openLessonRef.current = onOpenLesson;
-  const openLesson = useCallback((name: string) => {
-    void openLessonRef.current(name);
-  }, []);
 
   useEffect(() => {
     setExpandedLesson(lesson.kata);
@@ -936,7 +1058,9 @@ function LessonNavigation({
   return (
     <aside className="flex min-h-0 flex-col border-r border-dashed bg-surface-1" data-testid="lesson-navigation">
       <div className="border-b border-dashed px-5 pb-5 pt-5">
-        <BrandLogo alt="Dojofoo wordmark" className="h-6" />
+        <a aria-label="Back to your dojos" className="inline-flex" href="/">
+          <BrandLogo alt="Dojofoo wordmark" className="h-6" />
+        </a>
         <h1 className="mt-1.5 text-xl font-semibold">{humanTitle(lesson.dojo)}</h1>
         <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Chapters</h2>
       </div>
@@ -950,71 +1074,14 @@ function LessonNavigation({
                 item={item}
                 key={item.name}
                 last={index === lesson.lessons.length - 1}
+                lessonHref={`/course/${encodeURIComponent(workspaceId)}/${encodeURIComponent(lesson.dojo)}/lesson/${encodeURIComponent(item.name)}`}
                 onExpandedChange={setExpandedLesson}
-                onOpenLesson={openLesson}
               />
             );
           })}
         </div>
       </ScrollArea>
     </aside>
-  );
-}
-
-function CourseSelector({
-  courses,
-  onSelect,
-  sessionId,
-  workspaceId,
-}: {
-  courses: ActiveCourse[];
-  onSelect: (workspaceId: string) => void;
-  sessionId: string | null;
-  workspaceId: string;
-}) {
-  const selected = courses.find((course) => course.workspaceId === workspaceId) ?? courses[0];
-  const dojoNames = [...new Set(courses.map((course) => course.dojo))];
-  const visibleSessionId = sessionId ? middleEllipsis(sessionId) : "No session";
-
-  return (
-    <div className="grid w-full min-w-0 grid-cols-2 items-start gap-3 text-xs text-muted-foreground">
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Active course</span>
-        <Select
-          onValueChange={(dojo) => {
-            const next = courses.find((course) => course.dojo === dojo);
-            if (next) onSelect(next.workspaceId);
-          }}
-          value={selected?.dojo ?? ""}
-        >
-          <SelectTrigger
-            aria-label="Active course"
-            className="w-full min-w-0 px-3 text-sm font-medium"
-            data-testid="active-course-selector"
-            variant="borderless"
-          />
-          <SelectContent>
-            {dojoNames.map((dojo, index) => (
-              <SelectItem index={index} key={dojo} value={dojo}>{humanTitle(dojo)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <span className="px-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Session</span>
-        <Select value={sessionId ?? "none"}>
-          <SelectTrigger
-            aria-label="Session"
-            className="w-full min-w-0 px-3 text-sm font-medium"
-            data-testid="session-selector"
-            variant="borderless"
-          />
-          <SelectContent>
-            <SelectItem index={0} value={sessionId ?? "none"}>{visibleSessionId}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
   );
 }
 
@@ -1030,15 +1097,15 @@ const LessonNavigationItem = memo(function LessonNavigationItem({
   expanded,
   item,
   last,
+  lessonHref,
   onExpandedChange,
-  onOpenLesson,
 }: {
   currentKata: string;
   expanded: boolean;
   item: LessonSnapshot["lessons"][number];
   last: boolean;
+  lessonHref: string;
   onExpandedChange: (name: string) => void;
-  onOpenLesson: (name: string) => void;
 }) {
   const accessible = item.state === "completed" || item.isCurrent;
   return (
@@ -1054,25 +1121,38 @@ const LessonNavigationItem = memo(function LessonNavigationItem({
         value={item.name}
       >
         <AccordionPrimitive.Header>
-          <AccordionPrimitive.Trigger
-            aria-description={!accessible ? "Upcoming lesson; expand to preview its goal" : undefined}
-            className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
-            data-navigation-disabled={!accessible || undefined}
-            onClick={() => accessible && item.name !== currentKata && onOpenLesson(item.name)}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="truncate">{item.title}</span>
-            </span>
-            <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
-          </AccordionPrimitive.Trigger>
+          {accessible && item.name !== currentKata ? (
+            <a
+              className="flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)]"
+              href={lessonHref}
+            >
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="truncate">{item.title}</span>
+              </span>
+              <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
+            </a>
+          ) : (
+            <AccordionPrimitive.Trigger
+              aria-description={!accessible ? "Upcoming lesson; expand to preview its goal" : undefined}
+              className={`flex w-full items-center gap-2.5 px-4 py-4 text-left text-[14px] font-medium outline-none transition-colors hover:bg-hover focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[color:var(--focus-ring,#6B97FF)] ${!accessible ? "cursor-default text-muted-foreground/40" : "text-muted-foreground data-[state=open]:text-foreground"}`}
+              data-navigation-disabled={!accessible || undefined}
+            >
+              <>
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate">{item.title}</span>
+                </span>
+                <LessonStateIcon completed={item.state === "completed"} current={item.isCurrent} />
+              </>
+            </AccordionPrimitive.Trigger>
+          )}
         </AccordionPrimitive.Header>
         <LessonAccordionContent>
           <div>
             <p className="font-prose leading-5">{item.summary}</p>
             {accessible && item.name !== currentKata && (
-              <button className="mt-2 text-xs font-medium text-foreground underline underline-offset-4" onClick={() => onOpenLesson(item.name)} type="button">
+              <a className="mt-2 inline-block text-xs font-medium text-foreground underline underline-offset-4" href={lessonHref}>
                 Open lesson
-              </button>
+              </a>
             )}
           </div>
         </LessonAccordionContent>
@@ -1113,6 +1193,7 @@ export function StreamedChatMessage({
   fragments,
   message,
   onToolAnswer,
+  onHighlight,
   streaming = false,
   timing,
   workspaceId,
@@ -1120,6 +1201,7 @@ export function StreamedChatMessage({
   fragments: Record<string, string>;
   message: UIMessage;
   onToolAnswer?: (answers: Record<string, AskUserAnswer>) => void | Promise<void>;
+  onHighlight?: (highlight: CodeHighlight) => void;
   streaming?: boolean;
   timing?: ChatWorkTiming;
   workspaceId: string;
@@ -1137,13 +1219,17 @@ export function StreamedChatMessage({
         "min-w-0 max-w-full space-y-2 overflow-hidden",
         assistant ? "w-full" : "bg-muted px-3 py-2 text-sm",
       )}>
-        {message.parts.map((part, index) => {
+        {groupMessageParts(message.parts).map((group, index) => {
+          if (group.kind === "activity") {
+            return <ActivityTimeline activities={group.parts} key={`activity-${index}`} streaming={streaming} timing={timing} />;
+          }
+          const part = group.part;
           if (part.type === "thinking") {
-            return <ReasoningActivity key={`${part.type}-${index}`} part={part} streaming={streaming} timing={timing} />;
+            return null;
           }
           if (part.type === "text") {
             if (isInternalLessonMessage(part.content)) return null;
-            return <MessageContent fragments={fragments} key={`${part.type}-${index}`} text={part.content} workspaceId={workspaceId} />;
+            return <MessageContent autoHighlight={streaming} fragments={fragments} key={`${part.type}-${index}`} onHighlight={onHighlight} text={part.content} workspaceId={workspaceId} />;
           }
           if (part.type === "ui-resource" && part.resource.uri.startsWith("dojofoo://lessons/")) {
             return <MessageContent fragments={fragments} key={`${part.type}-${index}`} kind="lesson-fragment" text={part.resource.text ?? ""} workspaceId={workspaceId} />;
@@ -1158,7 +1244,8 @@ export function StreamedChatMessage({
             if (part.name === "dojo_lesson_verify") {
               const report = isTestReport(part.output) ? part.output : null;
               const failed = part.state === "error" && !report;
-              if (report) return <ChatTestSummary key={`${part.type}-${index}`} report={report} />;
+              if (report) return <ChatTestTerminal key={`${part.type}-${index}`} report={report} />;
+              if (isActiveThinkingActivity(part)) return <ChatTestTerminal key={`${part.type}-${index}`} />;
               if (failed) {
                 return (
                   <div className="w-full" key={`${part.type}-${index}`}>
@@ -1179,13 +1266,38 @@ export function StreamedChatMessage({
               ) : null;
             }
             if (part.name.includes("dojo_lesson_complete") && !toolFailed(part)) return null;
-            return <GenericToolActivity key={`${part.type}-${part.id}`} part={part} />;
+            return null;
           }
           return null;
         })}
       </div>
     </div>
   );
+}
+
+type MessagePart = UIMessage["parts"][number];
+type ActivityPart = ThinkingPart | ToolCallPart;
+type MessagePartGroup = { kind: "activity"; parts: ActivityPart[] } | { kind: "part"; part: MessagePart };
+
+function groupMessageParts(parts: UIMessage["parts"]): MessagePartGroup[] {
+  const groups: MessagePartGroup[] = [];
+  for (const part of parts) {
+    if (part.type === "tool-result") continue;
+    if (isTimelineActivity(part)) {
+      const previous = groups.at(-1);
+      if (previous?.kind === "activity") previous.parts.push(part);
+      else groups.push({ kind: "activity", parts: [part] });
+    } else groups.push({ kind: "part", part });
+  }
+  return groups;
+}
+
+function isTimelineActivity(part: MessagePart): part is ActivityPart {
+  if (part.type === "thinking") return true;
+  if (part.type !== "tool-call") return false;
+  if (part.name === "dojo_lesson_verify" || isAgentQuestion(part)) return false;
+  if (part.name.includes("dojo_ui_show") || (part.name.includes("dojo_lesson_complete") && !toolFailed(part))) return false;
+  return true;
 }
 
 function lessonFragmentId(input: unknown): string | undefined {
@@ -1198,22 +1310,28 @@ function isActiveThinkingActivity(activity: ToolCallPart): boolean {
     && (activity.state === "awaiting-input" || activity.state === "input-streaming" || activity.state === "input-complete");
 }
 
-function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; streaming: boolean; timing?: ChatWorkTiming }) {
-  const [open, setOpen] = useState(streaming);
-  const steps = formatThinkingSteps(part.content).map((step) => ({
-    title: step.label ?? "Reasoning",
-    body: step.content ?? "",
-  }));
-  const elapsed = timing?.startedAt !== undefined && timing.completedAt !== undefined
-    ? formatElapsed(timing.completedAt - timing.startedAt)
-    : undefined;
+function ActivityTimeline({ activities, streaming, timing }: { activities: ActivityPart[]; streaming: boolean; timing?: ChatWorkTiming }) {
+  const [open, setOpen] = useState(false);
+  const steps = activities.map<TimelineStep>((activity) => {
+    if (activity.type === "thinking") return { verb: "Thinking", status: streaming ? "running" : "success" };
+    const running = isActiveThinkingActivity(activity);
+    return {
+      verb: running ? toolActivityLabel(activity.name) : toolFailed(activity) ? `${toolResultLabel(activity.name)} failed` : toolResultLabel(activity.name),
+      chip: activityCommand(activity) ?? toolTarget(activity),
+      status: running ? "running" : toolFailed(activity) ? "error" : "success",
+    };
+  });
+  const elapsedMs = activityDuration(activities, timing);
+  const elapsed = elapsedMs === undefined ? undefined : formatElapsed(elapsedMs);
+  const suffix = elapsed ? ` · ${elapsed}` : "";
   return (
-    <ReasoningPanel
+    <ToolTimeline
+      activeLabel={`Working${suffix}`}
       className="max-w-none"
-      elapsed={elapsed}
       onOpenChange={setOpen}
       open={open}
-      restingLabel="Worked"
+      restingLabel={`Worked${suffix}`}
+      stats={[]}
       steps={steps}
       streaming={streaming}
       visibleSteps={steps.length}
@@ -1221,25 +1339,22 @@ function ReasoningActivity({ part, streaming, timing }: { part: ThinkingPart; st
   );
 }
 
-function GenericToolActivity({ part }: { part: ToolCallPart }) {
-  const running = isActiveThinkingActivity(part);
-  const failed = toolFailed(part);
-  const [open, setOpen] = useState(running || failed);
-  const command = activityCommand(part);
-  return (
-    <AssistantToolCall
-      activeLabel={toolActivityLabel(part.name)}
-      className="max-w-none"
-      error={failed}
-      label={failed ? `${toolResultLabel(part.name)} failed` : toolResultLabel(part.name)}
-      onOpenChange={setOpen}
-      open={open}
-      query={command ?? part.name}
-      request={serializeToolValue(part.input)}
-      result={part.output === undefined ? "Waiting for result…" : serializeToolValue(part.output)}
-      running={running}
-    />
-  );
+function activityDuration(activities: ActivityPart[], timing?: ChatWorkTiming): number | undefined {
+  if (timing?.startedAt !== undefined) return (timing.completedAt ?? Date.now()) - timing.startedAt;
+  const values = activities.flatMap((activity) => {
+    const duration = (activity as ActivityPart & { durationMs?: number }).durationMs;
+    return duration === undefined ? [] : [duration];
+  });
+  return values.length ? Math.max(...values) : undefined;
+}
+
+function toolTarget(part: ToolCallPart): string | undefined {
+  if (!part.input || typeof part.input !== "object") return undefined;
+  const input = part.input as Record<string, unknown>;
+  for (const key of ["path", "file", "name", "query"]) {
+    if (typeof input[key] === "string") return input[key];
+  }
+  return undefined;
 }
 
 function serializeToolValue(value: unknown): string {
@@ -1362,16 +1477,31 @@ function inlineCode(value: string) {
 }
 
 function MessageContent({
+  autoHighlight = false,
   fragments,
   kind,
+  onHighlight,
   text,
   workspaceId,
 }: {
+  autoHighlight?: boolean;
   fragments?: Record<string, string>;
   kind?: "message" | "commentary" | "reasoning" | "tool" | "checkpoint" | "lesson-fragment";
+  onHighlight?: (highlight: CodeHighlight) => void;
   text: string;
   workspaceId?: string;
 }) {
+  const automaticHighlight = useRef("");
+  useEffect(() => {
+    if (!autoHighlight || !onHighlight) return;
+    const highlight = codeHighlights(text).at(-1);
+    if (!highlight) return;
+    const signature = `${highlight.from}:${highlight.to}`;
+    if (automaticHighlight.current === signature) return;
+    automaticHighlight.current = signature;
+    onHighlight(highlight);
+  }, [autoHighlight, onHighlight, text]);
+
   if (kind === "lesson-fragment") {
     const fragment = fragments?.[text];
     return fragment
@@ -1382,7 +1512,7 @@ function MessageContent({
     return (
       <div className="w-full border-l border-dashed pl-3 text-sm text-muted-foreground">
         <p className="mb-1 font-display text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Agent note</p>
-        <MarkdownText text={text} />
+        <MarkdownText onHighlight={onHighlight} text={text} />
       </div>
     );
   }
@@ -1402,13 +1532,13 @@ function MessageContent({
             </CodeBlock>
           );
         }
-        return part.trim() ? <MarkdownText key={index} text={part} /> : null;
+        return part.trim() ? <MarkdownText key={index} onHighlight={onHighlight} text={part} /> : null;
       })}
     </div>
   );
 }
 
-function MarkdownText({ text }: { text: string }) {
+function MarkdownText({ onHighlight, text }: { onHighlight?: (highlight: CodeHighlight) => void; text: string }) {
   const lines = text.split("\n");
   const blocks: React.ReactNode[] = [];
   let index = 0;
@@ -1430,27 +1560,40 @@ function MarkdownText({ text }: { text: string }) {
       }
       const List = ordered ? "ol" : "ul";
       blocks.push(
-        <List className={`${ordered ? "list-decimal" : "list-disc"} space-y-1 pl-5`} key={`list-${index}`}>
-          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMessage(item)}</li>)}
+        <List className={`${ordered ? "list-decimal" : "list-disc"} space-y-1 pl-7`} key={`list-${index}`}>
+          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineMessage(item, onHighlight)}</li>)}
         </List>,
       );
       continue;
     }
     const heading = line.match(/^(#{1,3})\s+(.*)$/);
     if (heading) {
-      blocks.push(<p className="font-semibold text-foreground" key={`heading-${index}`}>{inlineMessage(heading[2])}</p>);
+      blocks.push(<p className="font-semibold text-foreground" key={`heading-${index}`}>{inlineMessage(heading[2], onHighlight)}</p>);
     } else if (line.startsWith("> ")) {
-      blocks.push(<blockquote className="border-l border-dashed pl-3 text-muted-foreground" key={index}>{inlineMessage(line.slice(2))}</blockquote>);
+      blocks.push(<blockquote className="border-l border-dashed pl-3 text-muted-foreground" key={index}>{inlineMessage(line.slice(2), onHighlight)}</blockquote>);
     } else {
-      blocks.push(<p className="whitespace-pre-wrap" key={index}>{inlineMessage(line)}</p>);
+      blocks.push(<p className="whitespace-pre-wrap" key={index}>{inlineMessage(line, onHighlight)}</p>);
     }
     index += 1;
   }
   return <>{blocks}</>;
 }
 
-function inlineMessage(value: string) {
-  return value.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, index) => {
+function inlineMessage(value: string, onHighlight?: (highlight: CodeHighlight) => void) {
+  return value.split(/(`[^`]+`|\*\*[^*]+\*\*|\[highlight:L\d+(?:-(?:L)?\d+)?\])/giu).map((part, index) => {
+    const highlight = codeHighlight(part);
+    if (highlight) {
+      return (
+        <button
+          className="dojo-inline-code cursor-pointer text-blue-500 hover:text-blue-400"
+          key={index}
+          onClick={() => onHighlight?.(highlight)}
+          type="button"
+        >
+          {part}
+        </button>
+      );
+    }
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code className="dojo-inline-code" key={index}>{part.slice(1, -1)}</code>;
     }
@@ -1461,44 +1604,26 @@ function inlineMessage(value: string) {
   });
 }
 
-function ChatTestSummary({ report }: { report: TestReport }) {
-  const passedPercentage = report.total > 0 ? (report.passed / report.total) * 100 : 0;
-  const failedPercentage = report.total > 0 ? (report.failed / report.total) * 100 : 0;
+function ChatTestTerminal({ report }: { report?: TestReport }) {
+  const lines = report?.tests.flatMap((test) => [
+    `${test.status === "passed" ? "✓" : test.status === "failed" ? "×" : "-"} ${test.name}`,
+    ...test.failureMessages.slice(0, 1).map((failure) => `  ${failure.split("\n")[0]}`),
+  ]) ?? [];
   return (
-    <div className="w-full py-2.5">
-      <div className="flex items-baseline justify-between gap-3 text-xs">
-        <span className="font-medium text-foreground">{report.passed} of {report.total} tests passed</span>
-        {report.durationMs !== undefined && (
-          <span className="font-mono text-[10px] text-muted-foreground">{Math.round(report.durationMs)}ms</span>
-        )}
-      </div>
-      <div
-        aria-label={`${report.passed} passed, ${report.failed} failed, ${report.skipped} skipped`}
-        className="mt-2 flex h-1.5 w-full overflow-hidden bg-border"
-        role="img"
-      >
-        <span className="bg-emerald-500" style={{ width: `${passedPercentage}%` }} />
-        <span className="bg-red-500" style={{ width: `${failedPercentage}%` }} />
-      </div>
-    </div>
+    <TerminalBlock
+      className="max-w-none"
+      command={report ? `${report.passed}/${report.total} lesson checks passed` : "Running lesson checks"}
+      done={Boolean(report)}
+      failed={Boolean(report?.failed)}
+      lines={lines}
+      visibleCount={lines.length}
+    />
   );
 }
 
 function LiveCheckSummary({ tests }: { tests: TestReport["tests"] }) {
-  const passed = tests.filter((test) => test.status === "passed").length;
-  const failed = tests.filter((test) => test.status === "failed").length;
-  return (
-    <div aria-busy="true" aria-live="polite" className="w-full py-2.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-foreground">Running lesson checks</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{tests.length} finished</span>
-      </div>
-      <div className="mt-2 flex h-1.5 w-full overflow-hidden bg-border">
-        {passed > 0 && <span className="bg-emerald-500" style={{ flex: passed }} />}
-        {failed > 0 && <span className="bg-red-500" style={{ flex: failed }} />}
-      </div>
-    </div>
-  );
+  const lines = tests.map((test) => `${test.status === "passed" ? "✓" : "×"} ${test.name}`);
+  return <TerminalBlock className="max-w-none" command="Running lesson checks" done={false} lines={lines} visibleCount={lines.length} />;
 }
 
 function RunningTestResults({ tests }: { tests: TestReport["tests"] }) {

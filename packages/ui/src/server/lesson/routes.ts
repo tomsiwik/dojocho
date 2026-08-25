@@ -4,8 +4,10 @@ import {
   answerSenseiQuestion,
   checkLesson,
   getLesson,
+  nextLesson,
   readLessonFile,
   setLessonModel,
+  startLessonSession,
   streamLessonIntroduction,
   streamCheckObservation,
   streamSensei,
@@ -46,6 +48,18 @@ app.get("/:workspaceId/courses/:courseId/lessons/:lessonId/messages", async (c) 
   return c.json({
     data: lesson.messages,
   });
+});
+
+app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/sessions", async (c) => {
+  try {
+    const { root, courseId, lessonId } = context(c);
+    const lesson = await getLesson(root, lessonId);
+    if (!lesson) return c.json({ error: "Lesson not found" }, 404);
+    assertCourse(lesson.dojo, courseId);
+    return c.json(await startLessonSession(root, lessonId), 201);
+  } catch (cause) {
+    return c.json({ error: cause instanceof Error ? cause.message : "Could not start a new lesson session" }, 502);
+  }
 });
 
 app.put("/:workspaceId/courses/:courseId/lessons/:lessonId/configuration/model", async (c) => {
@@ -100,6 +114,21 @@ app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/checks", async (c) =
     }, 201);
   } catch (cause) {
     return c.json({ error: cause instanceof Error ? cause.message : "Could not run the lesson checks." }, 500);
+  }
+});
+
+app.post("/:workspaceId/courses/:courseId/lessons/:lessonId/progressions", async (c) => {
+  try {
+    const { root, courseId, lessonId } = context(c);
+    const lesson = await getLesson(root, lessonId);
+    if (!lesson) return c.json({ error: "Lesson not found" }, 404);
+    assertCourse(lesson.dojo, courseId);
+    if (!lesson.result?.complete && lesson.state !== "completed") {
+      return c.json({ error: "Complete the current lesson before moving on" }, 409);
+    }
+    return c.json(await nextLesson(root));
+  } catch (cause) {
+    return c.json({ error: cause instanceof Error ? cause.message : "Could not continue the course" }, 409);
   }
 });
 
