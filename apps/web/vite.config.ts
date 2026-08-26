@@ -55,6 +55,7 @@ export default defineConfig({
         brotli: true,
         gzip: true,
       },
+      traceDeps: ['react'],
       minify: true,
       routeRules: {
         '/assets/**': {
