@@ -82,8 +82,8 @@ const courseEventNames = new Set<CourseEventName>([
   "finished",
 ]);
 
-const catalogCacheControl = "public, max-age=30, s-maxage=60";
-const snapshotCacheControl = "public, max-age=300, s-maxage=300";
+const catalogCacheControl = "public, max-age=30, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400";
+const snapshotCacheControl = "public, max-age=300, s-maxage=300, stale-while-revalidate=3600, stale-if-error=86400";
 
 function installCountBetween(events: CourseEvent[], start: number, end: number) {
   return new Set(
@@ -186,12 +186,16 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
   const eventStore = options.eventStore ?? new MemoryCourseEventStore(options.events);
   const legacyCourseId = (course: Course) =>
     course.source === "dojofoo" ? `dojocho/${course.slug}` : undefined;
+  let coursesCache: { expiresAt: number; value: Course[] } | undefined;
   const allCourses = async () => {
+    if (coursesCache && coursesCache.expiresAt > Date.now()) return coursesCache.value;
     const externalCourses = options.courseStore ? await options.courseStore.list() : [];
-    return [...new Map(
+    const value = [...new Map(
       [...builtInCourses, ...externalCourses, ...registeredCourses]
         .map((course) => [course.id, course]),
     ).values()];
+    coursesCache = { expiresAt: Date.now() + 30_000, value };
+    return value;
   };
   const findCourse = async (source: string, slug: string) =>
     (await allCourses()).find(
@@ -212,12 +216,65 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
   });
   const catalogWithRecordedInstalls = async () =>
     Promise.all((await allCourses()).map(withRecordedInstalls));
+  const marketplaceCourses = async () => {
+    const [courses, allEvents] = await Promise.all([
+      allCourses(),
+      eventStore.listAll(),
+    ]);
+    const normalizedEvents = new Map(courses.map((course) => [course.id, [] as CourseEvent[]]));
+    const courseByEventId = new Map(
+      courses.flatMap((course) => [
+        [course.id, course] as const,
+        ...(legacyCourseId(course) ? [[legacyCourseId(course)!, course] as const] : []),
+      ]),
+    );
+    for (const event of allEvents) {
+      const course = courseByEventId.get(event.courseId);
+      if (!course) continue;
+      normalizedEvents.get(course.id)?.push({ ...event, courseId: course.id });
+    }
+    const ranked = courses.map((course) => {
+      const events = normalizedEvents.get(course.id) ?? [];
+      return {
+        course,
+        metrics: courseMetrics(course, events),
+        recentInstalls: installCountBetween(
+          events,
+          Date.now() - 7 * 24 * 60 * 60_000,
+          Date.now() + 1,
+        ),
+      };
+    });
+    const trendingRank = new Map(
+      [...ranked]
+        .sort((left, right) => right.recentInstalls - left.recentInstalls)
+        .map((item, index) => [item.course.id, index]),
+    );
+
+    return ranked.map(({ course, metrics }) => ({
+      ...listingFields(course),
+      description: course.description,
+      version: course.version,
+      publishedAt: course.publishedAt,
+      repository: course.repository,
+      repositoryUrl: course.repositoryUrl,
+      author: course.author,
+      language: course.language,
+      framework: course.framework,
+      tags: course.tags,
+      kataCount: course.kataCount,
+      installs: metrics.installs,
+      metrics,
+      trendingRank: trendingRank.get(course.id) ?? Number.MAX_SAFE_INTEGER,
+    }));
+  };
 
   return new Elysia()
     .get("/health", () => ({ status: "ok" }))
     .get("/api/v1/health", () => ({ status: "ok" }))
-    .get("/api/v1/course-profiles", async () => ({
-      data: (await allCourses()).map(({ id, description, version, publishedAt, repository, repositoryUrl, author, language, framework, tags, kataCount }) => ({
+    .get("/api/v1/course-profiles", async ({ set }) => {
+      set.headers["cache-control"] = snapshotCacheControl;
+      return { data: (await allCourses()).map(({ id, description, version, publishedAt, repository, repositoryUrl, author, language, framework, tags, kataCount }) => ({
         id,
         description,
         version,
@@ -229,8 +286,12 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
         framework,
         tags,
         kataCount,
-      })),
-    }))
+      })) };
+    })
+    .get("/api/v1/marketplace", async ({ set }) => {
+      set.headers["cache-control"] = catalogCacheControl;
+      return { data: await marketplaceCourses() };
+    })
     .get("/api/v1/courses", async ({ query, set, status }) => {
       const view = query.view ?? "all-time";
       if (!new Set(["all-time", "trending", "hot"]).has(view)) {
@@ -340,11 +401,12 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
         generatedAt: new Date().toISOString(),
       };
     })
-    .get("/api/v1/courses/:source/:slug/metrics", async ({ params, status }) => {
+    .get("/api/v1/courses/:source/:slug/metrics", async ({ params, set, status }) => {
       const course = await findCourse(params.source, params.slug);
       if (!course) {
         return status(404, { error: "course_not_found", message: "Course not found." });
       }
+      set.headers["cache-control"] = catalogCacheControl;
       return courseMetrics(course, await eventsForCourse(course));
     })
     .get("/api/v1/courses/audit/*", ({ status }) =>
@@ -418,6 +480,7 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
           );
           if (existingIndex === -1) registeredCourses.push(registered);
           else registeredCourses[existingIndex] = registered;
+          coursesCache = undefined;
         }
       }
       if (!course) {

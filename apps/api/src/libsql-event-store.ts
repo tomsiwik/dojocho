@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { createClient, type Config } from "@libsql/client";
+import { createClient, type Client, type Config } from "@libsql/client/web";
 import { asc, eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/libsql/web";
 import { index, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { Course, CourseEvent } from "./app";
 import type { CourseEventStore } from "./event-store";
@@ -48,7 +48,10 @@ export class LibsqlCourseEventStore implements CourseEventStore {
   private constructor(private readonly db: ReturnType<typeof drizzle>) {}
 
   static async create(config: Config) {
-    const client = createClient(config);
+    return LibsqlCourseEventStore.fromClient(createClient(config));
+  }
+
+  static async fromClient(client: Client) {
     const db = drizzle(client);
     await db.run(sql`
       CREATE TABLE IF NOT EXISTS course_events (
@@ -83,6 +86,21 @@ export class LibsqlCourseEventStore implements CourseEventStore {
     }));
   }
 
+  async listAll() {
+    const rows = await this.db
+      .select()
+      .from(courseEvents)
+      .orderBy(asc(courseEvents.occurredAt));
+
+    return rows.map((row) => ({
+      courseId: row.courseId,
+      instanceId: row.instanceHash,
+      event: row.event,
+      occurredAt: row.occurredAt,
+      ...(row.kata ? { kata: row.kata } : {}),
+    }));
+  }
+
   async append(event: CourseEvent) {
     const instanceHash = hashInstanceId(event.instanceId);
     const inserted = await this.db
@@ -106,7 +124,10 @@ export class LibsqlCourseStore {
   private constructor(private readonly db: ReturnType<typeof drizzle>) {}
 
   static async create(config: Config) {
-    const client = createClient(config);
+    return LibsqlCourseStore.fromClient(createClient(config));
+  }
+
+  static async fromClient(client: Client) {
     const db = drizzle(client);
     await db.run(sql`
       CREATE TABLE IF NOT EXISTS external_courses (

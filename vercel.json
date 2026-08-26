@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
   "services": {
     "web": {
       "root": "apps/web",
@@ -13,9 +14,8 @@
       ]
     },
     "courses_api": {
-      "root": ".",
-      "entrypoint": "Dockerfile.vercel",
-      "runtime": "container"
+      "root": "apps/api",
+      "entrypoint": "src/server.ts"
     }
   },
   "rewrites": [

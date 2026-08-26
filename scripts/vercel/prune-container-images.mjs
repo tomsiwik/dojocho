@@ -3,17 +3,25 @@ import { pathToFileURL } from "node:url";
 
 const DEFAULT_PROJECT = "dojofoo";
 const DEFAULT_REPOSITORY = "courses_api";
-const DEFAULT_RETAIN = 5;
+const DEFAULT_RETAIN = 3;
 
 export function imagesToPrune(images, retain = DEFAULT_RETAIN) {
   if (!Number.isInteger(retain) || retain < 1) {
     throw new Error("retain must be a positive integer");
   }
 
-  return [...images]
-    .filter((image) => image.status === "ready")
-    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
-    .slice(retain);
+  const newestReadyIds = new Set(
+    images
+      .filter((image) => image.status === "ready")
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+      .slice(0, retain)
+      .map((image) => image.id)
+  );
+
+  return images.filter(
+    (image) =>
+      (image.status === "ready" && !newestReadyIds.has(image.id)) || image.status === "failed"
+  );
 }
 
 function vercel(args) {
@@ -67,11 +75,16 @@ export function pruneContainerImages({
 
   for (const image of staleImages) {
     removeImage({ image, project, repository });
-    process.stdout.write(`Deleted ${image.id} (${image.tags?.join(", ") || "untagged"})\n`);
+    process.stdout.write(`Deleted ${image.id} (${image.status})\n`);
     wait(500);
   }
 
-  process.stdout.write(`Retained ${Math.min(retain, images.length)} of ${images.length} images.\n`);
+  const retainedReady = images.filter(
+    (image) => image.status === "ready" && !staleImages.includes(image)
+  ).length;
+  process.stdout.write(
+    `Retained ${retainedReady} ready image${retainedReady === 1 ? "" : "s"}; active builds were left untouched.\n`
+  );
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
