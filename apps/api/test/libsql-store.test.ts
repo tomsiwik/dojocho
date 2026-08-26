@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { createClient } from "@libsql/client/sqlite3";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   LibsqlCourseStore,
@@ -30,9 +31,9 @@ describe("LibsqlCourseEventStore", () => {
   it("persists unique, anonymized course events", async () => {
     const directory = mkdtempSync(resolve(tmpdir(), "dojofoo-libsql-"));
     temporaryDirectories.push(directory);
-    const store = await LibsqlCourseEventStore.create({
+    const store = await LibsqlCourseEventStore.fromClient(createClient({
       url: `file:${resolve(directory, "events.db")}`,
-    });
+    }));
     const event = {
       instanceId: "raw-project-identifier",
       courseId: "dojofoo/starter",
@@ -62,7 +63,7 @@ describe("LibsqlCourseStore", () => {
     const directory = mkdtempSync(resolve(tmpdir(), "dojofoo-courses-"));
     temporaryDirectories.push(directory);
     const config = { url: `file:${resolve(directory, "courses.db")}` };
-    const first = await LibsqlCourseStore.create(config);
+    const first = await LibsqlCourseStore.fromClient(createClient(config));
     const externalCourse = {
       id: "acme/typescript-basics",
       slug: "typescript-basics",
@@ -88,7 +89,7 @@ describe("LibsqlCourseStore", () => {
     };
 
     await first.upsert(externalCourse);
-    const reopened = await LibsqlCourseStore.create(config);
+    const reopened = await LibsqlCourseStore.fromClient(createClient(config));
 
     expect(await reopened.list()).toEqual([externalCourse]);
   });
@@ -96,9 +97,9 @@ describe("LibsqlCourseStore", () => {
   it("normalizes legacy snapshots that predate course facets", async () => {
     const directory = mkdtempSync(resolve(tmpdir(), "dojofoo-legacy-courses-"));
     temporaryDirectories.push(directory);
-    const store = await LibsqlCourseStore.create({
+    const store = await LibsqlCourseStore.fromClient(createClient({
       url: `file:${resolve(directory, "courses.db")}`,
-    });
+    }));
     await store.upsert({
       id: "acme/legacy",
       slug: "legacy",

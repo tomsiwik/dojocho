@@ -1,9 +1,14 @@
-name: Prune container images
+name: Prune legacy container images
 
 on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      retain:
+        description: Number of recent ready images to retain
+        required: false
+        default: "3"
 
 concurrency:
   group: prune-container-images
@@ -19,7 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Retain the five newest API images
+      - name: Retain recent working API images
         env:
+          VERCEL_RETAIN_IMAGES: ${{ inputs.retain || '3' }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: node scripts/vercel/prune-container-images.mjs

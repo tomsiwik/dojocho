@@ -37,6 +37,13 @@ GET /api/v1/course-profiles
 GET /api/v1/courses/:source/:slug/metrics
 ```
 
+The marketplace UI reads its complete public projection in one request. This avoids an
+N+1 request fan-out while retaining the narrower skills.sh-compatible endpoints above:
+
+```http
+GET /api/v1/marketplace
+```
+
 Course profiles include `author`, `language`, optional `framework`, and topical `tags`.
 Language and framework are separate discovery facets; tags should not repeat either value.
 

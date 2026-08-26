@@ -129,14 +129,45 @@ describe("courses API", () => {
       app.handle(new Request("http://localhost/api/v1/courses/search?q=effect")),
       app.handle(new Request("http://localhost/api/v1/courses/curated")),
       app.handle(new Request("http://localhost/api/v1/courses/dojofoo/effect-ts")),
+      app.handle(new Request("http://localhost/api/v1/course-profiles")),
+      app.handle(new Request("http://localhost/api/v1/courses/dojofoo/effect-ts/metrics")),
     ]);
 
     expect(responses.map((response) => response.headers.get("cache-control"))).toEqual([
-      "public, max-age=30, s-maxage=60",
-      "public, max-age=30, s-maxage=60",
-      "public, max-age=300, s-maxage=300",
-      "public, max-age=300, s-maxage=300",
+      "public, max-age=30, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400",
+      "public, max-age=30, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400",
+      "public, max-age=300, s-maxage=300, stale-while-revalidate=3600, stale-if-error=86400",
+      "public, max-age=300, s-maxage=300, stale-while-revalidate=3600, stale-if-error=86400",
+      "public, max-age=300, s-maxage=300, stale-while-revalidate=3600, stale-if-error=86400",
+      "public, max-age=30, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400",
     ]);
+  });
+
+  it("serves the complete marketplace projection in one request", async () => {
+    const app = createCoursesApp({
+      courses: [course],
+      events: [
+        {
+          instanceId: "learner",
+          courseId: course.id,
+          event: "started",
+          kata: "001-hello-effect",
+          occurredAt: new Date().toISOString(),
+        },
+      ],
+    });
+    const response = await app.handle(new Request("http://localhost/api/v1/marketplace"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      data: [expect.objectContaining({
+        id: course.id,
+        description: course.description,
+        installs: course.installs,
+        trendingRank: 0,
+        metrics: expect.objectContaining({ started: 1, progressing: 1 }),
+      })],
+    });
   });
 
   it("keeps legacy course URLs and telemetry attached to the renamed course", async () => {

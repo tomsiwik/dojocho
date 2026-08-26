@@ -2,6 +2,7 @@ import type { CourseEvent } from "./app";
 
 export interface CourseEventStore {
   list(courseId: string): Promise<CourseEvent[]>;
+  listAll(): Promise<CourseEvent[]>;
   append(event: CourseEvent): Promise<boolean>;
 }
 
@@ -20,6 +21,10 @@ export class MemoryCourseEventStore implements CourseEventStore {
 
   async list(courseId: string) {
     return this.#events.filter((event) => event.courseId === courseId);
+  }
+
+  async listAll() {
+    return [...this.#events];
   }
 
   async append(event: CourseEvent) {

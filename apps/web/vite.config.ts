@@ -1,9 +1,21 @@
 import react from '@vitejs/plugin-react';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { globSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from 'fumadocs-mdx/vite';
 import { nitro } from 'nitro/vite';
+
+const appRoot = dirname(fileURLToPath(import.meta.url));
+const docsRoot = resolve(appRoot, 'content/docs');
+const docsPaths = globSync('**/*.mdx', { cwd: docsRoot }).map((file) => {
+  const slug = relative(docsRoot, resolve(docsRoot, file))
+    .replace(/(?:^|\/)index\.mdx$/, '')
+    .replace(/\.mdx$/, '');
+  return `/docs${slug ? `/${slug}` : ''}`;
+});
 
 export default defineConfig({
   server: {
@@ -20,7 +32,15 @@ export default defineConfig({
   plugins: [
     mdx(await import('./source.config.js')),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      prerender: {
+        enabled: true,
+        autoStaticPathsDiscovery: false,
+        crawlLinks: false,
+        failOnError: true,
+      },
+      pages: docsPaths.map((path) => ({ path })),
+    }),
     react(),
     nitro({
       preset: 'vercel',
@@ -35,6 +55,7 @@ export default defineConfig({
         brotli: true,
         gzip: true,
       },
+      traceDeps: ['react'],
       minify: true,
       routeRules: {
         '/assets/**': {
