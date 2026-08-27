@@ -58,6 +58,6 @@
     "@dojofoo/protocol": "workspace:*",
     "@dojofoo/ui": "workspace:*",
     "tsup": "^8.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
