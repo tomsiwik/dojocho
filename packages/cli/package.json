@@ -47,7 +47,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@agentclientprotocol/codex-acp": "^1.4.0",
+    "@agentclientprotocol/codex-acp": "^1.6.2",
     "@dojofoo/config": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "jiti": "^2.7.0",
