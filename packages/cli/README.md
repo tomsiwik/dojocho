@@ -9,7 +9,7 @@ npx dojofoo install       # set up your dojo (auto-detects your agent via env va
 npx dojofoo add dojofoo/effect-ts # install a training pack (a "dojo")
 npx dojofoo add owner/repository    # install a dojo directly from GitHub
 npx dojofoo update owner/repository # update it from its recorded source
-claude /kata              # start practicing
+opencode /kata            # start practicing
 npx dojofoo track --list  # inspect locally recorded .dojo/cassettes
 ```
 

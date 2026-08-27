@@ -20,6 +20,12 @@
   },
   "registries": {
     "@assistant-ui": "https://r.assistant-ui.com/{name}.json",
-    "@beui": "https://beui.dev/r/{name}.json"
+    "@beui": "https://beui.dev/r/{name}.json",
+    "@beui-pro": {
+      "url": "https://pro.beui.dev/r/{name}.json",
+      "headers": {
+        "Authorization": "Bearer ${BEUI_PRO_TOKEN}"
+      }
+    }
   }
 }

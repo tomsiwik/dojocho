@@ -15,8 +15,8 @@ a compatibility alias.
 
 ## What it does
 
-- Detects which coding agent you're in via env vars (e.g. `CLAUDECODE=1`
-  for Claude Code) and registers the `/kata` slash command there.
+- Detects which supported coding harness you're using and registers the
+  dojofoo skill there.
 - Writes the sensei rules — the agent-side instructions that enforce Socratic
   teaching: ask questions, never spoil solutions, narrow scope to the next
   failing test.
@@ -28,12 +28,10 @@ If `npx dojofoo install` can't detect your agent, or you want to wire up multipl
 pass one or more flags:
 
 ```sh
-npx dojofoo install --claude          # Claude Code
 npx dojofoo install --opencode        # OpenCode
 npx dojofoo install --codex           # OpenAI Codex CLI
-npx dojofoo install --gemini          # Gemini CLI
 npx dojofoo install --pi              # Pi
-npx dojofoo install --claude --codex  # multiple at once
+npx dojofoo install --opencode --codex # multiple at once
 ```
 
 ## Re-running install

@@ -9,11 +9,17 @@ import { tags } from "@lezer/highlight";
 import { StateEffect } from "@codemirror/state";
 import CodeMirror, { RangeSetBuilder, StateField } from "@uiw/react-codemirror";
 import { useEffect, useRef } from "react";
-import type { CodeHighlight } from "@/lib/code-highlight";
+import type { CodeHighlight } from "../lib/code-highlight";
 
 const vercelDark = EditorView.theme({
-  "&": { backgroundColor: "#0a0a0a", color: "#ededed" },
-  ".cm-content": { caretColor: "#ededed" },
+  "&": {
+    backgroundColor: "#0a0a0a",
+    color: "#ededed",
+    fontFamily: '"Iosevka", ui-monospace, monospace',
+    fontSize: "16.5px",
+    lineHeight: "1.55",
+  },
+  ".cm-content": { caretColor: "#ededed", fontFamily: '"Iosevka", ui-monospace, monospace' },
   ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#ededed" },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
     backgroundColor: "#ffffff1a",
@@ -204,6 +210,7 @@ export default function CodeEditor({
           syntaxHighlighting(vercelHighlight),
         ]}
         height="100%"
+        theme="dark"
         onChange={onChange}
         onCreateEditor={(view) => {
           editor.current = view;

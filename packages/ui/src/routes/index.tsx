@@ -21,10 +21,12 @@ import {
 import { ToolOutput } from "@/components/ai-elements/tool";
 import { TerminalBlock } from "@dojofoo/uix/components/elements/terminal-block";
 import { ToolTimeline, type TimelineStep } from "@dojofoo/uix/components/elements/tool-timeline";
+import { EmptyStateBoard } from "@dojofoo/uix/components/premium/empty-states/empty-state-board";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";
 import { ChatContainer, ChatContainerContent, ChatContainerFooter } from "@dojofoo/ui/chat-container";
+import { CourseLessonLayout, CourseLessonNavigation } from "@dojofoo/ui/course-lesson-layout";
 import { CourseCard } from "@dojofoo/ui/course-card";
 import {
   Dialog,
@@ -102,6 +104,7 @@ async function assertResponse(response: Response): Promise<Response> {
 function CourseIndex() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<ActiveCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
@@ -116,7 +119,8 @@ function CourseIndex() {
         return response.json() as Promise<ActiveCourse[]>;
       })
       .then(setCourses)
-      .catch((cause: Error) => setError(cause.message));
+      .catch((cause: Error) => setError(cause.message))
+      .finally(() => setCoursesLoading(false));
   }, []);
 
   const groups = groupCourses(courses);
@@ -207,6 +211,18 @@ function CourseIndex() {
               </Select>
             </div>
             {error && <p className="mt-8 border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-300">{error}</p>}
+            {!coursesLoading && !error && visibleCourses.length === 0 ? (
+              <EmptyStateBoard
+                actionLabel="Browse dojos"
+                className="mt-10"
+                columns={["Added", "Learning", "Completed"]}
+                cursorLabel="start here"
+                description="Browse the marketplace, then add a dojo to the workspace where you want to learn."
+                eyebrow="Dojos / empty"
+                onAction={() => window.open("https://dojo.foo/#dojos", "_blank", "noopener,noreferrer")}
+                title="Add your first dojo."
+              />
+            ) : (
             <div className="mt-10 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {visibleCourses.map((group) => {
               const course = preferredWorkspace(group);
@@ -237,6 +253,7 @@ function CourseIndex() {
                 <p className="mt-2 max-w-52 font-prose text-sm text-muted-foreground">Browse the marketplace and add another course to your local dojo.</p>
               </a>
             </div>
+            )}
           </div>
         </div>
       </section>
@@ -795,13 +812,9 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   const nextLesson = lesson.lessons[lesson.lessons.findIndex((item) => item.name === lesson.kata) + 1];
   const nextLessonPending = busy === "Preparing the next lesson…";
   return (
-    <main className="grid h-screen min-h-[42rem] grid-cols-[19rem_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
-      <LessonNavigation
-        lesson={lesson}
-        workspaceId={workspaceId}
-      />
-
-      <section className="grid min-h-0 min-w-0 grid-cols-[minmax(30rem,1.618fr)_minmax(22rem,1fr)]">
+    <CourseLessonLayout
+      navigation={<LessonNavigation lesson={lesson} workspaceId={workspaceId} />}
+      lesson={(
         <ScrollArea className="min-h-0 bg-surface-1" data-testid="lesson-pane">
           <div className="flex flex-col pb-12">
             <div className="order-2 px-8 pt-8">
@@ -962,7 +975,8 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
             {error && <p className="order-3 mx-8 mt-4 border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-300">{error}</p>}
           </div>
         </ScrollArea>
-
+      )}
+      chat={(
         <ChatContainer
           data-chat-error={chatError?.message}
           data-chat-status={chatStatus}
@@ -1037,8 +1051,8 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
               />
           </ChatContainerFooter>
         </ChatContainer>
-      </section>
-    </main>
+      )}
+    />
   );
 }
 
@@ -1056,16 +1070,7 @@ function LessonNavigation({
   }, [lesson.kata]);
 
   return (
-    <aside className="flex min-h-0 flex-col border-r border-dashed bg-surface-1" data-testid="lesson-navigation">
-      <div className="border-b border-dashed px-5 pb-5 pt-5">
-        <a aria-label="Back to your dojos" className="inline-flex" href="/">
-          <BrandLogo alt="Dojofoo wordmark" className="h-6" />
-        </a>
-        <h1 className="mt-1.5 text-xl font-semibold">{humanTitle(lesson.dojo)}</h1>
-        <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Chapters</h2>
-      </div>
-      <ScrollArea className="min-h-0 flex-1" data-testid="lesson-scroll" viewportClassName="scroll-fade pb-5">
-        <div className="w-full">
+    <CourseLessonNavigation courseTitle={humanTitle(lesson.dojo)}>
           {lesson.lessons.map((item, index) => {
             return (
               <LessonNavigationItem
@@ -1079,9 +1084,7 @@ function LessonNavigation({
               />
             );
           })}
-        </div>
-      </ScrollArea>
-    </aside>
+    </CourseLessonNavigation>
   );
 }
 

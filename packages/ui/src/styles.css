@@ -100,3 +100,66 @@
     --shadow-7: inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px rgba(0,0,0,0.20), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px 48px -24px var(--dm-drop);
     --shadow-8: inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px rgba(0,0,0,0.22), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px 48px -24px var(--dm-drop), 0 96px 96px -48px var(--dm-drop);
 }
+
+/* Portable theme boundaries for embedding shared UI in previews and other apps. */
+.dojo-theme-light {
+    color-scheme: light;
+    --background: #fafafa;
+    --foreground: #171717;
+    --card: #ffffff;
+    --card-foreground: #171717;
+    --popover: #ffffff;
+    --popover-foreground: #171717;
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #262626;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --accent: #e5e5e5;
+    --accent-foreground: #171717;
+    --border: #e5e5e5;
+    --input: #d4d4d4;
+    --ring: #6b97ff;
+    --hover: rgb(0 0 0 / 0.05);
+    --active: rgb(0 0 0 / 0.09);
+    --overlay: 0 0 0;
+    --surface-1: #fafafa;
+    --surface-2: #fcfcfc;
+    --surface-3: #ffffff;
+}
+
+.dojo-theme-dark {
+    color-scheme: dark;
+    --background: #171717;
+    --foreground: #f5f5f5;
+    --card: #171717;
+    --card-foreground: #f5f5f5;
+    --popover: #252525;
+    --popover-foreground: #f5f5f5;
+    --primary: oklch(0.6321 0.2554 13.98);
+    --primary-foreground: #fafafa;
+    --secondary: #252525;
+    --secondary-foreground: #f5f5f5;
+    --muted: #252525;
+    --muted-foreground: #a3a3a3;
+    --accent: #303030;
+    --accent-foreground: #fafafa;
+    --border: #2b2b2b;
+    --input: #404040;
+    --ring: #7aa2ff;
+    --hover: rgb(255 255 255 / 0.06);
+    --active: rgb(255 255 255 / 0.1);
+    --overlay: 255 255 255;
+    --surface-1: #171717;
+    --surface-2: #1e1e1e;
+    --surface-3: #252525;
+}
+
+.dojo-theme-light .dojo-brand-logo {
+    color: #404040 !important;
+}
+
+.dojo-theme-dark .dojo-brand-logo {
+    color: #ffffff !important;
+}

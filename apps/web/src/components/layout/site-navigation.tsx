@@ -60,7 +60,7 @@ export function SiteNavigation({
           <Button
             asChild
             variant="cta"
-            className="ml-1 rounded-[2px]"
+            className="ml-1 rounded-[2px] [&_[data-cta-inset]]:border-background"
           >
             <Link to="/$" params={{ _splat: 'docs/installation' }}>
               <span>Get Started</span>

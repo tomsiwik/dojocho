@@ -7,6 +7,7 @@ export interface CourseListing {
   sourceType: "github" | "well-known" | "npm";
   installUrl: string | null;
   url: string;
+  mode: "katas" | "interactive";
 }
 
 export interface CourseProfile {
