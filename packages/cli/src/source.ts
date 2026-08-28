@@ -6,6 +6,7 @@ const githubRepository = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u;
 
 export interface InstalledSource {
   version: 1;
+  /** `npm` is read only so older installations can report an actionable update error. */
   type: "github" | "npm" | "url" | "local";
   locator: string;
   integrity?: string;
@@ -14,13 +15,6 @@ export interface InstalledSource {
 export function parseGithubSource(source: string): { repository: string } | null {
   if (source.startsWith("@") || !githubRepository.test(source)) return null;
   return { repository: source };
-}
-
-export function githubArchiveUrl(repository: string) {
-  if (!githubRepository.test(repository)) {
-    throw new Error(`Invalid GitHub repository: ${repository}`);
-  }
-  return `https://codeload.github.com/${repository}/tar.gz/HEAD`;
 }
 
 export function writeInstalledSource(dojoPath: string, source: InstalledSource) {

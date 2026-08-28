@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, cpSync, renameSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, rmSync, lstatSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, renameSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, rmSync, lstatSync, mkdtempSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { execSync, execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { resolve, relative } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -23,12 +23,12 @@ import { AGENTS } from "./setup";
 import { queueCourseEvent } from "../telemetry";
 import { startKata } from "./kata";
 import {
-  githubArchiveUrl,
   parseGithubSource,
   readInstalledSource,
   writeInstalledSource,
   type InstalledSource,
 } from "../source";
+import { acquireRemoteDojo, type RemoteDojoSource } from "../source-acquisition";
 
 export async function add(root: string, args: string[]): Promise<void> {
   ensureProject(root);
@@ -42,7 +42,6 @@ export async function add(root: string, args: string[]): Promise<void> {
 
 Source can be:
   Local path:   ${CLI} add ./path/to/dojo
-  npm package:  ${CLI} add @dojofoo/effect-ts
   Registry:     ${CLI} add effect-ts
   URL:          ${CLI} add https://example.com/dojo.tgz
   GitHub:       ${CLI} add owner/repository
@@ -55,9 +54,9 @@ Flags:
   const sourceType = classifySource(source);
   switch (sourceType) {
     case "local":    addLocal(root, source, force); break;
-    case "npm":      addNpm(root, source, force); break;
-    case "github":   addGithub(root, source, force); break;
-    case "url":      addUrl(root, source, force); break;
+    case "npm":      throw deprecatedNpmSource(source);
+    case "github":   await addRemote(root, source, "github", force); break;
+    case "url":      await addRemote(root, source, "url", force); break;
     case "registry": await addFromRegistry(root, source, force); break;
   }
 }
@@ -83,13 +82,9 @@ export function classifySource(source: string): "local" | "npm" | "github" | "ur
   return "registry";
 }
 
-function safeExtract(tarball: string, cwd: string): void {
-  const listing = execFileSync("tar", ["-tzf", tarball], { cwd, encoding: "utf8" });
-  const unsafe = listing.split("\n").some((e) => e.startsWith("/") || e.includes(".."));
-  if (unsafe) {
-    throw new Error("Refusing to extract: tarball contains unsafe paths (absolute or ../)");
-  }
-  execFileSync("tar", ["xzf", tarball], { cwd, stdio: "pipe" });
+function deprecatedNpmSource(source: string): Error {
+  const repository = source.replace(/^@/u, "").replace(/^(dojofoo)\//u, "$1/");
+  return new Error(`npm dojo installation is deprecated: ${source}\n\nInstall the course from Git instead, for example:\n  ${CLI} add ${repository}`);
 }
 
 function moveDir(src: string, dest: string): void {
@@ -124,8 +119,7 @@ function addLocal(root: string, source: string, force: boolean): void {
     throw new Error(`Source not found: ${sourcePath}`);
   }
 
-  const tmpDir = resolve(tmpdir(), `dojofoo-${Date.now()}`);
-  mkdirSync(tmpDir, { recursive: true });
+  const tmpDir = mkdtempSync(resolve(tmpdir(), "dojofoo-local-"));
 
   try {
     const staged = resolve(tmpDir, "course");
@@ -195,52 +189,22 @@ function installExtracted(
   finalize(root, name, targetPath, installedSource);
 }
 
-function addGithub(root: string, source: string, force: boolean): void {
-  const repository = parseGithubSource(source)?.repository;
-  if (!repository) throw new Error(`Invalid GitHub repository: ${source}`);
-  const tmpDir = resolve(tmpdir(), `dojofoo-${Date.now()}`);
-  mkdirSync(tmpDir, { recursive: true });
+async function addRemote(root: string, source: string, type: RemoteDojoSource, force: boolean): Promise<void> {
+  const locator = type === "github" ? parseGithubSource(source)?.repository : source;
+  if (!locator) throw new Error(`Invalid GitHub repository: ${source}`);
+  const tmpDir = mkdtempSync(resolve(tmpdir(), "dojofoo-giget-"));
+  const staged = resolve(tmpDir, "course");
 
   try {
-    console.log(`Fetching ${repository}...`);
-    execFileSync("curl", ["-fsSL", "-o", "dojo.tgz", githubArchiveUrl(repository)], {
-      cwd: tmpDir,
-      stdio: "pipe",
-    });
-    const integrity = `sha256-${createHash("sha256")
-      .update(readFileSync(resolve(tmpDir, "dojo.tgz")))
-      .digest("hex")}`;
-    safeExtract("dojo.tgz", tmpDir);
-    const extracted = readdirSync(tmpDir, { withFileTypes: true })
-      .find((entry) => entry.isDirectory() && findManifestPath(resolve(tmpDir, entry.name)) !== null);
+    console.log(`Fetching ${locator}...`);
+    const downloaded = await acquireRemoteDojo(locator, type, staged);
+    const extracted = findDownloadedDojo(downloaded);
     if (!extracted) throw new Error(`${source} is not a dojo — missing dojo.yaml, dojo.yml, or dojo.json`);
-    installExtracted(root, resolve(tmpDir, extracted.name), source, force, {
+    installExtracted(root, extracted, source, force, {
       version: 1,
-      type: "github",
-      locator: repository,
-      integrity,
-    });
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
-}
-
-function addNpm(root: string, source: string, force: boolean): void {
-  const tmpDir = resolve(tmpdir(), `dojofoo-${Date.now()}`);
-  mkdirSync(tmpDir, { recursive: true });
-
-  try {
-    console.log(`Fetching ${source}...`);
-    execSync(`npm pack ${source} --pack-destination .`, { cwd: tmpDir, stdio: "pipe" });
-
-    const tarballs = readdirSync(tmpDir).filter((f) => f.endsWith(".tgz"));
-    if (tarballs.length === 0) throw new Error(`Failed to download ${source}`);
-
-    safeExtract(tarballs[0], tmpDir);
-    installExtracted(root, resolve(tmpDir, "package"), source, force, {
-      version: 1,
-      type: "npm",
-      locator: source,
+      type,
+      locator,
+      integrity: directoryIntegrity(extracted),
     });
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
@@ -259,13 +223,13 @@ function validateRegistryItem(data: unknown): RegistryItem {
     throw new Error("Invalid registry item: missing source");
   }
   const src = obj.source as Record<string, unknown>;
-  if (src.type === "npm" && typeof src.package === "string") {
+  if (src.type === "github" && typeof src.repository === "string" && parseGithubSource(src.repository)) {
     return obj as unknown as RegistryItem;
   }
   if (src.type === "tarball" && typeof src.url === "string") {
     return obj as unknown as RegistryItem;
   }
-  throw new Error(`Invalid registry item: source must be npm or tarball`);
+  throw new Error(`Invalid registry item: source must be github or tarball`);
 }
 
 async function addFromRegistry(root: string, name: string, force: boolean): Promise<void> {
@@ -277,10 +241,10 @@ async function addFromRegistry(root: string, name: string, force: boolean): Prom
       const res = await fetch(url);
       if (!res.ok) continue;
       const item = validateRegistryItem(await res.json());
-      if (item.source.type === "npm") {
-        return addNpm(root, item.source.package, force);
+      if (item.source.type === "github") {
+        return addRemote(root, item.source.repository, "github", force);
       }
-      return addUrl(root, item.source.url, force);
+      return addRemote(root, item.source.url, "url", force);
     } catch (err) {
       if (err instanceof Error && err.message.startsWith("Invalid registry")) throw err;
       console.log(`Registry "${registryName}" unreachable: ${url}`);
@@ -290,32 +254,34 @@ async function addFromRegistry(root: string, name: string, force: boolean): Prom
   throw new Error(`"${name}" not found in any registry.
 
 Try:
-  npm package:  ${CLI} add @dojofoo/${name}
+  GitHub:       ${CLI} add dojofoo/${name}
   Local path:   ${CLI} add ./path/to/${name}`);
 }
 
-function addUrl(root: string, url: string, force: boolean): void {
-  const tmpDir = resolve(tmpdir(), `dojofoo-${Date.now()}`);
-  mkdirSync(tmpDir, { recursive: true });
-
-  try {
-    console.log(`Fetching ${url}...`);
-    execFileSync("curl", ["-fsSL", "-o", "dojo.tgz", url], { cwd: tmpDir, stdio: "pipe" });
-    safeExtract("dojo.tgz", tmpDir);
-
-    // npm-packed tarballs extract to "package/", raw tarballs may not
-    const extractedDir = findManifestPath(resolve(tmpDir, "package"))
-      ? resolve(tmpDir, "package")
-      : tmpDir;
-
-    installExtracted(root, extractedDir, url, force, {
-      version: 1,
-      type: "url",
-      locator: url,
-    });
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
+function findDownloadedDojo(directory: string): string | null {
+  if (findManifestPath(directory)) return directory;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isDirectory() && findManifestPath(resolve(directory, entry.name))) {
+      return resolve(directory, entry.name);
+    }
   }
+  return null;
+}
+
+function directoryIntegrity(directory: string): string {
+  const hash = createHash("sha256");
+  const visit = (current: string, prefix = "") => {
+    for (const entry of readdirSync(current, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
+      if (entry.name === ".git" || entry.name === "node_modules" || entry.name === ".dojo-source.json") continue;
+      const path = resolve(current, entry.name);
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      hash.update(`${entry.isDirectory() ? "d" : "f"}:${relativePath}\0`);
+      if (entry.isDirectory()) visit(path, relativePath);
+      else if (statSync(path).isFile()) hash.update(readFileSync(path));
+    }
+  };
+  visit(directory);
+  return `sha256-${hash.digest("hex")}`;
 }
 
 function finalize(root: string, name: string, targetPath: string, source?: InstalledSource): void {

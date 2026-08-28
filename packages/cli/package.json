@@ -50,6 +50,7 @@
     "@agentclientprotocol/codex-acp": "^1.4.0",
     "@dojofoo/config": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "giget": "^3.3.1",
     "jiti": "^2.7.0",
     "typescript": "6.0.3",
     "zod": "^4.4.3"

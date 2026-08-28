@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Master Effect-TS through 40 hands-on katas",
   "source": {
-    "type": "npm",
-    "package": "@dojofoo/effect-ts"
+    "type": "github",
+    "repository": "dojofoo/effect-ts"
   }
 }

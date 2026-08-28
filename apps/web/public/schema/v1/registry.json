@@ -27,14 +27,14 @@
       "oneOf": [
         {
           "type": "object",
-          "required": ["type", "package"],
+          "required": ["type", "repository"],
           "additionalProperties": false,
           "properties": {
-            "type": { "const": "npm" },
-            "package": {
+            "type": { "const": "github" },
+            "repository": {
               "type": "string",
-              "description": "npm package name to install.",
-              "examples": ["@dojofoo/effect-ts"]
+              "description": "GitHub owner/repository to install.",
+              "examples": ["dojofoo/effect-ts"]
             }
           }
         },

@@ -494,7 +494,7 @@ export interface RegistryItem {
   name: string;
   version: string;
   description: string;
-  source: { type: "npm"; package: string } | { type: "tarball"; url: string };
+  source: { type: "github"; repository: string } | { type: "tarball"; url: string };
 }
 
 export interface RegistryIndex {

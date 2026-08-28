@@ -4,7 +4,6 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { rmSync } from "node:fs";
 import {
-  githubArchiveUrl,
   parseGithubSource,
   readInstalledSource,
   writeInstalledSource,
@@ -22,6 +21,14 @@ describe("dojo sources", () => {
     expect(parseGithubSource("starter")).toBeNull();
     expect(classifySource("dojofoo/starter")).toBe("github");
     expect(classifySource("@dojofoo/starter")).toBe("npm");
+  });
+
+  it("rejects the deprecated npm transport with a Git migration", async () => {
+    const root = mkdtempSync(join(tmpdir(), "dojo-npm-deprecated-"));
+    roots.push(root);
+    writeFileSync(resolve(root, ".dojorc"), JSON.stringify({ currentDojo: "", currentKata: null, editor: null }));
+    const { add } = await import("../src/commands/add");
+    await expect(add(root, ["@dojofoo/starter-kata"])).rejects.toThrow("dojofoo/starter-kata");
   });
 
   it("resolves updates from the installed source lock", () => {
@@ -58,13 +65,6 @@ describe("dojo sources", () => {
     expect(message).toContain("Source:   dojofoo/effect-ts");
     expect(message).toContain("npx dojofoo update effect-ts");
     expect(message).not.toContain("add effect-ts --force");
-  });
-
-  it("builds a GitHub archive URL without accepting unsafe names", () => {
-    expect(githubArchiveUrl("dojofoo/starter")).toBe(
-      "https://codeload.github.com/dojofoo/starter/tar.gz/HEAD",
-    );
-    expect(() => githubArchiveUrl("dojofoo/../starter")).toThrow("Invalid GitHub repository");
   });
 
   it("persists the canonical source beside the installed dojo", () => {
