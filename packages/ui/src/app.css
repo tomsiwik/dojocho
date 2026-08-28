@@ -136,10 +136,10 @@
   --color-ring: var(--ring);
   --color-hover: var(--hover);
   --color-active: var(--active);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc((var(--radius-base) - 4px) * var(--squircle-factor));
+  --radius-md: calc((var(--radius-base) - 2px) * var(--squircle-factor));
+  --radius-lg: calc(var(--radius-base) * var(--squircle-factor));
+  --radius-xl: calc((var(--radius-base) + 4px) * var(--squircle-factor));
   @keyframes shimmer {
   0% {
     background-position: 0% 0;
@@ -236,7 +236,8 @@
 
 :root {
   --fd-layout-width: 90rem;
-  --radius: 0.25rem;
+  --radius-base: 0.25rem;
+  --radius: calc(var(--radius-base) * var(--squircle-factor));
   --background: #fafafa;
   --foreground: #171717;
   --card: #ffffff;

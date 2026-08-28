@@ -1,5 +1,5 @@
 import { CourseLessonScreen, starterKataCourseScreen } from "@dojofoo/ui/course-lesson-demo";
-import { ComputerUse } from "@dojofoo/uix/components/elements/computer-use";
+import { ComputerUse } from "@dojofoo/ui/elements/computer-use";
 import { useEffect, useRef, useState } from "react";
 
 const APP_WIDTH = 1440;

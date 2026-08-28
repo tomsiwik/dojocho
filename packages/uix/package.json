@@ -6,21 +6,14 @@
   "sideEffects": [
     "**/*.css"
   ],
-  "imports": {
-    "#components/motion/popover-position": "./src/components/motion/popover-position.ts",
-    "#components/*": "./src/components/*.tsx",
-    "#hooks/*": "./src/hooks/*.ts",
-    "#lib/*": "./src/lib/*.ts"
-  },
   "exports": {
     "./styles.css": "./src/styles.css",
-    "./components/elements/*": "./src/components/elements/*.tsx",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts",
+    "./components/motion/button/*": "./src/components/motion/button/*.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
-    "storybook": "storybook dev -p 6007",
+    "storybook": "portless ui.dojofoo storybook dev",
+    "storybook:direct": "storybook dev -p 6007",
     "storybook:build": "storybook build -o ../../.storybook-static/uix",
     "types:check": "tsc --noEmit"
   },
@@ -29,21 +22,11 @@
     "react-dom": "^19.2.8"
   },
   "dependencies": {
-    "@ag-ui/client": "^0.0.58",
-    "@assistant-ui/react": "^0.15.16",
-    "@assistant-ui/react-ag-ui": "^0.0.56",
-    "@assistant-ui/react-generative-ui": "^0.0.15",
-    "@base-ui/react": "^1.7.0",
-    "@headlessui/react": "^2.2.10",
-    "class-variance-authority": "^0.7.1",
+    "@toolwind/corner-shape": "0.0.8-3",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.30.0",
-    "motion": "^13.0.0",
-    "ogl": "^1.0.11",
-    "radix-ui": "^1.6.7",
-    "shiki": "^4.4.3",
-    "tailwind-merge": "^3.6.0",
-    "tw-shimmer": "^0.4.12"
+    "cuelume": "^0.2.2",
+    "motion": "^13.1.1",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "10.5.10",
@@ -52,6 +35,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
+    "portless": "^0.15.5",
     "shadcn": "^4.16.2",
     "storybook": "10.5.10",
     "tailwindcss": "^4.3.3",

@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@dojofoo/ui": "workspace:*",
-    "@dojofoo/uix": "workspace:*",
     "@fontsource/hind": "5.3.0",
     "@fontsource/iosevka": "5.3.0",
     "@fontsource/khand": "5.3.0",

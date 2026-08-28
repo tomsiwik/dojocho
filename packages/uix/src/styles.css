@@ -1,16 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "tw-shimmer";
+
+@plugin "@toolwind/corner-shape";
 
 @source "./**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc((var(--radius-base) - 4px) * var(--squircle-factor));
+  --radius-md: calc((var(--radius-base) - 2px) * var(--squircle-factor));
+  --radius-lg: calc(var(--radius-base) * var(--squircle-factor));
+  --radius-xl: calc((var(--radius-base) + 4px) * var(--squircle-factor));
+  --radius-2xl: calc((var(--radius-base) + 8px) * var(--squircle-factor));
+  --radius-3xl: calc((var(--radius-base) + 16px) * var(--squircle-factor));
+  --radius-4xl: calc((var(--radius-base) + 24px) * var(--squircle-factor));
+  --radius-button-sm: calc(8px * var(--squircle-factor));
+  --radius-button-md: calc(10px * var(--squircle-factor));
+  --radius-button-lg: calc(12px * var(--squircle-factor));
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -19,6 +26,12 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-button-primary-hover: var(--button-primary-hover);
+  --color-button-primary-depth: var(--button-primary-depth);
+  --color-button-secondary-depth: var(--button-secondary-depth);
+  --color-button-disabled: var(--button-disabled);
+  --color-button-disabled-depth: var(--button-disabled-depth);
+  --color-button-disabled-foreground: var(--button-disabled-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -32,15 +45,39 @@
 }
 
 :root {
-  --radius: 0rem;
+  --radius-base: 0.5rem;
+  --radius: calc(var(--radius-base) * var(--squircle-factor));
+  --squircle-factor: 1;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.34 0 0);
   --primary-foreground: oklch(0.985 0 0);
+  --button-primary-hover: color-mix(
+    in oklch,
+    var(--primary) 90%,
+    white 10%
+  );
+  --button-primary-depth: color-mix(
+    in oklch,
+    var(--primary) 80%,
+    black 20%
+  );
+  --button-secondary-depth: color-mix(
+    in oklch,
+    var(--card) 80%,
+    black 20%
+  );
+  --button-disabled: oklch(0.56 0 0);
+  --button-disabled-depth: color-mix(
+    in oklch,
+    var(--button-disabled) 80%,
+    black 20%
+  );
+  --button-disabled-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -53,6 +90,34 @@
   --ring: oklch(0.708 0 0);
 }
 
+@supports (color: oklch(from black calc(0.96 * pow(l, 1.25)) c h)) {
+  :root {
+    --button-primary-depth: oklch(
+      from var(--primary) calc(0.96 * pow(l, 1.25)) c h
+    );
+    --button-secondary-depth: oklch(
+      from var(--card) calc(0.96 * pow(l, 1.25)) c h
+    );
+    --button-disabled-depth: oklch(
+      from var(--button-disabled) calc(0.96 * pow(l, 1.25)) c h
+    );
+  }
+}
+
+@utility button-border-sibling {
+  background: linear-gradient(
+    to bottom right,
+    var(--button-border-surface),
+    color-mix(in oklch, var(--button-border-surface) 80%, white 20%) 80%
+  );
+}
+
+@supports (corner-shape: squircle) {
+  :root {
+    --squircle-factor: 1.84;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -62,6 +127,13 @@
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
+  --button-primary-hover: color-mix(
+    in oklch,
+    var(--primary) 90%,
+    white 10%
+  );
+  --button-disabled: oklch(0.44 0 0);
+  --button-disabled-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -75,6 +147,10 @@
 }
 
 @layer base {
+  [class*="rounded"] {
+    @apply corner-squircle;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

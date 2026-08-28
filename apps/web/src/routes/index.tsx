@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CardGroup, Select, SelectContent, SelectItem, SelectTrigger } from "@dojofoo/ui";
-import { FeaturesBenefitsTriptych } from "@dojofoo/uix/components/premium/feature-sections/features-benefits-triptych";
-import { HeroCenteredDemo } from "@dojofoo/uix/components/premium/hero-sections/hero-centered-demo";
-import { IntegrationsLedger } from "@dojofoo/uix/components/premium/integrations/integrations-ledger";
-import { LogoCloudGrid } from "@dojofoo/uix/components/premium/logo-cloud/logo-cloud-grid";
+import { FeaturesBenefitsTriptych } from "@dojofoo/ui/premium/feature-sections/features-benefits-triptych";
+import { HeroCenteredDemo } from "@dojofoo/ui/premium/hero-sections/hero-centered-demo";
+import { IntegrationsLedger } from "@dojofoo/ui/premium/integrations/integrations-ledger";
+import { LogoCloudGrid } from "@dojofoo/ui/premium/logo-cloud/logo-cloud-grid";
 import { ArrowUpDown, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { HeroInstallAction } from "@/components/hero-install-action";

@@ -5,8 +5,6 @@
 @import "fumadocs-ui/css/shadcn.css";
 @import "fumadocs-ui/css/preset.css";
 
-@source "../../../packages/uix/src/**/*.{ts,tsx}";
-
 @font-face {
   font-family: "Iosevka";
   font-style: normal;
@@ -86,13 +84,13 @@
   --font-sans: "Hind", ui-sans-serif, sans-serif;
   --font-mono: "Iosevka", monospace;
   --font-prose: "Hind", ui-sans-serif, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-sm: calc((var(--radius-base) - 4px) * var(--squircle-factor));
+  --radius-md: calc((var(--radius-base) - 2px) * var(--squircle-factor));
+  --radius-lg: calc(var(--radius-base) * var(--squircle-factor));
+  --radius-xl: calc((var(--radius-base) + 4px) * var(--squircle-factor));
+  --radius-2xl: calc((var(--radius-base) + 8px) * var(--squircle-factor));
+  --radius-3xl: calc((var(--radius-base) + 12px) * var(--squircle-factor));
+  --radius-4xl: calc((var(--radius-base) + 16px) * var(--squircle-factor));
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -136,7 +134,8 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius-base: 0.625rem;
+  --radius: calc(var(--radius-base) * var(--squircle-factor));
   --background: oklch(0.96 0.001 286.375);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);

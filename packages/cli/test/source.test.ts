@@ -9,7 +9,7 @@ import {
   readInstalledSource,
   writeInstalledSource,
 } from "../src/source";
-import { classifySource } from "../src/commands/add";
+import { classifySource, existingDojoMessage } from "../src/commands/add";
 import { resolveUpdateSource } from "../src/commands/update";
 
 describe("dojo sources", () => {
@@ -40,6 +40,24 @@ describe("dojo sources", () => {
       dojo: "starter",
       source: { type: "github", locator: "external/package" },
     });
+  });
+
+  it("describes an existing project-local dojo using the update command", () => {
+    const root = mkdtempSync(join(tmpdir(), "dojo-existing-"));
+    roots.push(root);
+    const dojo = resolve(root, ".dojos/effect-ts");
+    mkdirSync(dojo, { recursive: true });
+    writeInstalledSource(dojo, {
+      version: 1,
+      type: "github",
+      locator: "dojofoo/effect-ts",
+    });
+
+    const message = existingDojoMessage(root, "effect-ts");
+    expect(message).toContain("already installed in this project");
+    expect(message).toContain("Source:   dojofoo/effect-ts");
+    expect(message).toContain("npx dojofoo update effect-ts");
+    expect(message).not.toContain("add effect-ts --force");
   });
 
   it("builds a GitHub archive URL without accepting unsafe names", () => {

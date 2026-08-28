@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "#components",
-    "hooks": "#hooks",
-    "lib": "#lib",
-    "ui": "#components",
-    "utils": "#lib/utils"
+    "components": "~/components",
+    "hooks": "~/hooks",
+    "lib": "~/lib",
+    "ui": "~/components",
+    "utils": "~/lib/utils"
   },
   "registries": {
     "@assistant-ui": "https://r.assistant-ui.com/{name}.json",
@@ -26,6 +26,7 @@
       "headers": {
         "Authorization": "Bearer ${BEUI_PRO_TOKEN}"
       }
-    }
+    },
+    "@soundcn": "https://soundcn.xyz/r/{name}.json"
   }
 }

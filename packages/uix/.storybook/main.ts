@@ -6,6 +6,9 @@ const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
   addons: ["@storybook/addon-a11y"],
   framework: "@storybook/react-vite",
+  core: {
+    allowedHosts: ["ui.dojofoo.td"],
+  },
   viteFinal: async (viteConfig) => ({
     ...viteConfig,
     plugins: [tailwindcss(), ...(viteConfig.plugins ?? []).flat()],
@@ -15,7 +18,7 @@ const config: StorybookConfig = {
         ...(typeof viteConfig.resolve?.alias === "object"
           ? viteConfig.resolve.alias
           : {}),
-        "@": fileURLToPath(new URL("../src", import.meta.url)),
+        "~": fileURLToPath(new URL("../src", import.meta.url)),
       },
     },
   }),

@@ -19,9 +19,9 @@ import {
   TestSuiteStats,
 } from "@/components/ai-elements/test-results";
 import { ToolOutput } from "@/components/ai-elements/tool";
-import { TerminalBlock } from "@dojofoo/uix/components/elements/terminal-block";
-import { ToolTimeline, type TimelineStep } from "@dojofoo/uix/components/elements/tool-timeline";
-import { EmptyStateBoard } from "@dojofoo/uix/components/premium/empty-states/empty-state-board";
+import { TerminalBlock } from "@dojofoo/ui/elements/terminal-block";
+import { ToolTimeline, type TimelineStep } from "@dojofoo/ui/elements/tool-timeline";
+import { EmptyStateBoard } from "@dojofoo/ui/premium/empty-states/empty-state-board";
 import type { AskUserAnswer } from "@dojofoo/ui/ask-user-questions";
 import { Button } from "@dojofoo/ui/button";
 import { BrandLogo } from "@dojofoo/ui/brand-logo";

@@ -4,7 +4,7 @@ import { rmSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { agentsFromArgs, setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
+import { agentsFromArgs, parseAgentSelection, setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
 import { intro } from "../src/commands/intro";
 import { kata } from "../src/commands/kata";
 import { journalPath, appendNote, readLearnings } from "../src/journal";
@@ -52,6 +52,16 @@ function writeWorkspaceFile(root: string, kataName: string, filename: string): v
   writeFileSync(resolve(dir, filename), "// scaffold");
 }
 
+async function captureLogAsync(fn: () => Promise<void>): Promise<string> {
+  const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+  try {
+    await fn();
+    return spy.mock.calls.map((c) => c.join(" ")).join("\n");
+  } finally {
+    spy.mockRestore();
+  }
+}
+
 function captureLog(fn: () => void): string {
   const spy = vi.spyOn(console, "log").mockImplementation(() => {});
   try {
@@ -70,39 +80,40 @@ describe("dojo setup", () => {
   beforeEach(() => { root = makeTmpDir(); });
   afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
-  it("outputs AskUserQuestion prompt when no flags given and no agent env var present", () => {
+  it("uses an interactive terminal selection when no agent can be detected", async () => {
     // Clear any agent-identifying env vars so detection falls back to the prompt
     const envKeys = Object.values(AGENTS).flatMap((cfg) => cfg.envVars);
     for (const key of envKeys) vi.stubEnv(key, "");
 
     try {
-      const output = captureLog(() => setup(root, []));
-      expect(output).toContain("AskUserQuestion");
-      expect(output).toContain("Claude Code");
-      expect(output).toContain("Gemini CLI");
-      expect(output).toContain("Pi");
+      const output = await captureLogAsync(() => setup(root, [], async () => ["opencode", "pi"]));
+      expect(output).toContain("Dojo ready");
+      expect(output).toContain("npx dojofoo ui");
+      expect(output).not.toContain("/kata");
+      expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(true);
+      expect(existsSync(resolve(root, ".pi/skills/dojofoo"))).toBe(true);
     } finally {
       vi.unstubAllEnvs();
     }
   });
 
-  it("generates a dependency-free dojo config", () => {
-    captureLog(() => setup(root, ["--codex"]));
+  it("generates a dependency-free dojo config", async () => {
+    await captureLogAsync(() => setup(root, ["--codex"]));
 
     expect(readFileSync(resolve(root, "dojo.config.ts"), "utf8")).toBe("export default {}\n");
   });
 
-  it("accepts the conventional --agent option", () => {
-    captureLog(() => setup(root, ["--agent", "opencode"]));
+  it("accepts the conventional --agent option", async () => {
+    await captureLogAsync(() => setup(root, ["--agent", "opencode"]));
 
     expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(true);
   });
 
-  it("scaffolds the project before asking which agent to configure", () => {
+  it("scaffolds the project before asking which agent to configure", async () => {
     const envKeys = Object.values(AGENTS).flatMap((cfg) => cfg.envVars);
     for (const key of envKeys) vi.stubEnv(key, "");
     try {
-      captureLog(() => setup(root, []));
+      await captureLogAsync(() => setup(root, [], async () => []));
       expect(existsSync(resolve(root, ".dojorc"))).toBe(true);
     } finally {
       vi.unstubAllEnvs();
@@ -117,6 +128,20 @@ describe("agent arguments", () => {
     [["--claude"], ["claude"]],
   ] as const)("parses %j", (args, expected) => {
     expect(agentsFromArgs([...args])).toEqual([...expected]);
+  });
+});
+
+describe("interactive agent selection", () => {
+  it.each([
+    ["1, 3", ["opencode", "pi"]],
+    ["codex opencode", ["codex", "opencode"]],
+    ["2,2", ["codex"]],
+  ] as const)("parses %j", (answer, expected) => {
+    expect(parseAgentSelection(answer)).toEqual([...expected]);
+  });
+
+  it("rejects unknown agents", () => {
+    expect(parseAgentSelection("grok")).toBeNull();
   });
 });
 

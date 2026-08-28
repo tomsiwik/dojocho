@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, lstatSync, readFileSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
+import { createInterface } from "node:readline/promises";
 import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CLI, DOJOS_DIR, readDojoRc, writeDojoRc, type DojoRc } from "../config";
-import { prompt, invokeAsk } from "../format";
 
 export const AGENTS = {
   claude: { dir: ".claude", commandsDir: "commands", hasSettings: true, envVars: ["CLAUDECODE"] },
@@ -16,6 +16,12 @@ const AGENTS_COMMANDS_DIR = ".agents/commands";
 const AGENTS_SKILLS_DIR = ".agents/skills";
 
 export type AgentName = keyof typeof AGENTS;
+
+const INTERACTIVE_AGENTS = [
+  { name: "OpenCode", value: "opencode" },
+  { name: "Codex", value: "codex" },
+  { name: "Pi", value: "pi" },
+] as const satisfies ReadonlyArray<{ name: string; value: AgentName }>;
 
 export function detectAgentsFromEnv(): AgentName[] {
   return (Object.keys(AGENTS) as AgentName[]).filter((a) =>
@@ -94,7 +100,7 @@ Source can be:
 
 ## Start practicing
 
-Once a dojo is added, use \`/kata\` in your coding agent to begin.
+Once a dojo is added, run \`npx dojofoo ui\` to begin.
 `;
 
 const LEGACY_DOJO_CONFIG = `import { defineConfig } from "@dojofoo/config"
@@ -113,16 +119,24 @@ const DEFAULT_RC: DojoRc = {
   progress: {},
 };
 
-export function setup(root: string, args: string[]): void {
+export async function setup(
+  root: string,
+  args: string[],
+  selectAgents = selectAgentsInteractively,
+): Promise<void> {
   const explicit = agentsFromArgs(args);
   const skillsOnly = args.includes("--skills");
   const configured = skillsOnly ? configuredAgents(root) : [];
-  const detected = explicit.length > 0 ? explicit : configured.length > 0 ? configured : detectAgentsFromEnv();
+  let detected = explicit.length > 0 ? explicit : configured.length > 0 ? configured : detectAgentsFromEnv();
+  const detectedFromEnvironment = explicit.length === 0 && configured.length === 0 && detected.length > 0;
 
   ensureProject(root);
   if (detected.length === 0) {
-    promptAgents();
-    return;
+    detected = await selectAgents();
+    if (detected.length === 0) {
+      console.log(`No coding agents selected. Run ${CLI} install --agent opencode,codex,pi when you're ready.`);
+      return;
+    }
   }
 
   if (skillsOnly) {
@@ -133,28 +147,45 @@ export function setup(root: string, args: string[]): void {
 
   setupAgents(root, detected);
 
-  const kataCmd = detected.length === 1 ? `${detected[0]} "/kata"` : "/kata in your agent prompt";
-  const suffix = explicit.length === 0 ? ` (detected from env: ${detected.join(", ")})` : "";
+  const suffix = detectedFromEnvironment ? ` (detected from env: ${detected.join(", ")})` : "";
   console.log(`Dojo ready${suffix}.
 
   Add a dojo with: ${CLI} add <source>
-  Then use:        ${kataCmd}`);
+  Start learning:  ${CLI} ui`);
 }
 
-function promptAgents(): void {
-  const options = [
-    `- "Claude Code" → claude`,
-    `- "OpenCode" → opencode`,
-    `- "Codex" → codex`,
-    `- "Gemini CLI" → gemini`,
-    `- "Pi" → pi`,
-  ].join("\n");
+export function parseAgentSelection(answer: string): AgentName[] | null {
+  const tokens = answer.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  const selected = new Set<AgentName>();
+  for (const token of tokens) {
+    const byNumber = INTERACTIVE_AGENTS[Number(token) - 1];
+    const byName = INTERACTIVE_AGENTS.find(({ name, value }) =>
+      token === value || token === name.toLowerCase(),
+    );
+    const agent = byNumber?.value ?? byName?.value;
+    if (!agent) return null;
+    selected.add(agent);
+  }
+  return [...selected];
+}
 
-  console.log(prompt(`${invokeAsk("multiSelect")} to ask the student:
-Which coding agents do you use?
-${options}
+export async function selectAgentsInteractively(): Promise<AgentName[]> {
+  if (!(process.stdin.isTTY && process.stdout.isTTY)) return [];
 
-Then run: ${CLI} install --agent <agent1,agent2,...>`));
+  const readline = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    process.stdout.write(`Which coding agents do you use?\n${INTERACTIVE_AGENTS
+      .map(({ name }, index) => `  ${index + 1}. ${name}`)
+      .join("\n")}\n`);
+    while (true) {
+      const answer = await readline.question("Select one or more (comma-separated): ");
+      const selected = parseAgentSelection(answer);
+      if (selected?.length) return selected;
+      process.stdout.write("Enter one or more numbers or agent names.\n");
+    }
+  } finally {
+    readline.close();
+  }
 }
 
 export function ensureProject(root: string): void {

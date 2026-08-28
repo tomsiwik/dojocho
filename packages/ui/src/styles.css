@@ -1,5 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
+@plugin "@toolwind/corner-shape";
+
 @source "./**/*.{ts,tsx}";
 
 @theme inline {
@@ -53,6 +55,9 @@
 }
 
 :root {
+    /* Conventional radii are the fallback. Native squircles need a larger
+       radius to occupy the same visual corner area. */
+    --squircle-factor: 1;
     --hover: rgb(0 0 0 / 0.05);
     --surface-1: #FAFAFA;
     --surface-2: #FCFCFC;
@@ -71,6 +76,18 @@
     --shadow-6: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color);
     --shadow-7: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color);
     --shadow-8: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color), 0 96px 96px -48px var(--shadow-color);
+}
+
+@supports (corner-shape: squircle) {
+    :root {
+        --squircle-factor: 1.84;
+    }
+}
+
+@layer base {
+    [class*="rounded"]:not([class*="rounded-full"]) {
+        @apply corner-squircle;
+    }
 }
 
 .dark {

@@ -103,12 +103,18 @@ function handleExisting(root: string, name: string, force: boolean): void {
   const targetPath = dojoDir(root, name);
   if (!existsSync(targetPath)) return;
   if (!force) {
-    throw new Error(`Dojo "${name}" already exists at ${DOJOS_DIR}/${name}
-
-To update:  ${CLI} add ${name} --force
-To remove:  ${CLI} remove ${name}`);
+    throw new Error(existingDojoMessage(root, name));
   }
   removeDojo(root, [name]);
+}
+
+export function existingDojoMessage(root: string, name: string): string {
+  const installed = readInstalledSource(dojoDir(root, name));
+  return `Dojo "${name}" is already installed in this project.
+
+  Location: ${DOJOS_DIR}/${name}${installed ? `\n  Source:   ${installed.locator}` : ""}
+  Update:   ${CLI} update ${name}
+  Remove:   ${CLI} remove ${name}`;
 }
 
 function addLocal(root: string, source: string, force: boolean): void {
@@ -359,14 +365,11 @@ function finalize(root: string, name: string, targetPath: string, source?: Insta
   // Symlink commands/skills to agent directories
   symlinkDojo(root, targetPath);
 
-  const agents = configuredAgents(root);
-  const kataCmd = agents.length === 1 ? `${agents[0]} "/kata"` : "/kata";
-
   console.log(`Dojo "${name}" added.
 
   Location:  ${DOJOS_DIR}/${name}
   Active:    ${name}
-  Command:   ${kataCmd}`);
+  Start:     ${CLI} ui`);
 
   runLifecycleScript(root, targetPath, "prepare.sh");
   queueCourseEvent(

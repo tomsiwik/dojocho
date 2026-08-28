@@ -41,7 +41,7 @@ async function main() {
     intro(findProjectRoot(), args);
   } else if (command === "install" || command === "setup") {
     if (!args.includes("--skills")) await bootstrapMise();
-    setup(process.cwd(), args);
+    await setup(process.cwd(), args);
   } else if (command === "add") {
     await add(process.cwd(), args);
     const root = findProjectRoot();
