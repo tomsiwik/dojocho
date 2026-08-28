@@ -15,8 +15,8 @@ import {
 } from "@dojofoo/config";
 import type { UIMessage } from "@tanstack/ai-client";
 import type { DojoLessonContext } from "@dojofoo/protocol";
-import platformTeaching from "../../../../../DOJOFOO.md?raw";
-import kataTeaching from "../../../../../teaching-styles/KATAS.md?raw";
+import platformTeaching from "./contracts/DOJOFOO.md?raw";
+import kataTeaching from "./contracts/KATAS.md?raw";
 import type { HarnessKind } from "../harness/adapter";
 import { dojofooHarness } from "../harness/registry";
 import { acpClient, type AcpStreamPart, type SessionModelConfiguration, type TranscriptMessage } from "./codex-client";

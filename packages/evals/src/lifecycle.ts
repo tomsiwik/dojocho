@@ -18,8 +18,14 @@ const stages = requested ? [requested as LifecycleStage] : allStages;
 const workspace = resolve(import.meta.dirname, "../../..");
 const fixture = resolve(import.meta.dirname, "../courses/kata-capabilities");
 const [platform, style, course, lesson, skill] = await Promise.all([
-  readFile(resolve(workspace, "DOJOFOO.md"), "utf8"),
-  readFile(resolve(workspace, "teaching-styles/KATAS.md"), "utf8"),
+  readFile(
+    resolve(workspace, "packages/ui/src/server/lesson/contracts/DOJOFOO.md"),
+    "utf8"
+  ),
+  readFile(
+    resolve(workspace, "packages/ui/src/server/lesson/contracts/KATAS.md"),
+    "utf8"
+  ),
   readFile(resolve(fixture, "DOJO.md"), "utf8"),
   readFile(resolve(fixture, "katas/001-transformation/SENSEI.md"), "utf8"),
   readFile(resolve(workspace, "packages/cli/skills/dojofoo/SKILL.md"), "utf8"),

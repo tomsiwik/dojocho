@@ -6,7 +6,7 @@ live behavior accidentally.
 
 The first scenario assembles:
 
-1. the internal `DOJOFOO.md` platform contract;
+1. the internal lesson-runtime `DOJOFOO.md` platform contract;
 2. the starter course's `DOJO.md`;
 3. lesson 002's `SENSEI.md`;
 4. the generic Dojofoo skill;

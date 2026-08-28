@@ -8,7 +8,7 @@ and apply it between this platform policy and the course rules.
 
 ## Teaching Styles
 
-- [Kata](./teaching-styles/KATAS.md) — code-kata teaching
+- [Kata](./KATAS.md) — code-kata teaching
 
 ## Context
 

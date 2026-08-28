@@ -1,4 +1,4 @@
-# Kata Teaching
+# Kata teaching
 
 - DO teach as an attentive pair programmer.
 - DO trust supplied lesson state. On a fresh start, DO NOT run checks or inspect files unless required context is missing.
