@@ -75,9 +75,23 @@ interface AcpRuntime {
   loadedSessions: Set<string>;
   loadingSessions: Map<string, Promise<void>>;
   ready: Promise<void> | null;
+  promptCapabilities?: acp.PromptCapabilities;
 }
 
 type SessionBinding = { runtimeKey: string; root: string };
+
+export function promptContextBlock(
+  adapter: HarnessAdapter,
+  capabilities: acp.PromptCapabilities | undefined,
+  resource: { uri: string; mimeType: string; text: string },
+): acp.ContentBlock {
+  const text = adapter.encodeResource(resource);
+  const canEmbed = capabilities?.embeddedContext === true
+    && adapter.supportsVirtualResourceUris !== false;
+  return canEmbed
+    ? { type: "resource", resource: { uri: resource.uri, mimeType: resource.mimeType, text } }
+    : { type: "text", text };
+}
 
 
 /**
@@ -89,6 +103,7 @@ export class AcpClient {
   private runtimes = new Map<string, AcpRuntime>();
   private sessions = new Map<string, SessionBinding>();
   private sessionConfigOptions = new Map<string, acp.SessionConfigOption[]>();
+  private contextualizedSessions = new Set<string>();
   private transcripts = new Map<string, TranscriptMessage[]>();
   private callbacks = new Map<string, (part: AcpStreamPart) => void>();
   private permissions = new Map<string, PendingPermission>();
@@ -125,6 +140,7 @@ export class AcpClient {
     }
     this.runtimes.clear();
     this.sessionConfigOptions.clear();
+    this.contextualizedSessions.clear();
   }
 
   async startThread(configuration: RuntimeConfiguration): Promise<string> {
@@ -140,6 +156,7 @@ export class AcpClient {
     );
     this.sessionConfigOptions.set(session.sessionId, configured ?? session.configOptions ?? []);
     this.sessions.set(session.sessionId, { root: configuration.root, runtimeKey: configuration.runtimeKey });
+    this.contextualizedSessions.delete(session.sessionId);
     this.runtime(configuration.runtimeKey).loadedSessions.add(session.sessionId);
     this.transcripts.set(session.sessionId, []);
     return session.sessionId;
@@ -217,18 +234,18 @@ export class AcpClient {
     this.turnStartedAt.set(threadId, startedAt);
     if (options.visible !== false) this.transcript(threadId).push({ role: "user", text, startedAt, completedAt: startedAt });
     const responseStart = this.transcript(threadId).length;
+    const contextBlock = (resource: { uri: string; mimeType: string; text: string }) =>
+      promptContextBlock(runtime.adapter, runtime.promptCapabilities, resource);
+    const includeInstructions = runtime.adapter?.contextualInstructions === true
+      && !this.contextualizedSessions.has(threadId);
+    if (includeInstructions) this.contextualizedSessions.add(threadId);
     const prompt: acp.ContentBlock[] = [
-      ...(options.context ?? []).map((resource) => ({
-        type: "resource" as const,
-        // Some ACP agents persist resource content as ordinary text and replay
-        // it without the original URI. Keep the identity in the content so a
-        // later load can still project private context correctly.
-        resource: {
-          uri: resource.uri,
-          mimeType: resource.mimeType,
-          text: runtime.adapter.encodeResource(resource),
-        },
-      })) ?? [],
+      ...(includeInstructions ? [contextBlock({
+        uri: "dojo://sensei/instructions",
+        mimeType: "text/markdown",
+        text: runtime.developerInstructions,
+      })] : []),
+      ...(options.context ?? []).map(contextBlock),
       { type: "text", text },
     ];
     try {
@@ -299,9 +316,9 @@ export class AcpClient {
   }
 
   modelConfiguration(threadId: string): SessionModelConfiguration | null {
-    const option = this.sessionConfigOptions.get(threadId)?.find((candidate) =>
-      candidate.type === "select" && (candidate.category === "model" || candidate.id === "model")
-    );
+    const configOptions = this.sessionConfigOptions.get(threadId) ?? [];
+    const option = configOptions.find((candidate) => candidate.type === "select" && candidate.id === "model")
+      ?? configOptions.find((candidate) => candidate.type === "select" && candidate.category === "model");
     if (!option || option.type !== "select") return null;
     const options = option.options.flatMap((candidate) => "options" in candidate
       ? candidate.options.map((value) => ({
@@ -404,6 +421,7 @@ export class AcpClient {
         loadedSessions: new Set(),
         loadingSessions: new Map(),
         ready: null,
+        promptCapabilities: undefined,
       };
       this.runtimes.set(configuration.runtimeKey, runtime);
       runCoordinator.attach(runtime.capability, {
@@ -451,11 +469,12 @@ export class AcpClient {
       unstable_createElicitation: (request) => this.createElicitation(request),
     }), stream);
     runtime.connection = connection;
-    await connection.initialize({
+    const initialized = await connection.initialize({
       protocolVersion: acp.PROTOCOL_VERSION,
       clientInfo: { name: "dojofoo", title: "Dojofoo", version: "0.1.0" },
       clientCapabilities: { elicitation: { form: {} } },
     });
+    runtime.promptCapabilities = initialized.agentCapabilities?.promptCapabilities;
   }
 
   private requestPermission(request: acp.RequestPermissionRequest): Promise<acp.RequestPermissionResponse> {
@@ -704,9 +723,9 @@ if (!existingAcpClient) {
 
 type UserTextProjection = { role: "user" | "assistant"; kind?: "reasoning" | "tool"; text: string };
 
-const leakedResourcePrefix = /^dojofoo:\/\/lessons\/[^\s]+\/checks\/latest(?=\S)/u;
+const leakedResourcePrefix = /^(?:dojo|dojofoo):\/\/lessons\/[^\s]+\/checks\/latest(?=\S)/u;
 
-const dojoContextPattern = /(?:^|\n)(?:dojofoo:\/\/[^\n]+\n)?<context ref="(dojofoo:\/\/[^"]+)"[^>]*>\n?([\s\S]*?)\n?<\/context>/gu;
+const dojoContextPattern = /(?:^|\n)(?:(?:dojo|dojofoo):\/\/[^\n]+\n)?<context ref="((?:dojo|dojofoo):\/\/[^"]+)"[^>]*>\n?([\s\S]*?)\n?<\/context>/gu;
 
 function projectUserText(text: string): UserTextProjection[] {
   const normalizedText = text.replace(leakedResourcePrefix, "");
@@ -728,17 +747,17 @@ function projectUserText(text: string): UserTextProjection[] {
 }
 
 function decodePromptResource(text: string): string {
-  const match = text.match(/^<context ref="dojofoo:\/\/[^"]+">\n?([\s\S]*?)\n?<\/context>$/u);
+  const match = text.match(/^<context ref="(?:dojo|dojofoo):\/\/[^"]+">\n?([\s\S]*?)\n?<\/context>$/u);
   return match?.[1] ?? text;
 }
 
 function projectDojoResource(uri: string, text: string): UserTextProjection[] {
-  if (uri === "dojofoo://sensei/instructions") return [];
-  if (uri.startsWith("dojofoo://courses/") && uri.endsWith("/context")) return [];
-  if (uri.startsWith("dojofoo://lessons/") && uri.endsWith("/checks/latest")) {
+  if (/^(?:dojo|dojofoo):\/\/sensei\/instructions$/u.test(uri)) return [];
+  if (/^(?:dojo|dojofoo):\/\/courses\//u.test(uri) && uri.endsWith("/context")) return [];
+  if (/^(?:dojo|dojofoo):\/\/lessons\//u.test(uri) && uri.endsWith("/checks/latest")) {
     return [{ role: "assistant", kind: "reasoning", text }];
   }
-  if (uri.startsWith("dojofoo://lessons/") && uri.includes("/checks/")) {
+  if (/^(?:dojo|dojofoo):\/\/lessons\//u.test(uri) && uri.includes("/checks/")) {
     try {
       const output = JSON.parse(text) as { report?: unknown };
       return [{

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createCodexHarnessAdapter } from "./codex";
 import { configureOpenCodeSessionModel, createOpenCodeHarnessAdapter } from "./opencode";
 import { dojofooHarness, harnessAdapter } from "./registry";
+import { promptContextBlock } from "../lesson/codex-client";
 
 describe("ACP harness adapters", () => {
   it("encapsulates Codex process configuration", () => {
@@ -14,7 +15,7 @@ describe("ACP harness adapters", () => {
       model: "gpt-5",
       developer_instructions: "Teach this lesson",
     }));
-    expect(adapter.encodeResource({ uri: "dojofoo://lesson", text: "private" })).toBe("private");
+    expect(adapter.encodeResource({ uri: "dojo://lesson", text: "private" })).toBe("private");
   });
 
   it("encapsulates OpenCode process, resource, and model configuration", async () => {
@@ -32,8 +33,8 @@ describe("ACP harness adapters", () => {
     expect(JSON.parse(environment.OPENCODE_CONFIG_CONTENT ?? "{}")).toMatchObject({
       experimental: { mcp_timeout: 600_000 },
     });
-    expect(adapter.encodeResource({ uri: "dojofoo://lesson", text: "private" }))
-      .toBe('<context ref="dojofoo://lesson">\nprivate\n</context>');
+    expect(adapter.encodeResource({ uri: "dojo://lesson", text: "private" }))
+      .toBe('<context ref="dojo://lesson">\nprivate\n</context>');
     await adapter.configureSession(connection as never, "session-1");
     expect(connection.setSessionConfigOption).toHaveBeenCalledWith({
       sessionId: "session-1",
@@ -56,7 +57,29 @@ describe("ACP harness adapters", () => {
   it("selects registered harnesses and rejects unknown names", () => {
     expect(dojofooHarness({})).toBe("opencode");
     expect(harnessAdapter("codex").kind).toBe("codex");
+    expect(harnessAdapter("cursor").process({ root: "/tmp/lesson", developerInstructions: "Teach" }).args)
+      .toEqual(["--yolo", "--trust", "acp"]);
+    expect(harnessAdapter("cursor").contextualInstructions).toBe(true);
+    expect(harnessAdapter("grok").process({ root: "/tmp/lesson", developerInstructions: "Teach" }).args)
+      .toEqual(["--rules", "Teach", "--permission-mode", "bypassPermissions", "agent", "stdio"]);
+    expect(harnessAdapter("fx").process({ root: "/tmp/lesson", developerInstructions: "Teach" }).args)
+      .toEqual(["acp"]);
+    expect(harnessAdapter("fx").process({ root: "/tmp/lesson", developerInstructions: "Teach" }).environment.FX_PERMISSION_MODE)
+      .toBe("yolo");
+    expect(harnessAdapter("fx").contextualInstructions).toBe(true);
+    expect(harnessAdapter("fx").supportsVirtualResourceUris).toBe(false);
     expect(() => dojofooHarness({ DOJOFOO_HARNESS: "unknown" })).toThrow("Unsupported Dojofoo harness");
+  });
+
+  it("negotiates embedded context and falls back for virtual URI incompatibilities", () => {
+    const resource = { uri: "dojo://lesson", mimeType: "text/plain", text: "private" };
+
+    expect(promptContextBlock(harnessAdapter("cursor"), { embeddedContext: false }, resource).type)
+      .toBe("text");
+    expect(promptContextBlock(harnessAdapter("grok"), { embeddedContext: true }, resource).type)
+      .toBe("resource");
+    expect(promptContextBlock(harnessAdapter("fx"), { embeddedContext: true }, resource).type)
+      .toBe("text");
   });
 
   it("isolates model discovery for OpenCode versions without ACP config options", async () => {

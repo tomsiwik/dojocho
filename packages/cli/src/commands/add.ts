@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, cpSync, renameSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, renameSync, unlinkSync, symlinkSync, readdirSync, readFileSync, writeFileSync, rmSync, lstatSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execSync, execFileSync } from "node:child_process";
 import { resolve, relative } from "node:path";
@@ -21,6 +21,7 @@ import { agentsFromArgs, configuredAgents, detectAgentsFromEnv, ensureProject, s
 import { pmCommands } from "../pm";
 import { AGENTS } from "./setup";
 import { queueCourseEvent } from "../telemetry";
+import { startKata } from "./kata";
 import {
   githubArchiveUrl,
   parseGithubSource,
@@ -342,7 +343,8 @@ function finalize(root: string, name: string, targetPath: string, source?: Insta
     }
   }
 
-  if (courseMode(readCourseManifest(root, name)) === "katas") {
+  const mode = courseMode(readCourseManifest(root, name));
+  if (mode === "katas") {
     // Kata courses extend their tooling into the learner's coding workspace.
     const dojo = loadConfig(root);
     const katasInclude = `${relative(root, dojo.katasPath)}/**/*.ts`;
@@ -365,13 +367,15 @@ function finalize(root: string, name: string, targetPath: string, source?: Insta
   // Symlink commands/skills to agent directories
   symlinkDojo(root, targetPath);
 
+  runLifecycleScript(root, targetPath, "prepare.sh");
+  if (mode === "katas" && !readDojoRc(root).currentKata) startKata(root);
+
   console.log(`Dojo "${name}" added.
 
   Location:  ${DOJOS_DIR}/${name}
   Active:    ${name}
   Start:     ${CLI} ui`);
 
-  runLifecycleScript(root, targetPath, "prepare.sh");
   queueCourseEvent(
     root,
     name,
@@ -394,7 +398,12 @@ function symlinkDir(sourceDir: string, targetDir: string, filter: (e: import("no
   for (const entry of readdirSync(sourceDir, { withFileTypes: true })) {
     if (!filter(entry)) continue;
     const link = resolve(targetDir, entry.name);
-    if (existsSync(link)) unlinkSync(link);
+    try {
+      if (!lstatSync(link).isSymbolicLink()) continue;
+      unlinkSync(link);
+    } catch {
+      // The local catalog does not contain this skill yet.
+    }
     symlinkSync(relative(targetDir, resolve(sourceDir, entry.name)), link);
   }
 }
@@ -414,9 +423,13 @@ export function runLifecycleScript(root: string, dojoPath: string, script: strin
 }
 
 function symlinkDojo(root: string, dojoPath: string): void {
+  symlinkDir(
+    resolve(dojoPath, "skills"),
+    resolve(root, ".agents", "skills"),
+    (entry) => entry.isDirectory(),
+  );
   for (const agent of configuredAgents(root)) {
     const dir = AGENTS[agent].dir;
     symlinkDir(resolve(dojoPath, "commands"), resolve(root, dir, "commands"), (e) => e.name.endsWith(".md"));
-    symlinkDir(resolve(dojoPath, "skills"), resolve(root, dir, "skills"), (e) => e.isDirectory());
   }
 }

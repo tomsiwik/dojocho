@@ -6,6 +6,8 @@
   "scripts": {
     "eval:introduction": "tsx src/introduction.ts",
     "eval:introduction:opencode": "tsx src/opencode-introduction.ts",
+    "eval:course:contract": "vitest run src/full-course-scenario.test.ts",
+    "eval:course:live": "tsx src/live-course-matrix.ts",
     "eval:all": "pnpm eval:introduction:opencode && pnpm eval:lifecycle && pnpm eval:transformation",
     "eval:lifecycle": "tsx src/lifecycle.ts",
     "eval:matrix": "tsx src/model-matrix.ts",

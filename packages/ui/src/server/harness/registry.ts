@@ -1,9 +1,13 @@
 import type { HarnessAdapter, HarnessKind } from "./adapter";
 import { codexHarnessAdapter } from "./codex";
+import { cursorHarnessAdapter, fxHarnessAdapter, grokHarnessAdapter } from "./native-acp";
 import { opencodeHarnessAdapter } from "./opencode";
 
 const adapters: Record<HarnessKind, HarnessAdapter> = {
   codex: codexHarnessAdapter,
+  cursor: cursorHarnessAdapter,
+  fx: fxHarnessAdapter,
+  grok: grokHarnessAdapter,
   opencode: opencodeHarnessAdapter,
 };
 

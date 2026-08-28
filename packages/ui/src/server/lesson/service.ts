@@ -124,7 +124,7 @@ export function shouldIntroduceLesson(snapshot: Pick<LessonSnapshot, "introduced
 
 function dojoContextResource(snapshot: LessonSnapshot) {
   return {
-    uri: `dojofoo://courses/${encodeURIComponent(snapshot.dojo)}/lessons/${encodeURIComponent(snapshot.kata)}/context`,
+    uri: `dojo://courses/${encodeURIComponent(snapshot.dojo)}/lessons/${encodeURIComponent(snapshot.kata)}/context`,
     mimeType: "application/json",
     text: JSON.stringify(dojoLessonContext(snapshot)),
   };
@@ -399,7 +399,7 @@ function jsonText(value: unknown): string {
   }
 }
 
-const checkResourceMarker = /^\[?dojofoo:\/\/lessons\/[^\]\s]+\/checks\/[^\]\s]+\]?\s*/u;
+const checkResourceMarker = /^\[?(?:dojo|dojofoo):\/\/lessons\/[^\]\s]+\/checks\/[^\]\s]+\]?\s*/u;
 
 export function visibleTranscriptText(entry: TranscriptMessage): string {
   const text = entry.text.replace(checkResourceMarker, "").trim();
@@ -457,7 +457,7 @@ export async function streamSensei(
     {
       signal,
       context: [{
-        uri: `dojofoo://lessons/${encodeURIComponent(snapshot.kata)}/checks/latest`,
+        uri: `dojo://lessons/${encodeURIComponent(snapshot.kata)}/checks/latest`,
         mimeType: "text/plain",
         text: evidenceContext,
       }, dojoContextResource(snapshot)],
@@ -479,7 +479,7 @@ export async function streamCheckObservation(
     signal,
     visible: false,
     context: [dojoContextResource(snapshot), {
-      uri: `dojofoo://lessons/${encodeURIComponent(kataName)}/checks/${observation.id}`,
+      uri: `dojo://lessons/${encodeURIComponent(kataName)}/checks/${observation.id}`,
       mimeType: "application/json",
       text: JSON.stringify({
         instruction: checkObservationInstruction(observation),
@@ -528,7 +528,7 @@ export async function streamLessonIntroduction(
       signal,
       visible: false,
       context: [dojoContextResource(snapshot), {
-        uri: `dojofoo://lessons/${encodeURIComponent(snapshot.kata)}/introduction`,
+        uri: `dojo://lessons/${encodeURIComponent(snapshot.kata)}/introduction`,
         mimeType: "text/plain",
         text: introductionInstruction,
       }],

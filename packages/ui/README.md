@@ -29,7 +29,7 @@ Codex
 The client currently supports standard ACP message and thought chunks, tool
 calls and results, permissions, session loading, and structured elicitation.
 Lesson check evidence is attached to a normal `session/prompt` as an ACP
-embedded JSON resource. The optional `dojofoo://` URI identifies the resource;
+embedded JSON resource. The optional `dojo://` URI identifies the resource;
 no custom JSON-RPC method or private message envelope is required.
 
 ACP v2 support will be negotiated when `codex-acp` supports it. Do not infer a

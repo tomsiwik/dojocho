@@ -1,11 +1,11 @@
 import type { ChatClientState, UIMessage } from "@tanstack/ai-client";
 
-const INTERNAL_DOJOFOO_REFERENCE = /^\[dojofoo:\/\/[^\]]+\]/u;
+const INTERNAL_DOJO_REFERENCE = /^\[(?:dojo|dojofoo):\/\/[^\]]+\]/u;
 
 export function isInternalLessonMessage(content: string): boolean {
   return content === "[dojo:begin-lesson]"
     || content === "[dojo:check-observation]"
-    || INTERNAL_DOJOFOO_REFERENCE.test(content);
+    || INTERNAL_DOJO_REFERENCE.test(content);
 }
 
 export function chatAcceptsInput(status: ChatClientState): boolean {
@@ -17,5 +17,10 @@ export function lessonNeedsIntroduction(messages: UIMessage[]): boolean {
     part.type === "text"
     && part.content.trim().length > 0
     && !isInternalLessonMessage(part.content)
+    && !(message.role === "assistant" && part.content.trim().toLowerCase() === "cancelled")
   )));
+}
+
+export function lessonIntroductionCanStart(status: ChatClientState, messages: UIMessage[]): boolean {
+  return status === "ready" && lessonNeedsIntroduction(messages);
 }

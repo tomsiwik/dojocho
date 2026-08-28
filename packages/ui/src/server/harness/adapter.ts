@@ -1,6 +1,6 @@
 import type * as acp from "@agentclientprotocol/sdk";
 
-export type HarnessKind = "codex" | "opencode";
+export type HarnessKind = "codex" | "cursor" | "fx" | "grok" | "opencode";
 
 export type HarnessProcess = {
   command: string;
@@ -15,6 +15,8 @@ export type HarnessRuntimeContext = {
 
 export interface HarnessAdapter {
   kind: HarnessKind;
+  contextualInstructions?: boolean;
+  supportsVirtualResourceUris?: boolean;
   configureSession(
     connection: acp.ClientSideConnection,
     sessionId: string,

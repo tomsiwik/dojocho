@@ -51,7 +51,7 @@ import type { LessonSnapshot, TestReport } from "@/server/lesson/service";
 import type { JsonRpcRequest } from "@/server/session/protocol";
 import { applyLessonMetadata, hydrateLesson } from "@/lib/lesson-snapshot";
 import { projectChatTimeline, type AnchoredChatEvent } from "@/lib/chat-timeline";
-import { chatAcceptsInput, isInternalLessonMessage, lessonNeedsIntroduction } from "@/lib/chat-internal";
+import { chatAcceptsInput, isInternalLessonMessage, lessonIntroductionCanStart } from "@/lib/chat-internal";
 import { cn } from "@/lib/utils";
 import { AgentQuestion, isAgentQuestion, parseAgentQuestions } from "@/components/chat/agent-question";
 import { useChatWorkTiming, type ChatWorkTiming } from "@/lib/chat-work-timing";
@@ -607,7 +607,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
   }, [chatStatus, pendingCheckObservation, sendMessage]);
 
   useEffect(() => {
-    if (!apiBase || !lesson || !lessonNeedsIntroduction(messages)) return;
+    if (!apiBase || !lesson || !lessonIntroductionCanStart(chatStatus, messages)) return;
     if (introductions.current.has(apiBase)) return;
     introductions.current.add(apiBase);
     setBusy("Sensei is introducing the lesson…");
@@ -636,7 +636,7 @@ export function LessonPage({ requestedCourseId, requestedLessonId, requestedSess
         setError(cause instanceof Error ? cause.message : String(cause));
       })
       .finally(() => { forwardedProps.current = {}; });
-  }, [apiBase, lesson, messages, navigate, sendMessage, updateMetadata]);
+  }, [apiBase, chatStatus, lesson, messages, navigate, sendMessage, updateMetadata]);
 
   async function sendQuestion(message = question.trim()) {
     if (!message) return;
@@ -1234,7 +1234,7 @@ export function StreamedChatMessage({
             if (isInternalLessonMessage(part.content)) return null;
             return <MessageContent autoHighlight={streaming} fragments={fragments} key={`${part.type}-${index}`} onHighlight={onHighlight} text={part.content} workspaceId={workspaceId} />;
           }
-          if (part.type === "ui-resource" && part.resource.uri.startsWith("dojofoo://lessons/")) {
+          if (part.type === "ui-resource" && /^(?:dojo|dojofoo):\/\/lessons\//u.test(part.resource.uri)) {
             return <MessageContent fragments={fragments} key={`${part.type}-${index}`} kind="lesson-fragment" text={part.resource.text ?? ""} workspaceId={workspaceId} />;
           }
           if (part.type === "tool-call") {

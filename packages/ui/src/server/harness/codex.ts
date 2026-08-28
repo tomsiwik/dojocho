@@ -1,5 +1,7 @@
-import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import type { HarnessAdapter } from "./adapter";
+
+const require = createRequire(import.meta.url);
 
 export function codexRuntimeEnvironment(
   developerInstructions: string,
@@ -37,7 +39,7 @@ export function createCodexHarnessAdapter(environment: NodeJS.ProcessEnv = proce
     encodeResource: (resource) => resource.text,
     process: (runtime) => ({
       command: process.execPath,
-      args: [fileURLToPath(import.meta.resolve("@agentclientprotocol/codex-acp"))],
+      args: [require.resolve("@agentclientprotocol/codex-acp")],
       environment: codexRuntimeEnvironment(runtime.developerInstructions, environment),
     }),
   };

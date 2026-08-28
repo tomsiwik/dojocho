@@ -1,6 +1,8 @@
 import { HarnessAgent } from "@ai-sdk/harness/agent";
 import { createPi } from "@ai-sdk/harness-pi";
 import { createJustBashSandbox } from "@ai-sdk/sandbox-just-bash";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { introductionScenario, printResult } from "./introduction-scenario";
 
 const scenario = await introductionScenario();
@@ -10,7 +12,7 @@ const agent = new HarnessAgent({
   harness: createPi({
     thinkingLevel: "medium",
     ...(process.env.DOJOFOO_EVAL_MODEL ? { model: process.env.DOJOFOO_EVAL_MODEL } : {}),
-    ...(process.env.DOJOFOO_EVAL_PI_AGENT_DIR ? { agentDir: process.env.DOJOFOO_EVAL_PI_AGENT_DIR } : {}),
+    agentDir: process.env.DOJOFOO_EVAL_PI_AGENT_DIR ?? join(homedir(), ".pi", "agent"),
   }),
   instructions: scenario.instructions,
   sandbox: createJustBashSandbox({ cwd: "/lesson" }),

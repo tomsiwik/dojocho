@@ -42,7 +42,7 @@
       {
         "type": "ui-resource",
         "resource": {
-          "uri": "dojofoo://lessons/normalize-handle/fragments/regex-whitespace",
+          "uri": "dojo://lessons/normalize-handle/fragments/regex-whitespace",
           "mimeType": "text/markdown",
           "text": "regex-whitespace"
         },

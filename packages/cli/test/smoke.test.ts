@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync, lstatSync, readlinkSync, readdirSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, chmodSync, lstatSync, readlinkSync, readdirSync, symlinkSync } from "node:fs";
 import { rmSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { resolve, join, relative } from "node:path";
 import { tmpdir } from "node:os";
 
 import { agentsFromArgs, parseAgentSelection, setup, setupAgents, setupSkills, configuredAgents, AGENTS, type AgentName } from "../src/commands/setup";
@@ -90,8 +90,9 @@ describe("dojo setup", () => {
       expect(output).toContain("Dojo ready");
       expect(output).toContain("npx dojofoo ui");
       expect(output).not.toContain("/kata");
-      expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(true);
-      expect(existsSync(resolve(root, ".pi/skills/dojofoo"))).toBe(true);
+      expect(existsSync(resolve(root, ".agents/skills/dojofoo/SKILL.md"))).toBe(true);
+      expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(false);
+      expect(existsSync(resolve(root, ".pi/skills/dojofoo"))).toBe(false);
     } finally {
       vi.unstubAllEnvs();
     }
@@ -106,7 +107,8 @@ describe("dojo setup", () => {
   it("accepts the conventional --agent option", async () => {
     await captureLogAsync(() => setup(root, ["--agent", "opencode"]));
 
-    expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(true);
+    expect(existsSync(resolve(root, ".agents/skills/dojofoo/SKILL.md"))).toBe(true);
+    expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(false);
   });
 
   it("scaffolds the project before asking which agent to configure", async () => {
@@ -159,7 +161,8 @@ describe("setupAgents", () => {
 
     // Per-agent directories
     expect(existsSync(resolve(root, cfg.dir, cfg.commandsDir))).toBe(true);
-    expect(existsSync(resolve(root, cfg.dir, "skills"))).toBe(true);
+    expect(existsSync(resolve(root, cfg.dir, "skills"))).toBe(false);
+    expect(existsSync(resolve(root, ".agents/skills/dojofoo/SKILL.md"))).toBe(true);
 
     // settings.json presence tracks hasSettings
     expect(existsSync(resolve(root, cfg.dir, "settings.json"))).toBe(cfg.hasSettings);
@@ -223,9 +226,22 @@ describe("setupSkills", () => {
 
     const canonical = resolve(root, ".agents/skills/dojofoo/SKILL.md");
     expect(readFileSync(canonical, "utf8")).toContain("dojo_lesson_verify");
-    expect(lstatSync(resolve(root, ".opencode/skills/dojofoo")).isSymbolicLink()).toBe(true);
-    expect(lstatSync(resolve(root, ".codex/skills/dojofoo")).isSymbolicLink()).toBe(true);
+    expect(existsSync(resolve(root, ".opencode/skills/dojofoo"))).toBe(false);
+    expect(existsSync(resolve(root, ".codex/skills/dojofoo"))).toBe(false);
     expect(existsSync(resolve(root, ".agents/commands"))).toBe(false);
+  });
+
+  it("migrates legacy agent-specific skill links to the local catalog", () => {
+    const legacyDirectory = resolve(root, ".codex/skills");
+    const canonical = resolve(root, ".agents/skills/dojofoo");
+    mkdirSync(legacyDirectory, { recursive: true });
+    mkdirSync(canonical, { recursive: true });
+    symlinkSync(relative(legacyDirectory, canonical), resolve(legacyDirectory, "dojofoo"), "dir");
+
+    setupSkills(root, ["codex"]);
+
+    expect(existsSync(resolve(root, ".agents/skills/dojofoo/SKILL.md"))).toBe(true);
+    expect(existsSync(resolve(legacyDirectory, "dojofoo"))).toBe(false);
   });
 });
 

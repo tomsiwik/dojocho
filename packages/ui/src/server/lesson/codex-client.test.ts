@@ -68,6 +68,34 @@ describe("AcpClient projection", () => {
     expect(setModel).toHaveBeenCalledWith(runtime.connection, "session-1", "provider/deep");
   });
 
+  it("prefers the canonical model selector when a harness also categorizes provider as model", () => {
+    const client = new AcpClient();
+    const options = [{
+      id: "provider",
+      name: "Provider",
+      category: "model",
+      type: "select",
+      currentValue: "gateway",
+      options: [{ value: "gateway", name: "Gateway" }],
+    }, {
+      id: "model",
+      name: "Model",
+      category: "model",
+      type: "select",
+      currentValue: "zai/glm-5.3-flash",
+      options: [{ value: "zai/glm-5.3-flash", name: "GLM 5.3 Flash" }],
+    }] satisfies import("@agentclientprotocol/sdk").SessionConfigOption[];
+    (client as unknown as { sessionConfigOptions: Map<string, unknown> })
+      .sessionConfigOptions.set("session-1", options);
+
+    expect(client.modelConfiguration("session-1")).toEqual({
+      id: "model",
+      name: "Model",
+      currentValue: "zai/glm-5.3-flash",
+      options: [{ value: "zai/glm-5.3-flash", name: "GLM 5.3 Flash" }],
+    });
+  });
+
   it("reports a visible ACP turn that completes without output", async () => {
     const client = new AcpClient();
     const runtime = {
@@ -90,6 +118,39 @@ describe("AcpClient projection", () => {
       "opencode completed the ACP turn without returning any output",
     );
     await expect(client.send("session-1", "Background", undefined, { visible: false })).resolves.toBe("");
+  });
+
+  it("injects contextual native-harness instructions only once per session", async () => {
+    const client = new AcpClient();
+    const prompt = vi.fn().mockResolvedValue({ stopReason: "end_turn" });
+    const runtime = {
+      adapter: {
+        contextualInstructions: true,
+        encodeResource: ({ text }: { text: string }) => text,
+      },
+      child: null,
+      connection: { cancel: vi.fn(), prompt },
+      harness: "fx",
+      root: "/tmp/lesson",
+      developerInstructions: "Private lesson contract",
+      loadedSessions: new Set(["session-1"]),
+      loadingSessions: new Map<string, Promise<void>>(),
+      ready: Promise.resolve(),
+    };
+    (client as unknown as { runtimes: Map<string, unknown> }).runtimes.set("lesson", runtime);
+    (client as unknown as { sessions: Map<string, unknown> }).sessions.set("session-1", {
+      runtimeKey: "lesson",
+      root: "/tmp/lesson",
+    });
+
+    await client.send("session-1", "First", undefined, { visible: false });
+    await client.send("session-1", "Second", undefined, { visible: false });
+
+    expect(prompt.mock.calls[0]?.[0].prompt).toEqual([
+      { type: "text", text: "Private lesson contract" },
+      { type: "text", text: "First" },
+    ]);
+    expect(prompt.mock.calls[1]?.[0].prompt).toEqual([{ type: "text", text: "Second" }]);
   });
 
   it("cancels and reports a harness that produces no ACP activity", async () => {
@@ -250,7 +311,7 @@ describe("AcpClient projection", () => {
         sessionUpdate: "user_message_chunk",
         content: {
           type: "text",
-          text: "dojofoo://lessons/example/checks/check-1\n<context ref=\"dojofoo://lessons/example/checks/check-1\">\n{\"report\":{\"passed\":1,\"total\":1}}\n</context>",
+          text: "dojo://lessons/example/checks/check-1\n<context ref=\"dojo://lessons/example/checks/check-1\">\n{\"report\":{\"passed\":1,\"total\":1}}\n</context>",
         },
       },
     });
@@ -270,7 +331,7 @@ describe("AcpClient projection", () => {
         content: {
           type: "resource",
           resource: {
-            uri: "dojofoo://lessons/example/checks/check-1",
+            uri: "dojo://lessons/example/checks/check-1",
             mimeType: "application/json",
             text: '{"report":{"passed":1,"total":2}}',
           },
@@ -284,7 +345,7 @@ describe("AcpClient projection", () => {
         content: {
           type: "resource",
           resource: {
-            uri: "dojofoo://sensei/instructions",
+            uri: "dojo://sensei/instructions",
             mimeType: "text/plain",
             text: "Hidden policy",
           },
@@ -471,7 +532,7 @@ describe("AcpClient projection", () => {
     ]);
   });
 
-  it("keeps private instructions hidden while projecting learner context", async () => {
+  it("keeps private instructions hidden across legacy and current dojo URIs", async () => {
     const client = new AcpClient();
 
     receive(client, {
@@ -490,7 +551,7 @@ describe("AcpClient projection", () => {
         sessionUpdate: "user_message_chunk",
         content: {
           type: "text",
-          text: "dojofoo://lessons/normalize-handle/checks/latest\n<context ref=\"dojofoo://lessons/normalize-handle/checks/latest\">\nCurrent local test evidence: 2/4 passing.\n</context>",
+          text: "dojo://lessons/normalize-handle/checks/latest\n<context ref=\"dojo://lessons/normalize-handle/checks/latest\">\nCurrent local test evidence: 2/4 passing.\n</context>",
         },
       },
     });
@@ -510,7 +571,7 @@ describe("AcpClient projection", () => {
         sessionUpdate: "user_message_chunk",
         content: {
           type: "text",
-          text: "<context ref=\"dojofoo://sensei/instructions\">\nHidden policy\n</context>",
+          text: "<context ref=\"dojo://sensei/instructions\">\nHidden policy\n</context>",
         },
       },
     });
@@ -536,7 +597,7 @@ describe("AcpClient projection", () => {
         sessionUpdate: "user_message_chunk",
         content: {
           type: "text",
-          text: "dojofoo://lessons/001-normalize-handle/checks/latestUse the completion tool now.",
+          text: "dojo://lessons/001-normalize-handle/checks/latestUse the completion tool now.",
         },
       },
     });
@@ -556,7 +617,7 @@ describe("AcpClient projection", () => {
         content: {
           type: "resource",
           resource: {
-            uri: "dojofoo://lessons/normalize-handle/introduction",
+            uri: "dojo://lessons/normalize-handle/introduction",
             mimeType: "text/plain",
             text: "Introduce this lesson without giving away the solution.",
           },
@@ -577,7 +638,7 @@ describe("AcpClient projection", () => {
         content: {
           type: "resource",
           resource: {
-            uri: "dojofoo://courses/starter/lessons/normalize-handle/context",
+            uri: "dojo://courses/starter/lessons/normalize-handle/context",
             mimeType: "application/json",
             text: JSON.stringify({ phase: "resume", lesson: { id: "normalize-handle" } }),
           },

@@ -95,10 +95,33 @@ function DojosPage() {
                 imageSrc: "/agents/codex.svg",
                 showName: false,
               },
-              { name: "Pi", imageSrc: "/agents/pi.svg", showName: false },
+              {
+                name: "Grok",
+                imageClassName: "h-7 w-20 dark:invert",
+                imageSrc: "/agents/grok.svg",
+                showName: false,
+              },
+              {
+                name: "Pi",
+                imageClassName: "size-7",
+                imageSrc: "/agents/pi.svg",
+                showName: false,
+              },
+              {
+                name: "Cursor",
+                imageClassName: "h-6 w-24 dark:invert",
+                imageSrc: "/agents/cursor.svg",
+                showName: false,
+              },
+              {
+                name: "FX",
+                imageClassName: "size-6 dark:invert",
+                imageSrc: "/agents/fx.svg",
+                showName: false,
+              },
             ]}
-            slots={3}
-            subtext="Use the coding harness you already trust."
+            slots={6}
+            subtext={<>Use the coding harness you already trust. Claude Code <a className="underline underline-offset-4 hover:text-foreground" href="https://x.com/tomhacks/status/2093314914429362334" rel="noreferrer" target="_blank">not supported</a>.</>}
             title="Works with"
           />
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, lstatSync, readFileSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, lstatSync, readFileSync, readlinkSync, readdirSync, unlinkSync, writeFileSync, symlinkSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -141,7 +141,7 @@ export async function setup(
 
   if (skillsOnly) {
     setupSkills(root, detected);
-    console.log(`Dojofoo skill installed for: ${detected.join(", ")}`);
+    console.log("Dojofoo skill installed in .agents/skills/dojofoo.");
     return;
   }
 
@@ -290,26 +290,26 @@ function writeCanonicalSkill(root: string): void {
   writeFileSync(resolve(targetDir, "SKILL.md"), readFileSync(source, "utf8"));
 }
 
-export function setupSkills(root: string, agents: AgentName[]): void {
+export function setupSkills(root: string, _agents: AgentName[]): void {
   writeCanonicalSkill(root);
-  for (const agent of agents) {
-    mkdirSync(resolve(root, AGENTS[agent].dir, "skills"), { recursive: true });
-    symlinkCanonicalSkill(root, agent);
-  }
+  removeLegacySkillLinks(root);
 }
 
-function symlinkCanonicalSkill(root: string, agent: AgentName): void {
-  const targetParent = resolve(root, AGENTS[agent].dir, "skills");
-  const target = resolve(targetParent, "dojofoo");
-  const canonical = resolve(root, AGENTS_SKILLS_DIR, "dojofoo");
-  try {
-    const existing = lstatSync(target);
-    if (!existing.isSymbolicLink()) return;
-    unlinkSync(target);
-  } catch {
-    // The skill has not been installed for this agent yet.
+function removeLegacySkillLinks(root: string): void {
+  for (const agent of Object.keys(AGENTS) as AgentName[]) {
+    const directory = resolve(root, AGENTS[agent].dir, "skills");
+    if (!existsSync(directory)) continue;
+    for (const entry of readdirSync(directory)) {
+      const link = resolve(directory, entry);
+      try {
+        if (!lstatSync(link).isSymbolicLink()) continue;
+        const target = readlinkSync(link);
+        if (target.includes(".agents/skills/") || target.includes(`${DOJOS_DIR}/`)) unlinkSync(link);
+      } catch {
+        // Ignore links concurrently removed by another installer process.
+      }
+    }
   }
-  symlinkSync(relative(targetParent, canonical), target, "dir");
 }
 
 export function setupAgents(root: string, agents: AgentName[]): void {

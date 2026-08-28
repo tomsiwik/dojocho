@@ -5,7 +5,7 @@ describe("visibleTranscriptText", () => {
   it("removes the internal check resource marker from learner text", () => {
     expect(visibleTranscriptText({
       role: "user",
-      text: "[dojofoo://lessons/001-normalize-handle/checks/latest]Use the Dojofoo dojo_lesson_complete tool now.",
+      text: "[dojo://lessons/001-normalize-handle/checks/latest]Use the Dojofoo dojo_lesson_complete tool now.",
     })).toBe("Use the Dojofoo dojo_lesson_complete tool now.");
   });
 
@@ -23,7 +23,7 @@ describe("transcriptToUIMessages", () => {
     const messages = transcriptToUIMessages([
       { role: "assistant", kind: "message", text: "Try the first small step." },
       { role: "assistant", kind: "tool", text: JSON.stringify({ name: "dojo_lesson_verify", input: {}, output: { passed: 0, failed: 1, skipped: 0, total: 1, tests: [] } }) },
-      { role: "user", kind: "message", text: "[dojofoo://lessons/001-normalize-handle/checks/check-123]" },
+      { role: "user", kind: "message", text: "[dojo://lessons/001-normalize-handle/checks/check-123]" },
       { role: "assistant", kind: "message", text: "The first failure gives us a useful place to begin." },
     ], "session-1");
 

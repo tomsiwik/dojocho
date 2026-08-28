@@ -52,5 +52,5 @@ test("projects one native harness session through chat, checks, and recovery", a
   await expect(page.getByTestId("chat-pane")).toContainText(marker, { timeout: 120_000 });
   await expect(page.getByTestId("sensei-streaming-message").filter({ hasText: marker })).toHaveCount(1);
   await expect(page.getByTestId("chat-pane").getByText(/\d+ of \d+ tests passed/).last()).toBeVisible();
-  await expect(page.getByTestId("chat-pane")).not.toContainText("dojofoo://");
+  await expect(page.getByTestId("chat-pane")).not.toContainText("dojo://");
 });

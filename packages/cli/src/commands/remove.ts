@@ -25,23 +25,11 @@ export function remove(root: string, args: string[]): void {
   rmSync(dojoPath, { recursive: true, force: true });
 
   // Clean symlinks that pointed into the removed dojo
+  cleanDojoLinks(resolve(root, ".agents", "skills"), name);
   for (const agent of configuredAgents(root)) {
     const dir = AGENTS[agent].dir;
     for (const sub of ["commands", "skills"]) {
-      const subDir = resolve(root, dir, sub);
-      if (!existsSync(subDir)) continue;
-      for (const entry of readdirSync(subDir)) {
-        const link = resolve(subDir, entry);
-        try {
-          if (!lstatSync(link).isSymbolicLink()) continue;
-          const target = readlinkSync(link);
-          if (target.includes(`${DOJOS_DIR}/${name}/`) || target.includes(`${DOJOS_DIR}/${name}\\`)) {
-            unlinkSync(link);
-          }
-        } catch {
-          // skip
-        }
-      }
+      cleanDojoLinks(resolve(root, dir, sub), name);
     }
   }
 
@@ -58,4 +46,20 @@ export function remove(root: string, args: string[]): void {
   }
 
   console.log(`Dojo "${name}" removed.`);
+}
+
+function cleanDojoLinks(directory: string, dojo: string): void {
+  if (!existsSync(directory)) return;
+  for (const entry of readdirSync(directory)) {
+    const link = resolve(directory, entry);
+    try {
+      if (!lstatSync(link).isSymbolicLink()) continue;
+      const target = readlinkSync(link);
+      if (target.includes(`${DOJOS_DIR}/${dojo}/`) || target.includes(`${DOJOS_DIR}/${dojo}\\`)) {
+        unlinkSync(link);
+      }
+    } catch {
+      // Ignore links concurrently removed by another installer process.
+    }
+  }
 }

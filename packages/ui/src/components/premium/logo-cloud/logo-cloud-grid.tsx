@@ -16,6 +16,7 @@ import {
   Triangle,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { EASE_OUT } from "../../../lib/ease";
 import { cn } from "../../../lib/utils";
@@ -30,7 +31,7 @@ export type GridLogo = {
 
 export type LogoCloudGridProps = {
   title?: string;
-  subtext?: string;
+  subtext?: ReactNode;
   /** Pool to roll through; the grid shows `slots` at a time. */
   logos?: GridLogo[];
   slots?: number;
@@ -99,7 +100,7 @@ export function LogoCloudGrid({
         <div
           className={cn(
             "mt-10 grid grid-cols-2 overflow-hidden border border-dashed border-border/60",
-            count === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4",
+            count === 3 || count === 6 ? "sm:grid-cols-3" : "sm:grid-cols-4",
           )}
           onPointerEnter={() => {
             pausedRef.current = true;

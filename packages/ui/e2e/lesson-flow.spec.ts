@@ -24,7 +24,7 @@ test("keeps recovered chat history on the first cold session render", async ({ p
 
   const chat = page.getByTestId("chat-pane");
   await expect(chat).toContainText(expectedText!.replaceAll("`", "").slice(0, 80));
-  await expect(chat).not.toContainText("dojofoo://lessons/");
+  await expect(chat).not.toContainText("dojo://lessons/");
 });
 
 test("keeps a completed check turn before and after transcript recovery", async ({ page }) => {

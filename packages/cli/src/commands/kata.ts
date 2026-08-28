@@ -80,7 +80,7 @@ export function kata(root: string, args: string[]): void {
 
   switch (flag) {
     case "--start":
-      start(root);
+      startKata(root);
       break;
     case "--check":
     case "--test":
@@ -253,7 +253,7 @@ function smart(root: string, args: string[]): void {
   }
 }
 
-function start(root: string): void {
+export function startKata(root: string): void {
   const rc = readDojoRc(root);
 
   if (!rc.currentDojo) {

@@ -83,3 +83,27 @@ workspace.
 
 The model matrix is deliberately opt-in because it can be slow and expensive.
 Do not use it as the routine development gate.
+
+## Full-course harness matrix
+
+The contract matrix drives the complete three-lesson starter lifecycle through
+every supported harness identity. It verifies introduction, an initial failing
+check, a passing solution, completion, reload, and progression without invoking
+a model:
+
+```sh
+pnpm --filter @dojofoo/evals eval:course:contract
+```
+
+An authenticated ACP smoke matrix reuses the same journey. It is doubly gated
+so an ordinary test run cannot spend model credits:
+
+```sh
+DOJOFOO_LIVE_HARNESS_MATRIX=1 \
+DOJOFOO_LIVE_HARNESSES=codex,opencode \
+pnpm --filter @dojofoo/evals eval:course:live
+```
+
+Select only the harnesses you intend to pay for. Pi runs through the official
+`HarnessAgent`; the other harnesses run through the same ACP client as the local
+Dojofoo UI.
