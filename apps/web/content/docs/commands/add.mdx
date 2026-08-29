@@ -21,6 +21,8 @@ An `owner/repository` source is downloaded directly from a public GitHub reposit
 After a successful first install, the CLI reports the canonical public repository to
 the dojofoo API. The API fetches and validates its `dojo.yaml`, `dojo.yml`, or `dojo.json` itself before listing
 the dojo in the marketplace. Maintainers do not submit a registry pull request.
+Set `marketplace: false` in the repository manifest for private fixtures, starters, and other
+public repositories that should remain installable without appearing in the marketplace.
 
 - The source and content hash are recorded in `.dojos/<name>/.dojo-source.json`.
 - A checked-in `mise.toml` or `.mise.toml` is the portable environment contract.

@@ -166,4 +166,8 @@ export class LibsqlCourseStore {
         set: { snapshot: JSON.stringify(course) },
       });
   }
+
+  async remove(id: string): Promise<void> {
+    await this.db.delete(externalCourses).where(eq(externalCourses.id, id));
+  }
 }

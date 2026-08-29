@@ -118,6 +118,7 @@ export interface KataEntry {
 }
 
 export interface DojoManifest {
+  marketplace?: boolean;
   mode?: "katas";
   name: string;
   version: string;
@@ -134,6 +135,7 @@ export interface DojoManifest {
 }
 
 export interface InteractiveDojoManifest {
+  marketplace?: boolean;
   mode: "interactive";
   name: string;
   version: string;
@@ -270,6 +272,9 @@ export function validateManifest(data: unknown): string[] {
     if (obj.tags.some((tag) => facets.has(tag.toLocaleLowerCase()))) {
       errors.push('"tags" must not repeat "language" or "framework"');
     }
+  }
+  if ("marketplace" in obj && typeof obj.marketplace !== "boolean") {
+    errors.push('"marketplace" must be a boolean');
   }
 
   return errors;

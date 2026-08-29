@@ -92,6 +92,8 @@ describe("LibsqlCourseStore", () => {
     const reopened = await LibsqlCourseStore.fromClient(createClient(config));
 
     expect(await reopened.list()).toEqual([externalCourse]);
+    await reopened.remove(externalCourse.id);
+    expect(await reopened.list()).toEqual([]);
   });
 
   it("normalizes legacy snapshots that predate course facets", async () => {

@@ -16,7 +16,10 @@ const eventStore = database
   : new MemoryCourseEventStore();
 const courseStore = database ? await LibsqlCourseStore.create(database) : null;
 const registrar = new GitHubCourseRegistrar({
-  store: courseStore ?? { upsert: async () => undefined },
+  store: courseStore ?? {
+    remove: async () => undefined,
+    upsert: async () => undefined,
+  },
 });
 
 export default createCoursesApp({

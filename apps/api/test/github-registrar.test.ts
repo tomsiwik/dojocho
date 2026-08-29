@@ -23,6 +23,7 @@ describe("GitHubCourseRegistrar", () => {
       if (url.endsWith("/repos/acme/typescript-basics")) {
         return Response.json({
           private: false,
+          full_name: "acme/typescript-basics",
           default_branch: "main",
           pushed_at: "2026-08-11T10:00:00.000Z",
         });
@@ -47,7 +48,7 @@ describe("GitHubCourseRegistrar", () => {
     const saved: unknown[] = [];
     const registrar = new GitHubCourseRegistrar({
       fetch,
-      store: { upsert: async (value) => { saved.push(value); } },
+      store: { remove: async () => undefined, upsert: async (value) => { saved.push(value); } },
     });
 
     const registered = await registrar.register({
@@ -79,10 +80,10 @@ describe("GitHubCourseRegistrar", () => {
   });
 
   it("rejects private repositories", async () => {
-    const privateFetch = vi.fn(async () => Response.json({ private: true }));
+    const privateFetch = vi.fn(async () => Response.json({ private: true, full_name: "acme/private" }));
     const registrar = new GitHubCourseRegistrar({
       fetch: privateFetch,
-      store: { upsert: async () => undefined },
+      store: { remove: async () => undefined, upsert: async () => undefined },
     });
 
     expect(await registrar.register({ type: "github", repository: "acme/private" })).toBeNull();
@@ -107,7 +108,7 @@ describe("GitHubCourseRegistrar", () => {
     const fetch = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
       if (url.endsWith("/repos/acme/learn-python")) {
-        return Response.json({ private: false, default_branch: "main" });
+        return Response.json({ private: false, full_name: "acme/learn-python", default_branch: "main" });
       }
       if (url.includes("/git/trees/main?recursive=1")) {
         return Response.json({
@@ -120,7 +121,7 @@ describe("GitHubCourseRegistrar", () => {
     });
     const upsert = vi.fn();
 
-    const registered = await new GitHubCourseRegistrar({ fetch, store: { upsert } }).register({
+    const registered = await new GitHubCourseRegistrar({ fetch, store: { remove: async () => undefined, upsert } }).register({
       type: "github",
       repository: "acme/learn-python",
     });
@@ -134,7 +135,7 @@ describe("GitHubCourseRegistrar", () => {
     const fetch = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
       if (url.endsWith("/repos/acme/invalid")) {
-        return Response.json({ private: false, default_branch: "main" });
+        return Response.json({ private: false, full_name: "acme/invalid", default_branch: "main" });
       }
       if (url.includes("/git/trees/main?recursive=1")) {
         return Response.json({ sha: "invalid-sha", tree: [
@@ -155,10 +156,94 @@ describe("GitHubCourseRegistrar", () => {
     const upsert = vi.fn();
     const registrar = new GitHubCourseRegistrar({
       fetch,
-      store: { upsert },
+      store: { remove: async () => undefined, upsert },
     });
 
     expect(await registrar.register({ type: "github", repository: "acme/invalid" })).toBeNull();
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("canonicalizes a renamed GitHub repository and removes its stale alias", async () => {
+    const files = new Map([
+      ["dojo.json", JSON.stringify({
+        name: "@acme/starter-kata",
+        version: "0.0.1",
+        description: "Starter dojo.",
+        test: "true",
+        katas: [{ template: "katas/001/solution.ts" }],
+      })],
+    ]);
+    const fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/repos/acme/starter")) {
+        return Response.json({
+          private: false,
+          full_name: "acme/starter-kata",
+          default_branch: "main",
+        });
+      }
+      if (url.includes("/git/trees/main?recursive=1")) {
+        return Response.json({
+          sha: "canonical-sha",
+          tree: [{ path: "dojo.json", type: "blob", size: files.get("dojo.json")!.length }],
+        });
+      }
+      return url.endsWith("/dojo.json")
+        ? new Response(files.get("dojo.json"))
+        : new Response("missing", { status: 404 });
+    });
+    const remove = vi.fn();
+    const upsert = vi.fn();
+
+    const registered = await new GitHubCourseRegistrar({ fetch, store: { remove, upsert } }).register({
+      type: "github",
+      repository: "acme/starter",
+    });
+
+    expect(registered).toMatchObject({
+      id: "acme/starter-kata",
+      repository: "acme/starter-kata",
+      installUrl: "acme/starter-kata",
+    });
+    expect(remove).toHaveBeenCalledWith("acme/starter");
+    expect(upsert).toHaveBeenCalledWith(registered);
+  });
+
+  it("removes an opted-out repository from the marketplace", async () => {
+    const manifest = JSON.stringify({
+      marketplace: false,
+      name: "@acme/private-starter",
+      version: "0.0.1",
+      description: "A starter that should not be listed.",
+      test: "true",
+      katas: [{ template: "katas/001/solution.ts" }],
+    });
+    const fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/repos/acme/private-starter")) {
+        return Response.json({
+          private: false,
+          full_name: "acme/private-starter",
+          default_branch: "main",
+        });
+      }
+      if (url.includes("/git/trees/main?recursive=1")) {
+        return Response.json({ tree: [{ path: "dojo.json", type: "blob", size: manifest.length }] });
+      }
+      return url.endsWith("/dojo.json")
+        ? new Response(manifest)
+        : new Response("missing", { status: 404 });
+    });
+    const remove = vi.fn();
+    const upsert = vi.fn();
+
+    const registered = await new GitHubCourseRegistrar({ fetch, store: { remove, upsert } }).register({
+      type: "github",
+      repository: "acme/private-starter",
+    });
+
+    expect(registered).toBeNull();
+    expect(remove).toHaveBeenCalledWith("acme/private-starter");
     expect(upsert).not.toHaveBeenCalled();
   });
 });

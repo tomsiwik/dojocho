@@ -473,7 +473,7 @@ export function createCoursesApp(options: CoursesAppOptions = {}) {
             ? { integrity: body.source.integrity }
             : {}),
         }) ?? undefined;
-        if (registered && registered.id === body.courseId) {
+        if (registered) {
           course = registered;
           const existingIndex = registeredCourses.findIndex(
             (candidate) => candidate.id === registered.id,

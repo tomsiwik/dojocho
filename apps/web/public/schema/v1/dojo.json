@@ -35,6 +35,11 @@
       "description": "Human-readable description of what this dojo teaches.",
       "examples": ["Master Effect-TS through 40 hands-on katas"]
     },
+    "marketplace": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether installs may publish this public GitHub dojo to the dojo.foo marketplace."
+    },
     "test": {
       "type": "string",
       "minLength": 1,

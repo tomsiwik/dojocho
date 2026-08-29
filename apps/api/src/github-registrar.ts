@@ -6,6 +6,7 @@ import type {
 import { parse as parseYaml } from "yaml";
 
 interface CourseSnapshotStore {
+  remove(id: string): Promise<void>;
   upsert(course: Course): Promise<void>;
 }
 
@@ -16,6 +17,7 @@ interface GitHubCourseRegistrarOptions {
 
 interface GitHubRepository {
   private?: boolean;
+  full_name?: string;
   default_branch?: string;
   pushed_at?: string;
 }
@@ -26,6 +28,7 @@ interface GitHubTree {
 }
 
 interface ExternalManifest {
+  marketplace?: boolean;
   mode?: "katas" | "interactive";
   name: string;
   version: string;
@@ -59,6 +62,7 @@ function parseExternalManifest(contents: string, path: string): ExternalManifest
     || (value.author !== undefined && typeof value.author !== "string")
     || (value.language !== undefined && typeof value.language !== "string")
     || (value.framework !== undefined && typeof value.framework !== "string")
+    || (value.marketplace !== undefined && typeof value.marketplace !== "boolean")
     || (value.tags !== undefined
       && (!Array.isArray(value.tags) || value.tags.some((tag) => typeof tag !== "string")))
     || (mode === "katas" && typeof value.test !== "string")
@@ -117,8 +121,6 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
 
   async register(source: CourseRegistrationSource): Promise<Course | null> {
     if (!repositoryPattern.test(source.repository)) return null;
-    const [owner, repositoryName] = source.repository.split("/") as [string, string];
-
     try {
       const repositoryResponse = await this.#fetch(
         `https://api.github.com/repos/${source.repository}`,
@@ -126,7 +128,11 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
       );
       if (!repositoryResponse.ok) return null;
       const repository = await repositoryResponse.json() as GitHubRepository;
-      if (repository.private || !repository.default_branch) return null;
+      if (repository.private || !repository.default_branch || !repository.full_name) return null;
+
+      const canonicalRepository = repository.full_name;
+      if (!repositoryPattern.test(canonicalRepository)) return null;
+      const [canonicalOwner, canonicalRepositoryName] = canonicalRepository.split("/") as [string, string];
 
       const branch = repository.default_branch;
       const treeResponse = await this.#fetch(
@@ -164,22 +170,29 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
       const manifestText = files.find((file) => file.path === manifestPath)?.contents;
       if (!manifestText) return null;
       const manifest = parseExternalManifest(manifestText, manifestPath);
+      if (manifest.marketplace === false) {
+        await Promise.all([
+          this.#store.remove(canonicalRepository),
+          ...(canonicalRepository === source.repository ? [] : [this.#store.remove(source.repository)]),
+        ]);
+        return null;
+      }
       const katas = (manifest.katas ?? []).map((kata) => kataName(kata.template, kata.name));
       const course: Course = {
-        id: source.repository,
-        slug: repositoryName,
+        id: canonicalRepository,
+        slug: canonicalRepositoryName,
         name: displayName(manifest.name, files),
-        source: owner,
+        source: canonicalOwner,
         description: manifest.description,
         version: manifest.version,
         publishedAt: repository.pushed_at ?? new Date().toISOString(),
-        repository: source.repository,
-        repositoryUrl: `https://github.com/${source.repository}`,
+        repository: canonicalRepository,
+        repositoryUrl: `https://github.com/${canonicalRepository}`,
         installs: 0,
         sourceType: "github",
-        installUrl: source.repository,
-        url: `https://dojo.foo/courses/${source.repository}`,
-        author: manifest.author ?? owner,
+        installUrl: canonicalRepository,
+        url: `https://dojo.foo/courses/${canonicalRepository}`,
+        author: manifest.author ?? canonicalOwner,
         language: manifest.language ?? "Other",
         framework: manifest.framework ?? null,
         tags: [...new Set(manifest.tags ?? [])],
@@ -189,6 +202,7 @@ export class GitHubCourseRegistrar implements CourseRegistrar {
         files,
         mode: manifest.mode ?? "katas",
       };
+      if (canonicalRepository !== source.repository) await this.#store.remove(source.repository);
       await this.#store.upsert(course);
       return course;
     } catch {
