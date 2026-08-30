@@ -6,11 +6,12 @@ import { z } from "zod";
 
 const root = process.env.DOJO_PROJECT_ROOT;
 const cli = process.env.DOJO_CLI;
+const profile = process.env.DOJOFOO_TOOL_PROFILE ?? "lesson";
 if (!root || !cli) throw new Error("DOJO_PROJECT_ROOT and DOJO_CLI are required");
 
 const server = new McpServer({ name: "dojofoo-lesson", version: "0.1.0" });
 
-server.registerTool(lessonCapabilities.check.tool, {
+if (profile === "lesson") server.registerTool(lessonCapabilities.check.tool, {
   description: lessonCapabilities.check.description,
   inputSchema: {},
 }, async () => {
@@ -29,7 +30,7 @@ server.registerTool(lessonCapabilities.check.tool, {
   }
 });
 
-server.registerTool(lessonCapabilities.context.tool, {
+if (profile === "lesson") server.registerTool(lessonCapabilities.context.tool, {
   description: lessonCapabilities.context.description,
   inputSchema: {},
 }, async () => {
@@ -60,7 +61,7 @@ server.registerTool(uiCapabilities.ask.tool, {
   };
 });
 
-server.registerTool(uiCapabilities.show.tool, {
+if (profile === "lesson") server.registerTool(uiCapabilities.show.tool, {
   description: uiCapabilities.show.description,
   inputSchema: { fragmentId: z.string() },
 }, async ({ fragmentId }) => {
@@ -72,7 +73,7 @@ server.registerTool(uiCapabilities.show.tool, {
   };
 });
 
-server.registerTool(lessonCapabilities.complete.tool, {
+if (profile === "lesson") server.registerTool(lessonCapabilities.complete.tool, {
   description: lessonCapabilities.complete.description,
   inputSchema: {},
 }, async () => {

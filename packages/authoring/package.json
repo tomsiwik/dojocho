@@ -1,0 +1,28 @@
+{
+  "name": "@dojofoo/authoring",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./scaffold": "./src/scaffold.ts",
+    "./files": "./src/server/files.ts",
+    "./server": "./src/server/routes.ts",
+    "./service": "./src/server/service.ts",
+    "./types": "./src/server/types.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dojofoo/config": "workspace:*",
+    "hono": "^4.13.1",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "6.0.3",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

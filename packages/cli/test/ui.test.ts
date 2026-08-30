@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { resolveUiEntry } from "../src/commands/ui";
+import { resolveUiEntry, resolveUiOpenPath } from "../src/commands/ui";
 
 const temporaryRoots: string[] = [];
 
@@ -15,6 +15,11 @@ afterEach(() => {
 });
 
 describe("bundled dojo UI", () => {
+  it("opens authoring inside the same Portless UI", () => {
+    expect(resolveUiOpenPath(["--authoring"])).toBe("/authoring");
+    expect(resolveUiOpenPath([])).toBe("");
+  });
+
   it("resolves the production server from an installed CLI package", () => {
     const root = mkdtempSync(join(tmpdir(), "dojo-packed-ui-"));
     temporaryRoots.push(root);

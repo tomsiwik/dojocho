@@ -29,6 +29,7 @@ Commands:
   remove <name>       Remove a dojo
   ui [--background]   Start or control the lesson UI
   track               Record the active agent session as a cassette
+  kyoshi              Create or resume a dojo authoring workspace
 
 Flags:
   --test/--check      Show overall progress
@@ -39,6 +40,7 @@ Flags:
 UI flags:
   prompt              Show a structured prompt in the current lesson UI
   --skill             Print agent instructions for controlling the UI
+  --authoring         Open the current workspace in Kyoshi authoring mode
   --background        Keep the UI daemon running after this command exits
   --no-open           Print the URL without opening a browser
   --name <name>       Set the Portless subdomain (default URL: https://dojo.localhost)

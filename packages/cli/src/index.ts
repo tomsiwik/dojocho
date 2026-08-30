@@ -11,6 +11,7 @@ import { status } from "./commands/status";
 import { ui } from "./commands/ui";
 import { track } from "./commands/track";
 import { update } from "./commands/update";
+import { kyoshi } from "./commands/kyoshi";
 import { flushCourseEvents } from "./telemetry";
 import { bootstrapMise } from "./mise-bootstrap";
 import { miseConfigPath } from "@dojofoo/config/project-preparation";
@@ -61,6 +62,8 @@ async function main() {
     await ui(findProjectRoot(), args);
   } else if (command === "track") {
     track(findProjectRoot(), args);
+  } else if (command === "kyoshi") {
+    await kyoshi(process.cwd(), args);
   } else {
     // Everything else is root-level flags
     root(process.cwd(), [command, ...args].filter(Boolean));

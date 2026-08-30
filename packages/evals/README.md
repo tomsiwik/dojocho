@@ -4,6 +4,17 @@ This package runs teaching scenarios through AI SDK `HarnessAgent`. It is
 separate from the production lesson server so prompt experiments cannot change
 live behavior accidentally.
 
+The Kyoshi benchmark starts from the blank authoring scaffold and asks a real
+harness to produce one complete kata lesson. It scores manifest validity,
+course/lesson separation, checks, learner-persona eval coverage, solution
+withholding, and the visible authoring handoff:
+It then simulates a human editing learner material in the UI and verifies that
+Kyoshi reads the changed file before advising without exposing transport context.
+
+```sh
+DOJOFOO_EVAL_HARNESS=codex pnpm --filter @dojofoo/evals eval:authoring
+```
+
 The first scenario assembles:
 
 1. the internal lesson-runtime `DOJOFOO.md` platform contract;

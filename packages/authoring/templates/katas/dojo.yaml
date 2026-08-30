@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://dojo.foo/schema/v1/dojo.json
+mode: katas
+name: "@dojofoo/template-katas"
+version: 0.0.1
+description: ""
+language: ""
+test: npx vitest run {template}
+katas: []

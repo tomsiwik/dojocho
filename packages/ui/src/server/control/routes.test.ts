@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   listSessions,
   observeLocalContext,
+  observeWorkspacePath,
   recordDojoLifecycle,
 } from "@dojofoo/config/local-state";
 import { buildControlRoutes } from "./routes";
@@ -42,6 +43,23 @@ function fixture() {
 }
 
 describe("local control-plane API", () => {
+  it("lists resumable Kyoshi drafts without requiring an installed dojo", async () => {
+    const root = mkdtempSync(join(tmpdir(), "dojofoo-authoring-workspace-"));
+    const stateHome = mkdtempSync(join(tmpdir(), "dojofoo-authoring-home-"));
+    temporaryPaths.push(root, stateHome);
+    mkdirSync(resolve(root, ".dojo"), { recursive: true });
+    writeFileSync(resolve(root, ".dojo", "kyoshi.json"), JSON.stringify({ sessionId: "kyoshi-1" }));
+    writeFileSync(resolve(root, "dojo.yaml"), "mode: katas\nname: typescript-patterns\ndescription: Practice TS patterns.\n");
+    const workspaceId = observeWorkspacePath(root, { stateHome, now: 100 });
+
+    const response = await buildControlRoutes({ stateHome, now: 200 }).request("/authoring");
+
+    expect(await response.json()).toEqual([expect.objectContaining({
+      workspaceId,
+      name: "typescript-patterns",
+      sessionId: "kyoshi-1",
+    })]);
+  });
   it("lists a freshly installed kata course before its first attempt", async () => {
     const { root, stateHome } = fixture();
     writeFileSync(resolve(root, ".dojorc"), JSON.stringify({

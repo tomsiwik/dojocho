@@ -10,6 +10,7 @@ import { courseMode, readCourseManifest, readDojoRc, type KataProgress } from "@
 import { Hono } from "hono";
 import { readFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
 import {
   adoptLocalSession,
   SessionAdoptionError,
@@ -105,6 +106,23 @@ export function buildControlRoutes(options: ControlRouteOptions = {}) {
       return c.json(courses);
     })
     .get("/workspaces", (c) => c.json(listWorkspaces(stateOptions())))
+    .get("/authoring", (c) => c.json(listWorkspaces(stateOptions()).flatMap((workspace) => {
+      try {
+        const thread = JSON.parse(readFileSync(resolve(workspace.path, ".dojo", "kyoshi.json"), "utf8")) as { sessionId?: string };
+        const manifest = readCourseManifestSource(workspace.path);
+        return [{
+          workspaceId: workspace.id,
+          path: workspace.path,
+          name: String(manifest.name ?? basename(workspace.path)),
+          description: String(manifest.description ?? "Course draft"),
+          mode: String(manifest.mode ?? "katas"),
+          sessionId: thread.sessionId ?? null,
+          lastSeenAt: workspace.lastSeenAt,
+        }];
+      } catch {
+        return [];
+      }
+    }).sort((left, right) => right.lastSeenAt - left.lastSeenAt)))
     .get("/runs", (c) => {
       const status = c.req.query("status");
       const runs = listDojoRuns(stateOptions()).filter((run) => {
@@ -146,6 +164,10 @@ export function buildControlRoutes(options: ControlRouteOptions = {}) {
 }
 
 export const controlRoutes = buildControlRoutes();
+
+function readCourseManifestSource(root: string): Record<string, unknown> {
+  return parseYaml(readFileSync(resolve(root, "dojo.yaml"), "utf8")) as Record<string, unknown>;
+}
 
 function courseMetadata(
   root: string,

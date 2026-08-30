@@ -3,7 +3,7 @@ import { fetchServerSentEvents, useChat, type UIMessage } from "@tanstack/ai-rea
 import type { ThinkingPart, ToolCallPart } from "@tanstack/ai-client";
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { BundledLanguage } from "shiki";
-import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, Loader2, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Undo2, XCircle } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Check, CheckCircle2, Circle, CircleDot, Loader2, LockKeyhole, Plus, RotateCcw, Save as SaveIcon, Star, Undo2, XCircle } from "lucide-react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { CodeBlock, CodeBlockCopyButton } from "@/components/ai-elements/code-block";
 import { CourseContent } from "@/components/course-content";
@@ -85,6 +85,7 @@ type CourseGroup = {
   dojo: string;
   workspaces: ActiveCourse[];
 };
+type AuthoringDraft = { workspaceId: string; name: string; description: string; mode: string; lastSeenAt: number };
 
 type LessonCheckEvent = {
   lesson: LessonSnapshot;
@@ -105,6 +106,7 @@ function CourseIndex() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<ActiveCourse[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+  const [drafts, setDrafts] = useState<AuthoringDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
@@ -121,6 +123,12 @@ function CourseIndex() {
       .then(setCourses)
       .catch((cause: Error) => setError(cause.message))
       .finally(() => setCoursesLoading(false));
+  }, []);
+  useEffect(() => {
+    fetch("/api/control/authoring")
+      .then((response) => response.ok ? response.json() as Promise<AuthoringDraft[]> : [])
+      .then(setDrafts)
+      .catch(() => setDrafts([]));
   }, []);
 
   const groups = groupCourses(courses);
@@ -211,7 +219,24 @@ function CourseIndex() {
               </Select>
             </div>
             {error && <p className="mt-8 border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-300">{error}</p>}
-            {!coursesLoading && !error && visibleCourses.length === 0 ? (
+            {drafts.length > 0 ? (
+              <section className="mt-10">
+                <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-orange-400">In authoring</p>
+                <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  {drafts.map((draft) => (
+                    <a className="group relative flex min-h-[10.5rem] flex-col overflow-hidden border border-orange-500/60 bg-surface-1 p-5 transition-colors hover:border-orange-400" href={`/authoring?workspace=${encodeURIComponent(draft.workspaceId)}`} key={draft.workspaceId}>
+                      <span className="absolute right-0 top-0 h-0 w-0 border-l-[42px] border-t-[42px] border-l-transparent border-t-orange-500" />
+                      <Star className="absolute right-1.5 top-1.5 size-3.5 fill-background text-background" />
+                      <p className="font-display text-xs font-medium uppercase tracking-[0.14em] text-orange-400">{draft.mode}</p>
+                      <h2 className="mt-3 font-display text-xl font-medium">{humanTitle(draft.name)}</h2>
+                      <p className="mt-2 font-prose text-sm text-muted-foreground">{draft.description || "Course draft"}</p>
+                      <span className="mt-auto flex items-center justify-between pt-5 text-xs text-muted-foreground">Resume authoring <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            {!coursesLoading && !error && visibleCourses.length === 0 && drafts.length === 0 ? (
               <EmptyStateBoard
                 actionLabel="Browse dojos"
                 className="mt-10"

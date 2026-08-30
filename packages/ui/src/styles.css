@@ -180,3 +180,23 @@
 .dojo-theme-dark .dojo-brand-logo {
     color: #ffffff !important;
 }
+
+.authoring-markdown[data-typist-editor] {
+    min-height: 100%;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.authoring-markdown[data-typist-editor] > * + * { margin-top: 0.75rem; }
+.authoring-markdown[data-typist-editor] :is(h1, h2, h3) {
+    font-family: var(--font-display);
+    font-weight: 500;
+    line-height: 1.2;
+}
+.authoring-markdown[data-typist-editor] h1 { font-size: 1.875rem; }
+.authoring-markdown[data-typist-editor] h2 { font-size: 1.5rem; }
+.authoring-markdown[data-typist-editor] h3 { font-size: 1.25rem; }
+.authoring-markdown[data-typist-editor] :is(ul, ol) { padding-left: 1.5rem; }
+.authoring-markdown[data-typist-editor] ul { list-style: disc; }
+.authoring-markdown[data-typist-editor] ol { list-style: decimal; }
+.authoring-markdown[data-typist-editor] code { font-family: var(--font-mono); }

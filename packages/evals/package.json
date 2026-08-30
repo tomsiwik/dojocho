@@ -9,6 +9,7 @@
     "eval:course:contract": "vitest run src/full-course-scenario.test.ts",
     "eval:course:live": "tsx src/live-course-matrix.ts",
     "eval:all": "pnpm eval:introduction:opencode && pnpm eval:lifecycle && pnpm eval:transformation",
+    "eval:authoring": "tsx src/authoring.ts",
     "eval:lifecycle": "tsx src/lifecycle.ts",
     "eval:matrix": "tsx src/model-matrix.ts",
     "eval:transformation": "tsx src/transformation.ts",
@@ -16,12 +17,15 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
+    "@dojofoo/authoring": "workspace:*",
+    "@dojofoo/config": "workspace:*",
     "@dojofoo/protocol": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@ai-sdk/harness": "1.0.85",
     "@ai-sdk/harness-pi": "1.0.87",
     "@ai-sdk/sandbox-just-bash": "1.0.85",
-    "ai": "^7.0.77"
+    "ai": "^7.0.77",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

@@ -177,6 +177,16 @@ export function listWorkspaces(options: LocalStateOptions = {}): LocalWorkspace[
   `);
 }
 
+/** Register a filesystem workspace without requiring an installed dojo. */
+export function observeWorkspacePath(root: string, options: LocalStateOptions = {}): string {
+  const db = openDatabase(options);
+  try {
+    return observeWorkspace(db, root, options.now ?? Date.now());
+  } finally {
+    db.close();
+  }
+}
+
 export function listDojoRuns(options: LocalStateOptions = {}): LocalDojoRun[] {
   return readRows<LocalDojoRun>(options, `
     SELECT id, workspace_id AS workspaceId, dojo, started_at AS startedAt,

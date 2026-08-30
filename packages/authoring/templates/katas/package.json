@@ -1,0 +1,17 @@
+{
+  "name": "@dojofoo/template-katas",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eval": "tsx evals/run.ts",
+    "lesson:check": "vitest run src",
+    "test": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.20.6",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

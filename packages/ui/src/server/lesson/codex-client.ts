@@ -60,6 +60,8 @@ type RuntimeConfiguration = {
   developerInstructions: string;
   lessonContext?: () => Promise<unknown> | unknown;
   lessonFragment?: (fragmentId: string) => Promise<{ fragmentId: string }> | { fragmentId: string };
+  lessonTools?: boolean;
+  toolProfile?: "lesson" | "authoring" | "none";
 };
 
 interface AcpRuntime {
@@ -147,7 +149,7 @@ export class AcpClient {
     const connection = await this.ensureRuntime(configuration);
     const session = await connection.newSession({
       cwd: configuration.root,
-      mcpServers: lessonMcpServers(configuration.root, this.runtime(configuration.runtimeKey).capability),
+      mcpServers: dojoMcpServers(configuration.root, this.runtime(configuration.runtimeKey).capability, toolProfile(configuration)),
     });
     const configured = await this.runtime(configuration.runtimeKey).adapter.configureSession(
       connection,
@@ -193,7 +195,7 @@ export class AcpClient {
     const loading = connection.loadSession({
       sessionId: threadId,
       cwd: root,
-      mcpServers: lessonMcpServers(root, runtime.capability),
+      mcpServers: dojoMcpServers(root, runtime.capability, toolProfile(resolvedConfiguration)),
     }).then(async (response) => {
       const configured = await runtime.adapter.configureSession(connection, threadId, response.configOptions);
       this.sessionConfigOptions.set(threadId, configured ?? response.configOptions ?? []);
@@ -820,7 +822,13 @@ function findTestReport(value: unknown): unknown | null {
   return null;
 }
 
-function lessonMcpServers(root: string, capability: string): acp.McpServer[] {
+function toolProfile(configuration: RuntimeConfiguration): "lesson" | "authoring" | "none" {
+  if (configuration.toolProfile) return configuration.toolProfile;
+  return configuration.lessonTools === false ? "none" : "lesson";
+}
+
+function dojoMcpServers(root: string, capability: string, profile: "lesson" | "authoring" | "none"): acp.McpServer[] {
+  if (profile === "none") return [];
   const serverEntry = process.argv[1];
   const bundledCli = serverEntry ? resolve(dirname(serverEntry), "..", "..", "index.js") : "";
   const cli = process.env.DOJO_CLI ?? (bundledCli && existsSync(bundledCli) ? bundledCli : undefined);
@@ -837,6 +845,7 @@ function lessonMcpServers(root: string, capability: string): acp.McpServer[] {
       { name: "DOJO_SKIP_PREPARE", value: "1" },
       { name: "DOJOFOO_RUN_CAPABILITY", value: capability },
       { name: "DOJOFOO_COORDINATOR_URL", value: `http://127.0.0.1:${process.env.PORT ?? "4567"}` },
+      { name: "DOJOFOO_TOOL_PROFILE", value: profile },
     ],
   }];
 }

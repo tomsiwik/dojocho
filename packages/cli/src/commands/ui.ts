@@ -23,6 +23,7 @@ export async function ui(cwd: string, args: string[]): Promise<void> {
   }
   const background = args.includes("--background");
   const shouldOpen = !args.includes("--no-open");
+  const openPath = resolveUiOpenPath(args);
   const tld = valueAfter(args, "--tld");
   const port = valueAfter(args, "--port") ?? process.env.PORT ?? process.env.DOJO_UI_PORT ?? "4567";
   if (!/^\d+$/u.test(port) || Number(port) < 1 || Number(port) > 65_535) {
@@ -47,7 +48,7 @@ export async function ui(cwd: string, args: string[]): Promise<void> {
         if (fellBack) return;
         fellBack = true;
         console.warn(`Portless ${reason}; falling back to http://localhost:${port}.`);
-        startDirectUi({ cwd, uiEntry, port, background, shouldOpen });
+        startDirectUi({ cwd, uiEntry, port, background, shouldOpen, openPath });
       };
       child.once("error", (error) => fallback(`could not start (${error.message})`));
       child.once("exit", (code) => {
@@ -55,7 +56,8 @@ export async function ui(cwd: string, args: string[]): Promise<void> {
       });
       setTimeout(() => {
         if (fellBack) return;
-        const url = activePortlessUrl(name);
+        const baseUrl = activePortlessUrl(name);
+        const url = baseUrl ? `${baseUrl}${openPath}` : null;
         if (url) {
           console.log(url);
           if (shouldOpen) openBrowser(url);
@@ -69,12 +71,12 @@ export async function ui(cwd: string, args: string[]): Promise<void> {
     }
     relayExit(child, () => {
       console.warn(`Portless failed; falling back to http://localhost:${port}.`);
-      startDirectUi({ cwd, uiEntry, port, background, shouldOpen });
+      startDirectUi({ cwd, uiEntry, port, background, shouldOpen, openPath });
     });
     return;
   }
 
-  startDirectUi({ cwd, uiEntry, port, background, shouldOpen });
+  startDirectUi({ cwd, uiEntry, port, background, shouldOpen, openPath });
 }
 
 function startDirectUi(input: {
@@ -83,9 +85,10 @@ function startDirectUi(input: {
   port: string;
   background: boolean;
   shouldOpen: boolean;
+  openPath: string;
 }): void {
-  const { cwd, uiEntry, port, background, shouldOpen } = input;
-  const url = `http://localhost:${port}`;
+  const { cwd, uiEntry, port, background, shouldOpen, openPath } = input;
+  const url = `http://localhost:${port}${openPath}`;
   const pidFile = directUiPidFile(port);
   replaceDirectDaemon(pidFile, uiEntry);
   console.log(url);
@@ -179,6 +182,10 @@ function relayExit(child: ReturnType<typeof spawn>, onFailure?: () => void): voi
 function valueAfter(args: string[], flag: string): string | undefined {
   const index = args.indexOf(flag);
   return index >= 0 ? args[index + 1] : undefined;
+}
+
+export function resolveUiOpenPath(args: string[]): string {
+  return args.includes("--authoring") ? "/authoring" : "";
 }
 
 export function resolveUiEntry(moduleUrl = import.meta.url): string | null {

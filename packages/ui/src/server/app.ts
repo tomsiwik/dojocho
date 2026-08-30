@@ -14,6 +14,7 @@ import { lessonRoutes } from "./lesson/routes";
 import { runRoutes } from "./run/routes";
 import { controlRoutes } from "./control/routes";
 import { interactiveRoutes } from "./interactive/routes";
+import { authoringRoutes } from "./authoring";
 
 /**
  * Construct the Hono app that owns all A2A routes.
@@ -79,6 +80,7 @@ function buildApp() {
   app.route("/api/run-command", runRoutes);
   app.route("/api/control", controlRoutes);
   app.route("/api/interactive", interactiveRoutes);
+  app.route("/api/authoring", authoringRoutes);
   // A2A endpoints.
   app.get("/.well-known/agent-card.json", honoAgentCardHandler(requestHandler));
   app.post("/api/a2a/jsonrpc", honoJsonRpcHandler(requestHandler));

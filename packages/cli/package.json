@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@agentclientprotocol/codex-acp": "^1.4.0",
+    "@dojofoo/authoring": "workspace:*",
     "@dojofoo/config": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "giget": "^3.3.1",
@@ -58,6 +59,7 @@
   "devDependencies": {
     "@dojofoo/protocol": "workspace:*",
     "@dojofoo/ui": "workspace:*",
+    "yaml": "^2.9.0",
     "tsup": "^8.0.0",
     "vitest": "^4.1.10"
   }
