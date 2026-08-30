@@ -36,7 +36,7 @@ const PARTICLE_SHAPES: readonly ParticleShape[] = [
 const PARTICLE_RADIUS = 4;
 const PARTICLE_POOL_SIZE = 16;
 const COMPOSED_BURST_CAPACITY = 6;
-type CompositionControls = {
+type ConfettiControls = {
   angleSpread: number;
   curvatureMax: number;
   curvatureMin: number;
@@ -44,8 +44,12 @@ type CompositionControls = {
   durationMin: number;
   direction: number;
   particleCount: number;
+  particleSizeMax: number;
+  particleSizeMin: number;
   radiusMax: number;
   radiusMin: number;
+  rotationSpeedMax: number;
+  rotationSpeedMin: number;
 };
 
 type ParticleGeometry = {
@@ -108,7 +112,7 @@ function buttonStyle(surface: string, text: string): CSSProperties {
   } as CSSProperties;
 }
 
-function CenterOutButton({
+export function Confetti({
   angle,
   children,
   composed = false,
@@ -122,7 +126,7 @@ function CenterOutButton({
   angle: number;
   children: string;
   composed?: boolean;
-  composition: CompositionControls;
+  composition: ConfettiControls;
   curvature: number;
   radius: number;
   rotate: "auto" | "auto-reverse" | "none";
@@ -204,8 +208,20 @@ function CenterOutButton({
     motionAnimation.setAttribute("path", particlePath(geometry.current!, particle));
     motionAnimation.setAttribute("rotate", particle.rotate === "none" ? "0" : particle.rotate);
     scaleAnimation.setAttribute("dur", `${particle.duration}ms`);
+    const initialScale = randomBetween(
+      composition.particleSizeMin,
+      composition.particleSizeMax,
+    ) / (PARTICLE_RADIUS * 2);
+    const launchScale = initialScale + (0.125 - initialScale) * 0.22;
+    scaleAnimation.setAttribute(
+      "values",
+      `${initialScale};${launchScale};0.125`,
+    );
     spinAnimation?.setAttribute("dur", `${particle.duration}ms`);
-    spinAnimation?.setAttribute("to", String(particle.spins * 360));
+    spinAnimation?.setAttribute(
+      "values",
+      `0;${particle.spins * 79.2};${particle.spins * 360}`,
+    );
     group.setAttribute("visibility", "visible");
     motionAnimation.addEventListener("endEvent", () => {
       if (generations.current[slot] === generation) {
@@ -223,14 +239,18 @@ function CenterOutButton({
     const initialShape = PARTICLE_SHAPES.indexOf(shape);
     if (!composed) {
       const emission = nextParticle.current;
+      const duration = 650;
       emit({
         angle,
         curvature,
-        duration: 650,
+        duration,
         radius,
         rotate,
         shape: PARTICLE_SHAPES[(initialShape + emission) % PARTICLE_SHAPES.length],
-        spins,
+        spins: randomBetween(
+          composition.rotationSpeedMin,
+          composition.rotationSpeedMax,
+        ) * duration / 1000,
       });
       return;
     }
@@ -241,6 +261,10 @@ function CenterOutButton({
       const emittedShape = PARTICLE_SHAPES[
         Math.floor(Math.random() * PARTICLE_SHAPES.length)
       ];
+      const duration = randomBetween(
+        composition.durationMin,
+        composition.durationMax,
+      );
       emit({
         // Randomize within evenly distributed sectors. Every burst changes while
         // retaining coverage across the requested spread instead of clustering.
@@ -248,11 +272,14 @@ function CenterOutButton({
           ? composition.direction
           : angleStart + (index + Math.random()) * angleStep,
         curvature: randomBetween(composition.curvatureMin, composition.curvatureMax),
-        duration: randomBetween(composition.durationMin, composition.durationMax),
+        duration,
         radius: randomBetween(composition.radiusMin, composition.radiusMax),
         rotate: emittedShape.startsWith("triangle") ? "auto" : "none",
         shape: emittedShape,
-        spins: randomBetween(-1.5, 1.5),
+        spins: randomBetween(
+          composition.rotationSpeedMin,
+          composition.rotationSpeedMax,
+        ) * duration / 1000,
       });
     }
   };
@@ -319,6 +346,8 @@ function CenterOutButton({
               dur="650ms"
               fill="freeze"
               id={motionId}
+              keyPoints="0;0.22;1"
+              keyTimes="0;0.2;1"
               path={path.current}
               ref={(node) => {
                 motionAnimations.current[slot] = node as SVGAnimationElement | null;
@@ -333,13 +362,13 @@ function CenterOutButton({
                 calcMode="linear"
                 dur="650ms"
                 fill="freeze"
-                from="0"
+                keyTimes="0;0.2;1"
                 ref={(node) => {
                   spinAnimations.current[slot] = node as SVGAnimationElement | null;
                 }}
                 restart="always"
-                to={String(spins * 360)}
                 type="rotate"
+                values={`0;${spins * 79.2};${spins * 360}`}
               />
               <g>
                 <use
@@ -354,13 +383,13 @@ function CenterOutButton({
                   calcMode="linear"
                   dur="650ms"
                   fill="freeze"
-                  from="1"
+                  keyTimes="0;0.2;1"
                   ref={(node) => {
                     scaleAnimations.current[slot] = node as SVGAnimationElement | null;
                   }}
                   restart="always"
-                  to="0.125"
                   type="scale"
+                  values="1;0.8075;0.125"
                 />
               </g>
             </g>
@@ -378,17 +407,22 @@ function CenterOutButton({
 }
 
 const meta = {
-  title: "Motion/Button Animations",
+  title: "Components/Button",
+  excludeStories: ["Confetti"],
   args: {
-    angleSpread: 56,
-    curvatureMax: 18,
-    curvatureMin: -18,
-    durationMax: 440,
-    durationMin: 260,
+    angleSpread: 245,
+    curvatureMax: 12,
+    curvatureMin: -8,
+    durationMax: 500,
+    durationMin: 300,
     direction: -90,
-    particleCount: 8,
-    radiusMax: 58,
-    radiusMin: 40,
+    particleCount: 12,
+    particleSizeMax: 14,
+    particleSizeMin: 10,
+    radiusMax: 48,
+    radiusMin: 32,
+    rotationSpeedMax: 0.75,
+    rotationSpeedMin: -0.75,
   },
   argTypes: {
     angleSpread: {
@@ -407,17 +441,33 @@ const meta = {
       control: { max: 32, min: 1, step: 1, type: "range" },
       description: "Particles emitted by each composed click.",
     },
+    particleSizeMax: {
+      control: { max: 24, min: 4, step: 1, type: "range" },
+      description: "Largest initial particle diameter in pixels.",
+    },
+    particleSizeMin: {
+      control: { max: 24, min: 4, step: 1, type: "range" },
+      description: "Smallest initial particle diameter in pixels.",
+    },
     radiusMax: { control: { max: 120, min: 24, step: 4, type: "range" } },
     radiusMin: { control: { max: 96, min: 8, step: 4, type: "range" } },
+    rotationSpeedMax: {
+      control: { max: 8, min: -8, step: 0.25, type: "range" },
+      description: "Maximum randomized rotation in turns per second.",
+    },
+    rotationSpeedMin: {
+      control: { max: 8, min: -8, step: 0.25, type: "range" },
+      description: "Minimum randomized rotation in turns per second.",
+    },
   },
   parameters: { layout: "centered" },
-} satisfies Meta<CompositionControls>;
+} satisfies Meta<ConfettiControls>;
 
 export default meta;
 
-type Story = StoryObj<CompositionControls>;
+type Story = StoryObj<ConfettiControls>;
 
-export const ColoredButtons: Story = {
+export const ConfettiStory: Story = {
   render: (composition) => (
     <main className="bg-background p-16 text-foreground">
       <div className="grid gap-12">
@@ -430,7 +480,7 @@ export const ColoredButtons: Story = {
             <div className="flex items-center gap-10">
               {COLORS.map(({ angle, curvature, label, radius, rotate, shape, spins, surface, text }) => (
                 <div key={label} style={buttonStyle(surface, text)}>
-                  <CenterOutButton angle={angle} composed={id === "composed"} composition={composition} curvature={curvature} radius={radius} rotate={rotate} shape={shape} spins={spins}>{label}</CenterOutButton>
+                  <Confetti angle={angle} composed={id === "composed"} composition={composition} curvature={curvature} radius={radius} rotate={rotate} shape={shape} spins={spins}>{label}</Confetti>
                 </div>
               ))}
             </div>

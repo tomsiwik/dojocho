@@ -27,7 +27,7 @@ function geistButtonStyle(surface: string, text: string): CSSProperties {
 }
 
 const meta = {
-  title: "Motion/Button Base",
+  title: "Components/Button",
   component: Button,
   tags: ["autodocs"],
   parameters: {
@@ -49,7 +49,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Examples: Story = {
+export const Default: Story = {
   args: {
     pressScale: 1
   },
