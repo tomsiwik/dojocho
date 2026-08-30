@@ -17,6 +17,11 @@ import {
   type ReactNode,
 } from "react";
 import { drop003Sound } from "~/lib/drop-003";
+import {
+  allowFocusSound,
+  consumeFocusSoundSuppression,
+  retainFocusSoundGuard,
+} from "~/lib/focus-sound-guard";
 import { playSound } from "~/lib/sound-engine";
 import { cn } from "~/lib/utils";
 
@@ -47,6 +52,8 @@ export interface InputProps extends Omit<
   error?: string | boolean;
   /** Reserve one message line so validation does not shift nearby content. */
   reserveErrorLine?: boolean;
+  /** Play the focus sound. Browser-tab restoration is always silent. */
+  focusSound?: boolean;
   success?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -65,6 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     onPointerDown,
     error,
     reserveErrorLine = false,
+    focusSound = true,
     success,
     leftIcon,
     rightIcon,
@@ -105,6 +113,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       { duration: 0.45 },
     );
   }, [hasError, reduce]);
+
+  useEffect(() => retainFocusSoundGuard(), []);
 
   const handleChange = (next: string) => {
     if (!controlled) setInternal(next);
@@ -197,7 +207,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
                 return;
               }
               setFocused(true);
-              if (!soundStartedByPointer.current) {
+              const suppressSound = consumeFocusSoundSuppression();
+              if (
+                focusSound &&
+                !soundStartedByPointer.current &&
+                !suppressSound
+              ) {
                 playFocusSound();
               }
               soundStartedByPointer.current = false;
@@ -215,11 +230,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
                 soundStartedByPointer.current = false;
                 return;
               }
+              allowFocusSound();
               const willFocus =
                 !event.defaultPrevented &&
                 document.activeElement !== event.currentTarget;
               soundStartedByPointer.current = willFocus;
-              if (willFocus) {
+              if (willFocus && focusSound) {
                 playFocusSound();
               }
             }}
