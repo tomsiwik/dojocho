@@ -10,6 +10,7 @@
     "./styles.css": "./src/styles.css",
     "./components/motion/button/*": "./src/components/motion/button/*.tsx",
     "./components/motion/file-tree": "./src/components/motion/file-tree.tsx",
+    "./components/motion/input": "./src/components/motion/input.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {

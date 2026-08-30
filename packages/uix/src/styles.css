@@ -112,6 +112,20 @@
   );
 }
 
+@keyframes input-water-touch {
+  0%, 100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.985);
+  }
+}
+
+@utility input-water-touch {
+  animation: input-water-touch 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center;
+}
+
 @supports (corner-shape: squircle) {
   :root {
     --squircle-factor: 1.84;
