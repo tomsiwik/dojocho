@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -47,6 +48,8 @@ describe("authoring routes", () => {
   });
 
   it("projects an empty folder without inventing course material", async () => {
+    mkdirSync(resolve(context.root, "evals/lessons"), { recursive: true });
+    writeFileSync(resolve(context.root, "evals/lessons/legacy.json"), "{}\n");
     const initial = await authoringRoutes.request("/workspace");
     expect(initial.status).toBe(200);
     const projected = await initial.json();
@@ -58,7 +61,10 @@ describe("authoring routes", () => {
       expect.objectContaining({ id: "intent", ready: false }),
       expect.objectContaining({ id: "curriculum", ready: false }),
     ]));
-    expect(existsSync(resolve(context.root, "DOJO.md"))).toBe(false);
+    expect(readFileSync(resolve(context.root, "DOJO.md"), "utf8")).toBe("# Course guidance\n\n");
+    expect(projected.rootFiles).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "evals/lessons/legacy.json" }),
+    ]));
 
     authorLesson();
     const authored = await authoringRoutes.request("/workspace");
@@ -66,7 +72,7 @@ describe("authoring routes", () => {
       lessons: [{
         id: "001-draw-a-boundary",
         hasSensei: true,
-        hasEval: true,
+        evalPaths: ["src/001-draw-a-boundary/eval.yaml"],
       }],
       issues: [],
     });
@@ -139,6 +145,56 @@ describe("authoring routes", () => {
     expect(traversal.status).not.toBe(200);
   });
 
+  it("adds a lesson and edits its display title without renaming its source paths", async () => {
+    const created = await authoringRoutes.request("/lessons", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "Normalize a Handle" }),
+    });
+    expect(created.status).toBe(201);
+    await expect(created.json()).resolves.toMatchObject({
+      lessonId: "001-normalize-a-handle",
+      workspace: {
+        lessons: [{
+          id: "001-normalize-a-handle",
+          title: "Normalize a Handle",
+        }],
+      },
+    });
+    expect(existsSync(resolve(context.root, "src/001-normalize-a-handle/KATA.md"))).toBe(false);
+    expect(existsSync(resolve(context.root, "src/001-normalize-a-handle/SENSEI.md"))).toBe(true);
+    expect(existsSync(resolve(context.root, "src/001-normalize-a-handle/eval.yaml"))).toBe(false);
+
+    const renamed = await authoringRoutes.request(
+      "/lessons/001-normalize-a-handle",
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Canonical Handles" }),
+      }
+    );
+    expect(renamed.status).toBe(200);
+    await expect(renamed.json()).resolves.toMatchObject({
+      lessons: [{
+        id: "001-normalize-a-handle",
+        title: "Canonical Handles",
+        senseiPath: "src/001-normalize-a-handle/SENSEI.md",
+      }],
+    });
+  });
+
+  it("edits the course title in dojo.yaml", async () => {
+    const renamed = await authoringRoutes.request("/course", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "Reliable Systems" }),
+    });
+    expect(renamed.status).toBe(200);
+    await expect(renamed.json()).resolves.toMatchObject({ name: "Reliable Systems" });
+    expect(readFileSync(resolve(context.root, "dojo.yaml"), "utf8"))
+      .toContain("name: Reliable Systems");
+  });
+
   it("accepts the standard AG-UI message envelope", async () => {
     const response = await authoringRoutes.request("/messages", {
       method: "POST",
@@ -166,20 +222,17 @@ katas:
 `);
     const lessonRoot = resolve(context.root, "src/001-draw-a-boundary");
     mkdirSync(lessonRoot, { recursive: true });
-    mkdirSync(resolve(context.root, "evals/lessons"), { recursive: true });
     writeFileSync(resolve(context.root, "DOJO.md"), "# Systems thinking\n\nTeach observable boundary decisions.\n");
-    writeFileSync(resolve(lessonRoot, "KATA.md"), "# Draw a Boundary\n\nDraw and justify one system boundary.\n");
     writeFileSync(resolve(lessonRoot, "SENSEI.md"), "# Draw a Boundary\n\nHelp the learner compare what is inside and outside.\n");
     writeFileSync(resolve(lessonRoot, "solution.ts"), "");
     writeFileSync(resolve(lessonRoot, "solution.test.ts"), "");
-    writeFileSync(resolve(context.root, "evals/lessons/001-draw-a-boundary.json"), `${JSON.stringify({
-      lessonId: "001-draw-a-boundary",
-      scenarios: [{
-        id: "introduction",
-        prompt: "Begin the lesson.",
-        fixture: "Let us compare what sits inside and outside this system.",
-        assertions: [{ type: "includes", value: "inside and outside" }],
-      }],
-    }, null, 2)}\n`);
+    writeFileSync(resolve(lessonRoot, "eval.yaml"), `cases:
+  - id: introduction
+    prompt: Begin the lesson.
+    fixture: Let us compare what sits inside and outside this system.
+    assertions:
+      - type: includes
+        value: inside and outside
+`);
   }
 });

@@ -1,0 +1,15 @@
+[tools]
+node = "24"
+pnpm = "10"
+
+[tasks.setup]
+description = "Install the course authoring dependencies"
+run = "pnpm install"
+
+[tasks.check]
+description = "Run lesson checks"
+run = "pnpm test"
+
+[tasks.eval]
+description = "Evaluate the authored teaching behavior"
+run = "pnpm eval"

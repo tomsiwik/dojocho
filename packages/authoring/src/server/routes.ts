@@ -6,8 +6,11 @@ import { promisify } from "node:util";
 import { Hono } from "hono";
 import {
   createAuthoringService,
+  createAuthoringLesson,
   createLessonTrial,
   authoringEvalReadiness,
+  renameAuthoringCourse,
+  renameAuthoringLesson,
 } from "./service";
 import { readAuthoringFile, writeAuthoringFile } from "./files";
 import type { AuthoringAgent, AuthoringStreamPart } from "./types";
@@ -92,6 +95,47 @@ export function createAuthoringRoutes(dependencies: AuthoringRouteDependencies) 
       return c.json({ error: errorMessage(cause) }, 409);
     }
   })
+  .post("/lessons", async (c) => {
+    try {
+      const input: { title?: unknown } = await c.req
+        .json<{ title?: unknown }>()
+        .catch(() => ({}));
+      const root = dependencies.resolveWorkspace(c.req.raw);
+      const lessonId = createAuthoringLesson(
+        root,
+        typeof input.title === "string" ? input.title : "Untitled lesson"
+      );
+      return c.json({ lessonId, workspace: await service.getWorkspace(root) }, 201);
+    } catch (cause) {
+      return c.json({ error: errorMessage(cause) }, 422);
+    }
+  })
+  .patch("/course", async (c) => {
+    try {
+      const input = await c.req.json<{ title?: unknown }>();
+      if (typeof input.title !== "string" || !input.title.trim()) {
+        return c.json({ error: "Course title is required" }, 422);
+      }
+      const root = dependencies.resolveWorkspace(c.req.raw);
+      renameAuthoringCourse(root, input.title);
+      return c.json(await service.getWorkspace(root));
+    } catch (cause) {
+      return c.json({ error: errorMessage(cause) }, 422);
+    }
+  })
+  .patch("/lessons/:lessonId", async (c) => {
+    try {
+      const input = await c.req.json<{ title?: unknown }>();
+      if (typeof input.title !== "string" || !input.title.trim()) {
+        return c.json({ error: "Lesson title is required" }, 422);
+      }
+      const root = dependencies.resolveWorkspace(c.req.raw);
+      renameAuthoringLesson(root, c.req.param("lessonId"), input.title);
+      return c.json(await service.getWorkspace(root));
+    } catch (cause) {
+      return c.json({ error: errorMessage(cause) }, 422);
+    }
+  })
   .get("/files/:path{.+}", (c) => {
     try {
       return c.json(readAuthoringFile(
@@ -140,7 +184,7 @@ export function createAuthoringRoutes(dependencies: AuthoringRouteDependencies) 
       .json<{ harness?: "cassette" | "opencode" }>()
       .catch(() => ({}));
     const harness = input.harness ?? "cassette";
-    if (!existsSync(resolve(root, "evals", "run.ts"))) {
+    if (!existsSync(resolve(root, "scripts", "eval.ts"))) {
       return c.json({ error: `No authored eval runner found in ${root}` }, 404);
     }
     if (!existsSync(resolve(root, "node_modules"))) {

@@ -17,7 +17,7 @@ export type LessonScenario = {
 
 export type LessonEvalDefinition = {
   lessonId: string;
-  scenarios: LessonScenario[];
+  cases: LessonScenario[];
 };
 
 export type LessonEvalResult = {

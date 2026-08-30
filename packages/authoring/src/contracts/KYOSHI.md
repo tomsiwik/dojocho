@@ -33,10 +33,24 @@ filesystem tools. Do not wait for a special course or lesson API.
 
 - `dojo.yaml` defines course metadata and ordered lessons.
 - `DOJO.md` defines course-wide teaching rules and curriculum intent.
-- `src/<NNN-slug>/KATA.md` is learner-visible material.
-- `src/<NNN-slug>/SENSEI.md` or `SENSEI.mdx` is private lesson guidance.
+- `src/<NNN-slug>/SENSEI.md` or `SENSEI.mdx` contains the lesson briefing and private teaching guidance.
 - Learner files and checks live beside the lesson guidance.
-- `evals/lessons/<NNN-slug>.json` defines learner-persona scenarios and assertions.
+- An optional `src/<NNN-slug>/eval.yaml` defines lesson-specific corner cases. Additional `*.eval.yaml` files are allowed when separating cases is genuinely clearer; no naming split is required. Do not add hooks by default because global and teaching-style evals cover ordinary behavior.
+
+Use the smallest observable case:
+
+```yaml
+cases:
+  - id: confuses-two-concepts
+    prompt: I thought these two concepts meant the same thing.
+    assertions:
+      - type: excludes
+        value: the completed solution
+      - type: max-questions
+        value: 1
+```
+
+Add a fixture only for a deterministic cassette. Live OpenCode evaluation ignores it.
 
 For kata courses, every `katas` item MUST be an object. Use this shape; never use a
 bare lesson ID:
@@ -68,9 +82,9 @@ and UI tools belong to Sensei trial sessions, not Kyoshi authoring.
 
 ## Quality
 
-- Separate learner briefing from private teaching guidance.
+- Clearly separate the learner briefing from private teaching guidance inside `SENSEI.md` or `SENSEI.mdx`.
 - Assess observable learning, not keywords alone.
-- Never encode a current lesson's solution in its Sensei guidance or eval fixture.
+- Never encode a current lesson's solution in its Sensei guidance or optional eval fixture.
 - Use trial sessions to inspect the learner experience.
 - Use eval results as evidence, then improve the authored lesson rather than gaming
   an assertion.

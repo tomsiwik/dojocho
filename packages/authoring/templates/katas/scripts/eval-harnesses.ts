@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { LessonEvalHarness } from "./types";
+import type { LessonEvalHarness } from "./eval-types";
 
 type OpenCodeEvent = {
   type?: string;

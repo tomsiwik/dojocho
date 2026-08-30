@@ -53,6 +53,29 @@ describe("authoring service", () => {
     );
   });
 
+  it("keeps bootstrap discovery tool-free so hidden streaming cannot await UI input", async () => {
+    const root = mkdtempSync(resolve(tmpdir(), "dojofoo-authoring-bootstrap-"));
+    scaffoldAuthoringWorkspace({ root, name: "bootstrap-course", style: "katas" });
+    const send = vi.fn(async () => "response");
+    const agent: AuthoringAgent = {
+      currentHarness: () => "test-harness",
+      start: async () => "native-session",
+      resume: async () => {},
+      history: async () => [],
+      send,
+      answer: () => {},
+    };
+
+    await createAuthoringService(agent).streamIntroduction(root, () => {});
+
+    expect(send).toHaveBeenCalledWith(
+      "native-session",
+      expect.stringContaining("Do not invoke a tool during this hidden bootstrap turn"),
+      expect.any(Function),
+      { visible: false, signal: undefined }
+    );
+  });
+
   it("attaches saved UI files to the next natural author message once", async () => {
     const root = mkdtempSync(resolve(tmpdir(), "dojofoo-authoring-edits-"));
     scaffoldAuthoringWorkspace({ root, name: "editable-course", style: "katas" });

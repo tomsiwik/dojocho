@@ -7,7 +7,7 @@ export type AuthoringTranscriptMessage = {
 };
 
 export const AUTHORING_BOOTSTRAP_MARKER = "[dojo:begin-authoring]";
-export const AUTHORING_BOOTSTRAP_PROMPT = "Begin this authoring session. Inspect the draft, summarize its current readiness in one sentence, then ask the single smallest decision needed next. Use structured elicitation when a short set of real choices exists.";
+export const AUTHORING_BOOTSTRAP_PROMPT = "Begin this authoring session. Inspect the draft, summarize its current readiness in one sentence, then ask the single smallest open discovery question in prose. Do not invoke a tool during this hidden bootstrap turn; structured elicitation becomes available after the visible chat starts.";
 export const AUTHORING_EDITS_MARKER = "[dojo:author-edits]";
 
 export function isAuthoringBootstrapMessage(message: AuthoringTranscriptMessage): boolean {

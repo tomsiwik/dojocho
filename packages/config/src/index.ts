@@ -111,6 +111,7 @@ export interface KataEntry {
   template: string;
   test?: string;
   name?: string;
+  title?: string;
   description?: string;
   difficulty?: 1 | 2 | 3;
   tags?: string[];
@@ -225,7 +226,7 @@ export function validateManifest(data: unknown): string[] {
         errors.push(`katas[${i}] is missing required "template" string`);
       }
       const k = kata as Record<string, unknown>;
-      for (const f of ["test", "name", "description"]) {
+      for (const f of ["test", "name", "title", "description"]) {
         if (f in k && typeof k[f] !== "string") {
           errors.push(`katas[${i}].${f} must be a string`);
         }

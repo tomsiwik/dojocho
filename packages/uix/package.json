@@ -9,6 +9,7 @@
   "exports": {
     "./styles.css": "./src/styles.css",
     "./components/motion/button/*": "./src/components/motion/button/*.tsx",
+    "./components/motion/file-tree": "./src/components/motion/file-tree.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
   "scripts": {
@@ -25,6 +26,7 @@
     "@toolwind/corner-shape": "0.0.8-3",
     "clsx": "^2.1.1",
     "cuelume": "^0.2.2",
+    "lucide-react": "^1.37.0",
     "motion": "^13.1.1",
     "tailwind-merge": "^3.6.0"
   },

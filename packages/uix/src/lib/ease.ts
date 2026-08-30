@@ -32,9 +32,9 @@ export const SPRING_PANEL = {
 /** Shared-layout glides — pills, indicators and panels morphing between positions. */
 export const SPRING_LAYOUT = {
   type: "spring",
-  stiffness: 360,
-  damping: 32,
-  mass: 0.6,
+  stiffness: 1400,
+  damping: 44,
+  mass: 0.175,
 } as const;
 
 /** Cursor-follow physics for decorative mouse tracking (magnetic, tilt, dock). */

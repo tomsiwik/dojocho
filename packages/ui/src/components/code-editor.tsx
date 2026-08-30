@@ -1,6 +1,9 @@
 import { autocompletion, closeCompletion, completionKeymap, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { javascript } from "@codemirror/lang-javascript";
+import { json } from "@codemirror/lang-json";
+import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
+import { yaml } from "@codemirror/lang-yaml";
 import { undo } from "@codemirror/commands";
 import { codeFolding, foldGutter, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
@@ -35,7 +38,7 @@ const vercelDark = EditorView.theme({
   },
   ".cm-gutters": {
     backgroundColor: "#0a0a0a",
-    borderRight: "1px solid #242424",
+    borderRight: "0",
     color: "#878787",
   },
   ".cm-activeLineGutter": { backgroundColor: "#ffffff1a", color: "#a1a1a1" },
@@ -129,13 +132,15 @@ const vercelHighlight = HighlightStyle.define([
   { tag: tags.invalid, color: "#f05b8d" },
 ]);
 
+export type CodeEditorLanguage = "javascript" | "json" | "markdown" | "python" | "typescript" | "yaml";
+
 type CodeEditorProps = {
   code: string;
   coverage: boolean;
   lineHits?: Record<string, number>;
   failedLines?: number[];
   filePath: string;
-  language: "javascript" | "typescript" | "python";
+  language: CodeEditorLanguage;
   lessonApiBase: string;
   readOnly: boolean;
   onChange: (code: string) => void;
@@ -159,7 +164,13 @@ export default function CodeEditor({
   const editor = useRef<EditorView | null>(null);
   const languageExtension = language === "python"
     ? python()
-    : javascript({ jsx: true, typescript: language === "typescript" });
+    : language === "yaml"
+      ? yaml()
+      : language === "json"
+        ? json()
+        : language === "markdown"
+          ? markdown()
+        : javascript({ jsx: true, typescript: language === "typescript" });
   const languageTools = language === "typescript" ? typescriptLanguageTools(filePath, lessonApiBase) : [];
 
   useEffect(() => {
@@ -205,7 +216,7 @@ export default function CodeEditor({
           preciseFolding,
           flashLineExtension,
           coverageExtension(coverage ? lineHits : undefined, failedLines),
-          EditorView.contentAttributes.of({ "aria-label": "Solution code" }),
+          EditorView.contentAttributes.of({ "aria-label": "Code editor" }),
           vercelDark,
           syntaxHighlighting(vercelHighlight),
         ]}

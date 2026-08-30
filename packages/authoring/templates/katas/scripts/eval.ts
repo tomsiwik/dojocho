@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
 import type {
   AuthoringEvalReport,
   EvalAssertion,
@@ -7,8 +8,8 @@ import type {
   LessonEvalHarness,
   LessonEvalResult,
   LessonScenario,
-} from "./types";
-import { createHarness } from "./harnesses";
+} from "./eval-types";
+import { createHarness } from "./eval-harnesses";
 
 const root = resolve(import.meta.dirname, "..");
 const requestedHarness = process.argv.find((argument) =>
@@ -18,14 +19,11 @@ const harness: LessonEvalHarness = createHarness(requestedHarness, root);
 
 const course = await requiredFile("DOJO.md");
 const definitions = await readDefinitions();
-if (definitions.length === 0) {
-  stop("No lesson evals exist yet. Add evals/lessons/<lesson-id>.json before running evaluations.");
-}
 const lessons = [];
 for (const definition of definitions) {
   const lesson = await readLessonInstructions(definition.lessonId);
   const scenarios: LessonEvalResult[] = [];
-  for (const scenario of definition.scenarios) {
+  for (const scenario of definition.cases) {
     const startedAt = Date.now();
     const response = await harness.generate({ course, lesson, scenario });
     const assertions = scoreScenario(scenario, response);
@@ -65,11 +63,25 @@ if (lessons.some(({ scenarios }) =>
 }
 
 async function readDefinitions(): Promise<LessonEvalDefinition[]> {
-  const directory = resolve(root, "evals", "lessons");
-  const files = await readdir(directory).catch(() => []);
-  return Promise.all(files.filter((file) => file.endsWith(".json")).sort().map(async (file) =>
-    JSON.parse(await readFile(resolve(directory, file), "utf8")) as LessonEvalDefinition
-  ));
+  const source = resolve(root, "src");
+  const lessons = await readdir(source, { withFileTypes: true }).catch(() => []);
+  const definitions: LessonEvalDefinition[] = [];
+  for (const lesson of lessons.filter((entry) => entry.isDirectory()).sort((left, right) => left.name.localeCompare(right.name))) {
+    const directory = resolve(source, lesson.name);
+    const hooks = (await readdir(directory).catch(() => []))
+      .filter((file) => file.endsWith(".eval.yaml") || file.endsWith(".eval.yml") || file === "eval.yaml" || file === "eval.yml")
+      .sort();
+    const cases: LessonScenario[] = [];
+    for (const hook of hooks) {
+      const document = parseYaml(await readFile(resolve(directory, hook), "utf8")) as { cases?: LessonScenario[] };
+      if (!Array.isArray(document?.cases)) {
+        throw new Error(`${lesson.name}/${hook} must define a cases array`);
+      }
+      cases.push(...document.cases);
+    }
+    if (cases.length > 0) definitions.push({ lessonId: lesson.name, cases });
+  }
+  return definitions;
 }
 
 async function requiredFile(path: string): Promise<string> {

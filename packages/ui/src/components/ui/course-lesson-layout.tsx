@@ -48,10 +48,12 @@ export function CourseLessonNavigation({
   children,
   courseTitle,
   homeHref = "/",
+  sectionTitle = "Chapters",
 }: {
   children: ReactNode;
-  courseTitle: string;
+  courseTitle: string | null;
   homeHref?: string;
+  sectionTitle?: string | null;
 }) {
   return (
     <aside className="flex min-h-0 flex-col border-r border-dashed bg-surface-1" data-testid="lesson-navigation">
@@ -59,8 +61,8 @@ export function CourseLessonNavigation({
         <a aria-label="Back to your dojos" className="inline-flex" href={homeHref}>
           <BrandLogo alt="Dojofoo wordmark" className="h-6" />
         </a>
-        <h1 className="mt-1.5 text-xl font-semibold">{courseTitle}</h1>
-        <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Chapters</h2>
+        {courseTitle ? <h1 className="mt-1.5 text-xl font-semibold">{courseTitle}</h1> : null}
+        {sectionTitle ? <h2 className="mt-7 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">{sectionTitle}</h2> : null}
       </div>
       <ScrollArea className="min-h-0 flex-1" data-testid="lesson-scroll" viewportClassName="scroll-fade pb-5">
         <div className="w-full">{children}</div>
