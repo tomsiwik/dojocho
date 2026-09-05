@@ -10,6 +10,7 @@
     "./styles.css": "./src/styles.css",
     "./components/motion/button/*": "./src/components/motion/button/*.tsx",
     "./components/motion/file-tree": "./src/components/motion/file-tree.tsx",
+    "./components/motion/shared-layout-bg": "./src/components/motion/shared-layout-bg.tsx",
     "./components/motion/input": "./src/components/motion/input.tsx",
     "./lib/*": "./src/lib/*.ts"
   },
@@ -32,6 +33,8 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@storybook/addon-a11y": "10.5.10",
     "@storybook/react-vite": "10.5.10",
     "@tailwindcss/vite": "^4.3.3",

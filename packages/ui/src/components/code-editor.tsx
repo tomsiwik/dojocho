@@ -5,29 +5,20 @@ import { markdown } from "@codemirror/lang-markdown";
 import { python } from "@codemirror/lang-python";
 import { yaml } from "@codemirror/lang-yaml";
 import { undo } from "@codemirror/commands";
-import { codeFolding, foldGutter, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { codeFolding, foldGutter } from "@codemirror/language";
 import { linter, lintGutter, type Diagnostic } from "@codemirror/lint";
 import { Decoration, EditorView, GutterMarker, gutterLineClass, keymap, ViewPlugin, type DecorationSet } from "@codemirror/view";
-import { tags } from "@lezer/highlight";
 import { StateEffect } from "@codemirror/state";
 import CodeMirror, { RangeSetBuilder, StateField } from "@uiw/react-codemirror";
 import { useEffect, useRef } from "react";
 import type { CodeHighlight } from "../lib/code-highlight";
+import { vercelCursorColors, vercelCursorTheme } from "../lib/code-editor-theme";
 
-const vercelDark = EditorView.theme({
+const editorAdditions = EditorView.theme({
   "&": {
-    backgroundColor: "#0a0a0a",
-    color: "#ededed",
-    fontFamily: '"Iosevka", ui-monospace, monospace',
-    fontSize: "16.5px",
-    lineHeight: "1.55",
+    height: "100%",
   },
-  ".cm-content": { caretColor: "#ededed", fontFamily: '"Iosevka", ui-monospace, monospace' },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#ededed" },
-  "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-    backgroundColor: "#ffffff1a",
-  },
-  ".cm-activeLine": { backgroundColor: "#ffffff1a" },
+  ".cm-scroller": { overflow: "auto" },
   ".cm-line-flash": {
     animation: "dojofoo-line-flash 1.2s ease-out",
     backgroundColor: "#0070f34d",
@@ -36,72 +27,6 @@ const vercelDark = EditorView.theme({
     "0%, 35%": { backgroundColor: "#0070f366" },
     "100%": { backgroundColor: "transparent" },
   },
-  ".cm-gutters": {
-    backgroundColor: "#0a0a0a",
-    borderRight: "0",
-    color: "#878787",
-  },
-  ".cm-activeLineGutter": { backgroundColor: "#ffffff1a", color: "#a1a1a1" },
-  ".cm-tooltip": {
-    backgroundColor: "#000000",
-    border: "0",
-    borderRadius: "0",
-    boxShadow: "var(--shadow-5)",
-    color: "#ededed",
-    fontFamily: "Iosevka, monospace",
-  },
-  ".cm-tooltip-autocomplete": {
-    borderLeft: "2px solid #62a6ff",
-    fontSize: "0.8125rem",
-    maxWidth: "30rem",
-    minWidth: "18rem",
-  },
-  ".cm-tooltip-autocomplete.cm-tooltip-below": { transform: "translateY(4px)" },
-  ".cm-tooltip-autocomplete > ul": { maxHeight: "16rem", padding: "0" },
-  ".cm-tooltip-autocomplete > ul > li": {
-    alignItems: "center",
-    boxSizing: "border-box",
-    cursor: "pointer",
-    display: "flex",
-    height: "25.575px",
-    lineHeight: "25.575px",
-    minHeight: "25.575px",
-    padding: "0 0.625rem !important",
-  },
-  ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-    backgroundColor: "#ffffff1a",
-    color: "#ededed",
-  },
-  ".cm-completionIcon": { color: "#878787", opacity: "1", width: "1.25rem" },
-  ".cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionIcon": { color: "#a3a3a3" },
-  ".cm-completionLabel": { fontSize: "0.8125rem" },
-  ".cm-completionMatchedText": { color: "#62a6ff", fontWeight: "600", textDecoration: "none" },
-  ".cm-completionDetail": { color: "#878787", fontStyle: "normal", marginLeft: "1rem" },
-  ".cm-tooltip-lint": {
-    backgroundColor: "#000000 !important",
-    border: "0 !important",
-    boxShadow: "var(--shadow-5)",
-    maxWidth: "30rem",
-    minWidth: "20rem",
-  },
-  ".cm-tooltip-lint.cm-tooltip-below": { transform: "translateY(6px)" },
-  ".cm-tooltip-lint .cm-diagnostic": {
-    borderLeft: "2px solid #e5484d",
-    lineHeight: "1.5",
-    minHeight: "4.5rem",
-    padding: "0.75rem 1rem !important",
-  },
-  ".cm-diagnosticText": { fontFamily: "Iosevka, monospace", fontSize: "0.9375rem" },
-  ".cm-diagnosticSource": { color: "#878787", marginTop: "0.375rem" },
-  ".cm-gutter-lint": { width: "1em" },
-  ".cm-foldGutter": { width: "0.875rem" },
-  ".cm-gutter-lint .cm-gutterElement": {
-    alignItems: "center",
-    display: "flex",
-    justifyContent: "center",
-    padding: "0",
-  },
-  ".cm-foldGutter .cm-gutterElement": { padding: "0 0.25rem 0 0" },
   ".cm-lint-marker-error": {
     content: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4' fill='%23f05b8d'/%3E%3C/svg%3E\")",
     height: "1em",
@@ -121,16 +46,6 @@ const vercelDark = EditorView.theme({
     backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4' viewBox='0 0 6 4'%3E%3Cpath d='M0 3L2 1L4 3L6 1' fill='none' stroke='%23f5a623' stroke-width='1.25'/%3E%3C/svg%3E\")",
   },
 }, { dark: true });
-
-const vercelHighlight = HighlightStyle.define([
-  { tag: tags.comment, color: "#a1a1a1" },
-  { tag: [tags.keyword, tags.operatorKeyword, tags.modifier, tags.controlKeyword], color: "#f05b8d" },
-  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.typeName], color: "#b675f1" },
-  { tag: [tags.string, tags.special(tags.string), tags.regexp, tags.tagName], color: "#58c760" },
-  { tag: [tags.bool, tags.number, tags.atom, tags.constant(tags.name), tags.propertyName], color: "#62a6ff" },
-  { tag: [tags.variableName, tags.name, tags.punctuation], color: "#ededed" },
-  { tag: tags.invalid, color: "#f05b8d" },
-]);
 
 export type CodeEditorLanguage = "javascript" | "json" | "markdown" | "python" | "typescript" | "yaml";
 
@@ -193,10 +108,12 @@ export default function CodeEditor({
 
   return (
     <div
-      className="h-full min-h-0 overflow-hidden bg-[#0a0a0a]"
+      className="h-full min-h-0 overflow-hidden"
+      style={{ backgroundColor: vercelCursorColors.background }}
       data-file-path={filePath}
     >
       <CodeMirror
+        className="h-full min-h-0"
         basicSetup={{
           autocompletion: false,
           bracketMatching: true,
@@ -217,11 +134,10 @@ export default function CodeEditor({
           flashLineExtension,
           coverageExtension(coverage ? lineHits : undefined, failedLines),
           EditorView.contentAttributes.of({ "aria-label": "Code editor" }),
-          vercelDark,
-          syntaxHighlighting(vercelHighlight),
+          editorAdditions,
         ]}
         height="100%"
-        theme="dark"
+        theme={vercelCursorTheme}
         onChange={onChange}
         onCreateEditor={(view) => {
           editor.current = view;

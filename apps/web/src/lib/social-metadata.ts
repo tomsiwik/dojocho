@@ -1,6 +1,8 @@
-export const SOCIAL_IMAGE_URL = "https://dojo.foo/og-dojofoo.jpg";
+import { SITE_URL } from "./site";
+
+export const SOCIAL_IMAGE_URL = `${SITE_URL}/og.webp`;
 export const DEFAULT_SOCIAL_DESCRIPTION =
-  "Installable coding dojos that turn your AI agent into a sensei.";
+  "Agentic teaching built around your learning. Practice with katas, save your progress, and author your own course with your coding agent.";
 
 interface SocialMetadataOptions {
   title: string;
@@ -15,7 +17,7 @@ export function socialMetadata({
   url,
   type = "website",
 }: SocialMetadataOptions) {
-  const imageAlt = `dojofoo — ${title}`;
+  const imageAlt = "dojofoo — Agentic teaching built around your learning";
 
   return [
     { name: "description", content: description },
@@ -27,9 +29,9 @@ export function socialMetadata({
     { property: "og:description", content: description },
     { property: "og:image", content: SOCIAL_IMAGE_URL },
     { property: "og:image:secure_url", content: SOCIAL_IMAGE_URL },
-    { property: "og:image:type", content: "image/jpeg" },
-    { property: "og:image:width", content: "1280" },
-    { property: "og:image:height", content: "640" },
+    { property: "og:image:type", content: "image/webp" },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
     { property: "og:image:alt", content: imageAlt },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:site", content: "@tomhacks" },

@@ -422,32 +422,6 @@
   }
 }
 
-.cm-editor,
-.cm-editor .cm-gutters,
-.cm-editor .cm-scroller {
-  background: #0a0a0a !important;
-}
-
-[data-file-path] > .cm-theme-light,
-[data-file-path] .cm-editor {
-  height: 100%;
-  min-height: 0;
-}
-
-.cm-editor {
-  color: #ededed;
-  font-family: "Iosevka", ui-monospace, monospace;
-  font-size: 16.5px;
-  line-height: 1.55;
-}
-
-.cm-editor .cm-scroller {
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  overflow: auto;
-}
-
 @keyframes lesson-accordion-down {
   from {
     height: 0;
@@ -477,26 +451,4 @@
 .lesson-accordion-content[data-state="closed"] {
   height: 0;
   animation: lesson-accordion-up 120ms ease-in;
-}
-
-.cm-editor .cm-content,
-.cm-editor .cm-gutters {
-  font-family: "Iosevka", ui-monospace, monospace !important;
-  font-size: 16.5px !important;
-  line-height: 1.55 !important;
-}
-
-.cm-editor .cm-gutters {
-  border-right: 0 !important;
-  color: #878787 !important;
-}
-
-.cm-editor .cm-activeLine,
-.cm-editor .cm-activeLineGutter {
-  background: #ffffff1a !important;
-}
-
-.cm-editor.cm-focused {
-  outline: 1px solid #333333 !important;
-  outline-offset: -1px;
 }

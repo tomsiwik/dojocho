@@ -4,25 +4,26 @@ const columns = [
   {
     title: "Learn",
     links: [
-      { label: "Documentation", href: "/docs" },
+      { label: "Usage", href: "/docs" },
       { label: "Quickstart", href: "/docs/quickstart" },
-      { label: "CLI", href: "/docs/cli" },
+      { label: "Installation", href: "/docs/installation" },
     ],
   },
   {
     title: "Explore",
     links: [
-      { label: "Dojos", href: "/#dojos" },
-      { label: "Add a dojo", href: "/docs/authoring" },
-      { label: "Roadmap", href: "https://github.com/tomsiwik/dojofoo/blob/main/ROADMAP.md" },
+      { label: "Dojos", href: "/dojos" },
+      { label: "Authoring", href: "/authoring" },
+      { label: "Developers", href: "/developers" },
     ],
   },
   {
     title: "Project",
     links: [
-      { label: "GitHub", href: "https://github.com/tomsiwik/dojofoo" },
-      { label: "Issues", href: "https://github.com/tomsiwik/dojofoo/issues" },
-      { label: "License", href: "https://github.com/tomsiwik/dojofoo/blob/main/LICENSE" },
+      { label: "GitHub", href: "https://github.com/dojofoo/dojofoo" },
+      { label: "Issues", href: "https://github.com/dojofoo/dojofoo/issues" },
+      { label: "Roadmap", href: "https://github.com/dojofoo/dojofoo/blob/main/ROADMAP.md" },
+      { label: "License", href: "https://github.com/dojofoo/dojofoo/blob/main/packages/cli/LICENSE" },
     ],
   },
 ] as const;
@@ -56,7 +57,14 @@ export function SiteFooter() {
       </div>
       <div className="flex flex-col items-start justify-between gap-2 border-border border-b [border-bottom-style:dashed] px-6 py-5 font-display text-[10px] font-medium text-muted-foreground uppercase tracking-[0.14em] sm:flex-row sm:items-center">
         <span>© dojofoo</span>
-        <span>Learn with your own agent</span>
+        <a
+          className="transition-colors hover:text-foreground"
+          href="https://x.com/tomhacks"
+          rel="noreferrer"
+          target="_blank"
+        >
+          Created with love by Tom Siwik
+        </a>
       </div>
     </footer>
   );

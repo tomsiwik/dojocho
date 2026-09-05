@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { DocsLayout } from '@/components/layout/notebook'
+import { SiteFooter } from '@/components/layout/site-footer'
 import {
   DocsBody,
   DocsDescription,
@@ -79,7 +80,9 @@ const clientLoader = browserCollections.docs.createClientLoader({
 })
 
 const sidebarTabs = [
-  { title: 'Docs', url: '/docs' },
+  { title: 'Usage', url: '/docs' },
+  { title: 'Authoring', url: '/authoring' },
+  { title: 'Developers', url: '/developers' },
 ]
 
 function Page() {
@@ -88,15 +91,22 @@ function Page() {
   const { nav, ...base } = baseOptions()
 
   return (
-    <DocsLayout
-      {...base}
-      tabMode="navbar"
-      nav={{ ...nav, mode: 'top' }}
-      sidebar={{ tabs: sidebarTabs }}
-      tree={pageTree}
-    >
-      <Link to={markdownUrl} hidden />
-      <Suspense>{clientLoader.useContent(path, { markdownUrl, path })}</Suspense>
-    </DocsLayout>
+    <>
+      <DocsLayout
+        {...base}
+        tabMode="navbar"
+        nav={{ ...nav, mode: 'top' }}
+        sidebar={{ tabs: sidebarTabs }}
+        tree={pageTree}
+      >
+        <Link to={markdownUrl} hidden />
+        <Suspense>{clientLoader.useContent(path, { markdownUrl, path })}</Suspense>
+      </DocsLayout>
+      <div className="marketplace-lined-frame mx-auto w-full max-w-(--fd-layout-width) px-4 sm:px-5">
+        <div className="marketplace-lined-surface">
+          <SiteFooter />
+        </div>
+      </div>
+    </>
   )
 }
