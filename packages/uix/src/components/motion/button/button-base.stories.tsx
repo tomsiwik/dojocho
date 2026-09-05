@@ -36,12 +36,14 @@ const meta = {
   args: {
     pressScale: 0.98,
     ripple: true,
+    fingerprint: false,
   },
   argTypes: {
     pressScale: {
       control: { type: "range", min: 0.8, max: 1, step: 0.01 },
     },
     ripple: { control: "boolean" },
+    fingerprint: { control: "boolean" },
   },
 } satisfies Meta<typeof Button>;
 
@@ -54,24 +56,24 @@ export const Default: Story = {
     pressScale: 1
   },
 
-  render: ({ pressScale, ripple }) => (
+  render: ({ fingerprint, pressScale, ripple }) => (
     <main className="grid min-w-[42rem] gap-10 bg-background p-12 text-foreground">
       <section className="grid gap-4">
         <h2 className="text-sm font-medium">Variants</h2>
         <div className="flex flex-wrap items-center gap-3">
-          <Button pressScale={pressScale} ripple={ripple} variant="primary">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} variant="primary">
             Primary
           </Button>
-          <Button pressScale={pressScale} ripple={ripple} variant="secondary">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} variant="secondary">
             Secondary
           </Button>
-          <Button pressScale={pressScale} ripple={ripple} variant="outline">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} variant="outline">
             Outline
           </Button>
-          <Button pressScale={pressScale} ripple={ripple} variant="ghost">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} variant="ghost">
             Ghost
           </Button>
-          <Button disabled pressScale={pressScale} ripple={ripple}>
+          <Button disabled fingerprint={fingerprint} pressScale={pressScale} ripple={ripple}>
             Disabled
           </Button>
         </div>
@@ -82,7 +84,20 @@ export const Default: Story = {
         <div className="flex flex-wrap items-center gap-3">
           {GEIST_COLORS.map(({ label, surface, text }) => (
             <div key={label} style={geistButtonStyle(surface, text)}>
-              <Button pressScale={pressScale} ripple={ripple}>
+              <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple}>
+                {label}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-4">
+        <h2 className="text-sm font-medium">Fingerprint colors</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          {GEIST_COLORS.map(({ label, surface, text }) => (
+            <div key={label} style={geistButtonStyle(surface, text)}>
+              <Button fingerprint pressScale={pressScale} ripple={false}>
                 {label}
               </Button>
             </div>
@@ -93,17 +108,18 @@ export const Default: Story = {
       <section className="grid gap-4">
         <h2 className="text-sm font-medium">Sizes</h2>
         <div className="flex flex-wrap items-center gap-3">
-          <Button pressScale={pressScale} ripple={ripple} size="sm">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} size="sm">
             Small
           </Button>
-          <Button pressScale={pressScale} ripple={ripple} size="md">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} size="md">
             Medium
           </Button>
-          <Button pressScale={pressScale} ripple={ripple} size="lg">
+          <Button fingerprint={fingerprint} pressScale={pressScale} ripple={ripple} size="lg">
             Large
           </Button>
           <Button
             aria-label="Add"
+            fingerprint={fingerprint}
             pressScale={pressScale}
             ripple={ripple}
             size="icon"
@@ -114,7 +130,7 @@ export const Default: Story = {
       </section>
 
       <p className="text-sm text-muted-foreground">
-        Click any enabled button to test its ripple. Adjust ripple and press scale in Controls.
+        Click the colored fingerprint row to test the alternate press effect. Ripple remains available independently in Controls.
       </p>
     </main>
   )

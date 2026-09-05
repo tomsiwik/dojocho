@@ -7,6 +7,7 @@ import {
 import { RootProvider } from "fumadocs-ui/provider/tanstack"
 import SearchDialog from "@/components/search"
 import { DEFAULT_SOCIAL_DESCRIPTION, socialMetadata } from "@/lib/social-metadata"
+import { SITE_URL } from "@/lib/site"
 import { ShapeProvider } from "@dojofoo/ui"
 import appCss from "../styles.css?url"
 
@@ -19,7 +20,7 @@ export const Route = createRootRoute({
       ...socialMetadata({
         title: "dojofoo",
         description: DEFAULT_SOCIAL_DESCRIPTION,
-        url: "https://dojo.foo",
+        url: SITE_URL,
       }),
     ],
     links: [

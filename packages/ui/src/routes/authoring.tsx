@@ -6,6 +6,7 @@ import { fetchServerSentEvents, useChat, type UIMessage } from "@tanstack/ai-rea
 import { ArrowRight, Check, Circle, ExternalLink, Pencil, Play, Plus, RefreshCw } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthoringFilePreview } from "@/components/authoring-file-preview";
+import { AuthoringSidebar } from "@/components/authoring-sidebar";
 import { CourseContent } from "@/components/course-content";
 import { Button } from "@dojofoo/ui/button";
 import { ChatContainer, ChatContainerContent, ChatContainerFooter } from "@dojofoo/ui/chat-container";
@@ -21,6 +22,7 @@ const CodeEditor = lazy(() => import("@/components/code-editor"));
 
 type ReportResponse = { report: AuthoringEvalReport | null; root: string };
 type AuthoringFile = { content: string; label: string; path: string };
+const USE_AI_AUTHORING_SIDEBAR = true;
 
 export const Route = createFileRoute("/authoring")({ component: AuthoringPage });
 
@@ -261,6 +263,25 @@ function AuthoringPage() {
     <CourseLessonLayout
       navigation={(
         <CourseLessonNavigation courseTitle={null} sectionTitle={null}>
+          {USE_AI_AUTHORING_SIDEBAR ? (
+            <AuthoringSidebar
+              activeFilePath={activeFilePath}
+              busy={Boolean(busy)}
+              courseExpanded={courseExpanded}
+              expandedLessonId={expandedLessonId}
+              onAddLesson={() => void addLesson()}
+              onCourseExpandedChange={setCourseExpanded}
+              onLessonExpandedChange={setExpandedLessonId}
+              onRenameCourse={(title) => void renameCourse(title)}
+              onRenameLesson={(lessonId, title) => void renameLesson(lessonId, title)}
+              onSelectLessonFile={selectLessonFile}
+              onSelectRootFile={selectRootFile}
+              scope={scope}
+              selectedLessonId={selectedLessonId}
+              workspace={workspace}
+            />
+          ) : (
+          <LegacySidebar>
           <h2 className="border-b border-dashed px-5 py-3 font-display text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">Course</h2>
           <div className="border-b border-dashed">
             <EditableCourse
@@ -321,6 +342,8 @@ function AuthoringPage() {
           >
             <Plus className="size-4" strokeWidth={1.75} /> Add lesson
           </button>
+          </LegacySidebar>
+          )}
         </CourseLessonNavigation>
       )}
       lesson={(
@@ -437,6 +460,10 @@ function AuthoringPage() {
       )}
     />
   );
+}
+
+function LegacySidebar({ children }: { children: ReactNode }) {
+  return children;
 }
 
 function EditableChapter({

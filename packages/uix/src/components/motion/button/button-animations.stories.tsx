@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { CSSProperties } from "react";
 import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "./base";
+import { particlePath, type ParticleGeometry } from "./particle-path";
 
 const COLORS = [
   { angle: -90, curvature: 28, label: "Red", radius: 72, rotate: "none", shape: "circle", spins: 0, surface: "#e5484d", text: "#fff" },
@@ -52,13 +53,6 @@ type ConfettiControls = {
   rotationSpeedMin: number;
 };
 
-type ParticleGeometry = {
-  centerX: number;
-  centerY: number;
-  insetHalfHeight: number;
-  insetHalfWidth: number;
-};
-
 type ParticleMotion = {
   angle: number;
   curvature: number;
@@ -73,32 +67,6 @@ function randomBetween(minimum: number, maximum: number) {
   const lower = Math.min(minimum, maximum);
   const upper = Math.max(minimum, maximum);
   return lower + Math.random() * (upper - lower);
-}
-
-function particlePath(
-  geometry: ParticleGeometry,
-  { angle, curvature, radius }: Pick<ParticleMotion, "angle" | "curvature" | "radius">,
-) {
-  const radians = angle * Math.PI / 180;
-  const cosine = Math.cos(radians);
-  const sine = Math.sin(radians);
-  const rectangleScale = Math.max(Math.abs(cosine), Math.abs(sine));
-  const projectedX = geometry.insetHalfWidth * cosine / rectangleScale;
-  const projectedY = geometry.insetHalfHeight * sine / rectangleScale;
-  const projectedLength = Math.hypot(projectedX, projectedY);
-  const outwardX = projectedLength === 0 ? 0 : projectedX / projectedLength;
-  const outwardY = projectedLength === 0 ? 0 : projectedY / projectedLength;
-  const startX = geometry.centerX + projectedX;
-  const startY = geometry.centerY + projectedY;
-  const endX = startX + outwardX * radius;
-  const endY = startY + outwardY * radius;
-  const midpointX = (startX + endX) / 2;
-  const midpointY = (startY + endY) / 2;
-  const controlX = midpointX - outwardY * curvature;
-  const controlY = midpointY + outwardX * curvature;
-  return curvature === 0
-    ? `M ${startX} ${startY} L ${endX} ${endY}`
-    : `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
 }
 
 function buttonStyle(surface: string, text: string): CSSProperties {
@@ -160,7 +128,7 @@ export function Confetti({
       insetHalfHeight: Math.max(0, targetBounds.height / 2 - PARTICLE_RADIUS),
       insetHalfWidth: Math.max(0, targetBounds.width / 2 - PARTICLE_RADIUS),
     };
-    path.current = particlePath(geometry.current, { angle, curvature, radius });
+    path.current = particlePath(geometry.current, angle, curvature, radius);
     setViewport({ height: wrapperBounds.height, width: wrapperBounds.width });
     return path.current;
   }, [angle, curvature, radius]);
@@ -205,7 +173,15 @@ export function Confetti({
     generations.current[slot] = generation;
     particleUse.setAttribute("href", `#${glyphPrefix}-${particle.shape}`);
     motionAnimation.setAttribute("dur", `${particle.duration}ms`);
-    motionAnimation.setAttribute("path", particlePath(geometry.current!, particle));
+    motionAnimation.setAttribute(
+      "path",
+      particlePath(
+        geometry.current!,
+        particle.angle,
+        particle.curvature,
+        particle.radius,
+      ),
+    );
     motionAnimation.setAttribute("rotate", particle.rotate === "none" ? "0" : particle.rotate);
     scaleAnimation.setAttribute("dur", `${particle.duration}ms`);
     const initialScale = randomBetween(
@@ -398,12 +374,21 @@ export function Confetti({
         })}
       </svg>
       <span className="relative z-10 inline-flex">
-        <Button ref={button} ripple onClick={animate}>
+        <Button
+          fingerprint={composed}
+          ref={button}
+          ripple={!composed}
+          onClick={animate}
+        >
           {children}
         </Button>
       </span>
     </span>
   );
+}
+
+function CrackStuck({ children }: { children: string }) {
+  return <Button crackStuck pressScale={1}>{children}</Button>;
 }
 
 const meta = {
@@ -480,7 +465,11 @@ export const ConfettiStory: Story = {
             <div className="flex items-center gap-10">
               {COLORS.map(({ angle, curvature, label, radius, rotate, shape, spins, surface, text }) => (
                 <div key={label} style={buttonStyle(surface, text)}>
-                  <Confetti angle={angle} composed={id === "composed"} composition={composition} curvature={curvature} radius={radius} rotate={rotate} shape={shape} spins={spins}>{label}</Confetti>
+                  {label === "Amber" ? (
+                    <CrackStuck>{label}</CrackStuck>
+                  ) : (
+                    <Confetti angle={angle} composed={id === "composed"} composition={composition} curvature={curvature} radius={radius} rotate={rotate} shape={shape} spins={spins}>{label}</Confetti>
+                  )}
                 </div>
               ))}
             </div>

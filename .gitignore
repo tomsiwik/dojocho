@@ -29,6 +29,7 @@ packages/ui/playwright-report/
 **/coverage/
 
 # Runtime artifacts
+/.worktree/
 /logs/
 /.agents/
 /.codex/

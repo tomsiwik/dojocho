@@ -1,0 +1,38 @@
+---
+title: Use the authoring UI
+description: Plan, edit, and trial a course with Kyoshi while keeping control of the material.
+---
+
+## Create a workspace
+
+Start in a new folder:
+
+```sh
+mkdir my-dojo
+cd my-dojo
+npx dojofoo kyoshi --style katas --name my-dojo
+```
+
+This scaffolds the course and opens the local UI in authoring mode. The scaffold currently supports `katas`; other teaching-style scaffolds are not yet available.
+
+## Build together
+
+Tell Kyoshi who the course is for, what they already know, and what they should be able to do afterwards. Start with a small lesson and refine it together rather than generating a whole curriculum at once.
+
+Use the sidebar to explore course files and lessons. The editor lets you inspect the material the agent creates and make your own changes. The authoring conversation stays with the course as you switch lessons.
+
+Put shared teaching guidance in `DOJO.md` and lesson-specific guidance in `SENSEI.md` or `SENSEI.mdx`. Review the exercise, tests, and explanations yourself: generated material still needs your subject knowledge and judgment.
+
+## Check and trial
+
+Use the evaluation controls to inspect teaching behavior, and trial the lesson as a learner. An evaluation is evidence to review, not a guarantee of teaching quality. Refine the material when the agent skips prerequisites, gives away an answer, or fails to help a stuck learner.
+
+## Resume authoring
+
+From the course folder, reopen the existing workspace:
+
+```sh
+npx dojofoo ui --authoring
+```
+
+The files remain yours to edit outside the UI and commit to your repository. See [manual authoring](/authoring/manual) for trying a local installation and sharing the course.

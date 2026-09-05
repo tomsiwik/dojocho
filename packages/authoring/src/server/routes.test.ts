@@ -137,6 +137,16 @@ describe("authoring routes", () => {
       content: "# Course intent\n\nTeach through comparison.\n",
     });
 
+    const packageManifest = '{"name":"authored-course","private":true}';
+    const savePackage = await authoringRoutes.request("/files/package.json", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ content: packageManifest }),
+    });
+    expect(savePackage.status).toBe(200);
+    expect(readFileSync(resolve(context.root, "package.json"), "utf8"))
+      .toBe(`${packageManifest}\n`);
+
     const traversal = await authoringRoutes.request("/files/../secrets", {
       method: "PUT",
       headers: { "content-type": "application/json" },

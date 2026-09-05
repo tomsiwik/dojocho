@@ -48,8 +48,6 @@ export function IntegrationsLedger({
     integrations.find((integration) => integration.id === selectedId) ??
     integrations[0];
 
-  if (!selected) return null;
-
   return (
     <section
       className={cn("w-full bg-background px-4 py-20 sm:px-8", className)}
@@ -75,7 +73,7 @@ export function IntegrationsLedger({
           </p>
         </header>
 
-        <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
+        {selected ? <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
           <div className="flex min-h-[500px] flex-col justify-between border-border border-b [border-bottom-style:dashed] p-5 sm:p-8 lg:border-r lg:border-b-0 lg:[border-right-style:dashed]">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -218,7 +216,9 @@ export function IntegrationsLedger({
               );
             })}
           </div>
-        </div>
+        </div> : (
+          <p className="px-5 py-10 text-muted-foreground sm:px-8">No entries available yet.</p>
+        )}
       </motion.div>
     </section>
   );

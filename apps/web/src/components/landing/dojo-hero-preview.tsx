@@ -22,7 +22,7 @@ export function DojoHeroPreview() {
   return (
     <ComputerUse
       activeIndex={0}
-      className="h-full max-w-none translate-y-px rounded-t-sm rounded-b-none border border-border/60 bg-background shadow-2xl"
+      className="h-full max-w-none translate-y-px rounded-t-sm rounded-b-none border border-border/60 bg-background shadow-3xl"
       steps={[]}
       url="dojo.localhost/session/starter-typescript"
       viewportClassName="min-h-0 flex-1"

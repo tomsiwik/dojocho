@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from 'fumadocs-mdx/vite';
 import { nitro } from 'nitro/vite';
+import { wgslVitePlugin } from 'vgpu/client';
 
 const appRoot = dirname(fileURLToPath(import.meta.url));
 const docsRoot = resolve(appRoot, 'content/docs');
@@ -30,6 +31,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
+    wgslVitePlugin(),
     mdx(await import('./source.config.js')),
     tailwindcss(),
     tanstackStart({

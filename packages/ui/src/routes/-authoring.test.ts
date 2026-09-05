@@ -1,6 +1,11 @@
 import type { AuthoringWorkspace } from "@dojofoo/authoring/service";
 import { describe, expect, it } from "vitest";
-import { authoringFiles, authoringFileUrl, isSaveShortcut } from "./authoring";
+import {
+  authoringFiles,
+  authoringFileUrl,
+  isSaveShortcut,
+} from "./authoring";
+import { authoringSidebarSelection } from "@/components/authoring-sidebar";
 
 const workspace: AuthoringWorkspace = {
   root: "/tmp/course",
@@ -54,5 +59,20 @@ describe("authoring workspace files", () => {
     expect(isSaveShortcut({ ctrlKey: false, key: "s", metaKey: true })).toBe(true);
     expect(isSaveShortcut({ ctrlKey: true, key: "S", metaKey: false })).toBe(true);
     expect(isSaveShortcut({ ctrlKey: false, key: "s", metaKey: false })).toBe(false);
+  });
+
+  it("resolves sidebar resource selections without coupling files to row labels", () => {
+    expect(authoringSidebarSelection(
+      workspace,
+      "authoring:course:file:DOJO.md",
+    )).toEqual({ scope: "course", path: "DOJO.md" });
+    expect(authoringSidebarSelection(
+      workspace,
+      "authoring:lesson:001-first:file:src%2F001-first%2FSENSEI.md",
+    )).toEqual({
+      scope: "lesson",
+      lessonId: "001-first",
+      path: "src/001-first/SENSEI.md",
+    });
   });
 });

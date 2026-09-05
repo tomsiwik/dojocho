@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 
-const authoringFilePattern = /^(?:dojo\.yaml|DOJO\.md|src\/[a-zA-Z0-9][a-zA-Z0-9._-]*\/(?:KATA\.md|SENSEI\.(?:md|mdx)|(?:eval|[a-zA-Z0-9][a-zA-Z0-9._-]*\.eval)\.ya?ml))$/u;
+const privateAuthoringDirectories = new Set([".dojo", ".git", "node_modules"]);
 
 export function readAuthoringFile(root: string, requestedPath: string): {
   content: string;
@@ -43,7 +43,14 @@ export function acknowledgeAuthoringEdits(root: string, acknowledged: string[]):
 }
 
 function authoringFilePath(root: string, requestedPath: string): string {
-  if (!authoringFilePattern.test(requestedPath)) {
+  const segments = requestedPath.split("/");
+  if (
+    !requestedPath
+    || isAbsolute(requestedPath)
+    || requestedPath.includes("\\")
+    || segments.some((segment) => !segment || segment === "." || segment === "..")
+    || privateAuthoringDirectories.has(segments[0] ?? "")
+  ) {
     throw new Error(`Unsupported authoring file: ${requestedPath}`);
   }
   return resolve(root, requestedPath);

@@ -13,6 +13,7 @@ export type HeroCenteredDemoProps = {
   subtext?: ReactNode;
   actions?: ReactNode;
   demo?: ReactNode;
+  background?: ReactNode;
   demoClassName?: string;
   className?: string;
 };
@@ -23,6 +24,7 @@ export function HeroCenteredDemo({
   subtext,
   actions,
   demo,
+  background,
   demoClassName,
   className,
 }: HeroCenteredDemoProps) {
@@ -65,14 +67,18 @@ export function HeroCenteredDemo({
         transition={reduce ? undefined : { duration: 0.7, ease: EASE_OUT, delay: 0.22 }}
         className="relative mt-14 h-[34rem] overflow-hidden border-border border-t [border-top-style:dashed] sm:h-[40rem]"
       >
-        <Silk
-          className="absolute inset-0"
-          color="#ff0056"
-          noiseIntensity={1.4}
-          rotation={(3 * Math.PI) / 4}
-          scale={1.15}
-          speed={4}
-        />
+        {background ? (
+          <div className="absolute inset-0">{background}</div>
+        ) : (
+          <Silk
+            className="absolute inset-0"
+            color="#ff0056"
+            noiseIntensity={1.4}
+            rotation={(3 * Math.PI) / 4}
+            scale={1.15}
+            speed={4}
+          />
+        )}
         <div className={cn("relative h-full p-5 sm:p-8 lg:p-12", demoClassName)}>{demo}</div>
       </motion.div>
     </section>
