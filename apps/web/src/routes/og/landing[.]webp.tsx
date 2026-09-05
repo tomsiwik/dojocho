@@ -1,22 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router'
 import ImageResponse from 'takumi-js/response'
-import { Renderer } from '@takumi-rs/core'
 import khand from '@fontsource/khand/files/khand-latin-500-normal.woff2?inline'
 import hind from '@fontsource/hind/files/hind-latin-400-normal.woff2?inline'
 import { Grid } from '@/components/og/grid'
 import { getLogoWordmarkDataUrl } from '@/lib/og-assets'
 
-const renderer = new Renderer()
-const fontsReady = Promise.all([
-  renderer.registerFont({ name: 'Khand', weight: 500, data: Buffer.from(khand.split(',')[1], 'base64') }),
-  renderer.registerFont({ name: 'Hind', weight: 400, data: Buffer.from(hind.split(',')[1], 'base64') }),
-])
-
 export const Route = createFileRoute('/og/landing.webp')({
   server: {
     handlers: {
       GET: async () => {
-        await fontsReady
+        // Production serves the generated asset; native rendering is dev-only.
+        // Loading native bindings at module scope breaks unrelated SSR routes.
+        if (import.meta.env.PROD) {
+          return new Response(null, { status: 302, headers: { Location: '/og.webp' } })
+        }
+        const { Renderer } = await import('@takumi-rs/core')
+        const renderer = new Renderer()
+        await Promise.all([
+          renderer.registerFont({ name: 'Khand', weight: 500, data: Buffer.from(khand.split(',')[1], 'base64') }),
+          renderer.registerFont({ name: 'Hind', weight: 400, data: Buffer.from(hind.split(',')[1], 'base64') }),
+        ])
         const logoUrl = await getLogoWordmarkDataUrl()
         return new ImageResponse(
           <Grid
