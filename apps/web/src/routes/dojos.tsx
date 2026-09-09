@@ -68,18 +68,20 @@ function DojosPage() {
                   label="Teaching style"
                   onValueChange={setStyleFilter}
                   options={[
-                    { label: "Any style", value: "all" },
+                    { label: "Any", value: "all" },
                     { label: "Katas", value: "katas" },
                     { label: "Interactive", value: "interactive" },
+                    { label: "Explorative", value: "explorative" },
+                    { label: "Mentor", value: "mentor" },
                   ]}
                   value={styleFilter}
                 />
                 <MarketplaceFilterGroup
                   className="mt-7"
-                  label="Language"
+                  label="Framework / Lang"
                   onValueChange={setLanguageFilter}
                   options={[
-                    { label: "Any language", value: "all" },
+                    { label: "Any", value: "all" },
                     ...languages.map((language) => ({ label: language, value: language })),
                   ]}
                   value={languageFilter}

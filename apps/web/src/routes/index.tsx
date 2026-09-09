@@ -10,15 +10,19 @@ import { FftOcean } from "@/components/landing/fft-ocean";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNavigation } from "@/components/layout/site-navigation";
 import { loadMarketplaceCourses } from "@/lib/courses.functions";
+import { getLearningCount } from "@/lib/learning-count";
 
 export const Route = createFileRoute("/")({
-  loader: () => loadMarketplaceCourses(),
+  loader: async () => ({
+    courses: await loadMarketplaceCourses(),
+    learningCount: getLearningCount(),
+  }),
   staleTime: 60_000,
   component: DojosPage,
 });
 
 function DojosPage() {
-  const courses = Route.useLoaderData();
+  const { courses, learningCount } = Route.useLoaderData();
   const topCourses = useMemo(() => [...courses]
     .sort((left, right) => left.trendingRank - right.trendingRank || right.installs - left.installs)
     .slice(0, 10), [courses]);
@@ -42,7 +46,7 @@ function DojosPage() {
             background={<FftOcean />}
             demo={<DojoHeroPreview />}
             demoClassName="px-5 pt-6 pb-0 sm:px-8 sm:pt-8 sm:pb-0 lg:px-12 lg:pt-10 lg:pb-0"
-            promo="6 people currently learning"
+            promo={`${learningCount} people currently learning`}
             subtext={<>Your coding agent follows the course, watches your work,<br />and mentors you by adapting to how you learn best.<br />Install a dojo in any folder and start learning with your agent right away.</>}
             title={<>Agentic teaching<br />built around your learning</>}
           />
@@ -99,11 +103,11 @@ function DojosPage() {
             items={[
               {
                 title: "Practice with Katas",
-                description: "Work through small challenges with an agent that helps you understand the next step without giving away the answer.",
+                description: "Work through small challenges with an agent that helps you understand the next step without giving away the answer. Stuck? Ask your agent to work through it with you.",
               },
               {
-                title: "Save progress & resume later",
-                description: "Keep your work in Git. Commit what you’ve learned and pick up where you left off.",
+                title: "Get certified & save progress",
+                description: "Keep your work in Git. Commit what you’ve learned and pick up where you left off. Earn a certificate when you complete a course.",
               },
               {
                 title: "Author your own course",

@@ -2,14 +2,14 @@
 
 import {
   BadgeCheck,
-  Blocks,
   Braces,
-  FileCode2,
+  Compass,
+  Check,
+  ArrowRight,
   GalleryVerticalEnd,
-  LayoutPanelTop,
-  Palette,
-  PanelsTopLeft,
-  Rows3,
+  Brain,
+  MessagesSquare,
+  MousePointerClick,
 } from "lucide-react";
 import {
   AnimatePresence,
@@ -17,8 +17,10 @@ import {
   useInView,
   useReducedMotion,
 } from "motion/react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, type ReactNode, useEffect, useRef, useState } from "react";
 import { EASE_IN_OUT, EASE_OUT } from "../../../lib/ease";
+import effectLogo from "../../../assets/effect.svg";
+import pydanticAiLogo from "../../../assets/pydantic-ai.svg";
 import { cn } from "../../../lib/utils";
 
 export type BenefitsTriptychItem = {
@@ -53,11 +55,7 @@ const DEFAULT_ITEMS: BenefitsTriptychItem[] = [
   },
 ];
 
-const BACKGROUNDS = [
-  "radial-gradient(circle at 18% 18%, rgba(250, 240, 184, 0.92), transparent 32%), radial-gradient(circle at 82% 78%, rgba(86, 145, 128, 0.9), transparent 42%), linear-gradient(145deg, #b8d7c9 0%, #dbe5c2 42%, #6c9d8b 100%)",
-  "radial-gradient(circle at 48% 20%, rgba(203, 239, 255, 0.9), transparent 30%), radial-gradient(circle at 80% 78%, rgba(15, 115, 168, 0.84), transparent 44%), linear-gradient(155deg, #d8edf0 0%, #8fc8d8 45%, #1f82ae 100%)",
-  "radial-gradient(circle at 24% 22%, rgba(238, 226, 174, 0.9), transparent 31%), radial-gradient(circle at 76% 76%, rgba(41, 91, 98, 0.9), transparent 43%), linear-gradient(145deg, #aebfb0 0%, #d3c590 38%, #376b70 100%)",
-] as const;
+const LiquidLines = lazy(() => import("../../react-bits/liquid-lines"));
 
 export function FeaturesBenefitsTriptych({
   eyebrow = "Built for momentum",
@@ -200,9 +198,7 @@ export function FeaturesBenefitsTriptych({
                 aria-hidden="true"
                 className="relative isolate mt-auto h-[25rem] w-full shrink-0 overflow-hidden border-border border-t [border-top-style:dashed]"
               >
-                <TriptychField index={index} />
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/30 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-foreground/15 to-transparent" />
+                <TriptychField index={index} active={isInView} reduceMotion={reduceMotion} />
                 <div className="absolute inset-0 flex items-end justify-center px-5 sm:px-8 md:px-5 lg:px-8">
                   {item.visual ?? (
                     <DefaultVisual
@@ -221,23 +217,26 @@ export function FeaturesBenefitsTriptych({
   );
 }
 
-function TriptychField({ index }: { index: number }) {
+function TriptychField({
+  index,
+  active,
+  reduceMotion,
+}: {
+  index: number;
+  active: boolean;
+  reduceMotion: boolean;
+}) {
   return (
-    <div
-      className="absolute inset-0"
-      style={{ backgroundImage: BACKGROUNDS[index % BACKGROUNDS.length] }}
-    >
-      <div
-        className="absolute inset-0 opacity-40 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, transparent 0px, transparent 7px, rgba(255,255,255,0.58) 8px, transparent 10px, transparent 17px)",
-        }}
-      />
-      <div className="absolute inset-x-0 top-1/3 h-px bg-white/35" />
-      <div className="absolute -right-24 top-10 h-52 w-80 rotate-[-12deg] rounded-full border-[18px] border-white/25 blur-sm" />
-      <div className="absolute -left-24 bottom-6 h-48 w-72 rotate-[9deg] rounded-full border-[14px] border-black/15 blur-sm" />
-      <div className="absolute left-1/2 top-24 size-52 -translate-x-1/2 rounded-full bg-white/15 blur-3xl" />
+    <div className="pointer-events-none absolute inset-0 bg-[color-mix(in_srgb,var(--surface-1)_40%,black)]">
+      {active && (
+        <Suspense fallback={null}>
+          <LiquidLines
+            variant="pixel-lift"
+            timeOffset={index * 12}
+            speed={reduceMotion ? 0 : 0.4}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -255,7 +254,7 @@ function DefaultVisual({
     return <CompositionPanel phase={phase} reduceMotion={reduceMotion} />;
   }
 
-  if (index === 2) {
+  if (index === 0) {
     return <SourcePanel phase={phase} reduceMotion={reduceMotion} />;
   }
 
@@ -263,25 +262,24 @@ function DefaultVisual({
 }
 
 const LIBRARY_ITEMS = [
-  { label: "Heroes", icon: LayoutPanelTop },
-  { label: "Features", icon: GalleryVerticalEnd },
-  { label: "Pricing", icon: PanelsTopLeft },
-  { label: "CTAs", icon: Blocks },
+  { label: "Katas", icon: Braces },
+  { label: "Interactive", icon: MousePointerClick },
+  { label: "Mentor", icon: MessagesSquare },
+  { label: "Explorative", icon: Compass },
 ] as const;
 
 function LibraryPanel({ phase }: { phase: number }) {
   return (
     <div className="relative -mb-7 w-full max-w-sm overflow-hidden border border-dashed border-b-0 border-border/80 bg-background/70 p-5 backdrop-blur-2xl backdrop-saturate-150 ring-1 ring-foreground/10">
-      <GlassSheen />
       <div className="relative flex items-start justify-between gap-4">
         <div>
           <p className="font-medium text-sm text-foreground">
-            Component library
+            Course Types
           </p>
-          <p className="mt-1 text-muted-foreground text-xs">Premium blocks</p>
+          <p className="mt-1 text-muted-foreground text-xs">Authorable</p>
         </div>
         <span className="border border-dashed border-border/60 bg-background/55 px-2.5 py-1 font-mono text-muted-foreground text-xs tabular-nums backdrop-blur-md">
-          120+ variants
+          {LIBRARY_ITEMS.length} types
         </span>
       </div>
 
@@ -310,9 +308,9 @@ function LibraryPanel({ phase }: { phase: number }) {
 }
 
 const PAGE_SECTIONS = [
-  { label: "Hero", icon: LayoutPanelTop },
-  { label: "Feature story", icon: Rows3 },
-  { label: "Conversion", icon: PanelsTopLeft },
+  { label: "Effect-ts", logo: effectLogo },
+  { label: "Pydantic AI", logo: pydanticAiLogo },
+  { label: "Build an LLM", logo: null },
 ] as const;
 
 function CompositionPanel({
@@ -324,25 +322,24 @@ function CompositionPanel({
 }) {
   return (
     <div className="relative -mb-7 w-full max-w-sm overflow-hidden border border-dashed border-b-0 border-border/80 bg-background/70 p-5 backdrop-blur-2xl backdrop-saturate-150 ring-1 ring-foreground/10">
-      <GlassSheen />
       <div className="relative flex items-center justify-between gap-4 border-border/50 border-b [border-bottom-style:dashed] pb-4">
         <div className="flex items-center gap-2.5">
           <span className="grid size-8 place-items-center rounded-full bg-muted text-foreground">
             <GalleryVerticalEnd className="size-3.5" />
           </span>
           <div>
-            <p className="font-medium text-foreground text-sm">Landing page</p>
-            <p className="text-muted-foreground text-xs">3 sections</p>
+            <p className="font-medium text-foreground text-sm">Certificates</p>
+            <p className="text-muted-foreground text-xs">3 courses</p>
           </div>
         </div>
         <span className="flex items-center gap-1.5 font-mono text-muted-foreground text-xs uppercase tracking-wider">
           <span className="size-1.5 rounded-full bg-foreground" />
-          Composing
+          Online
         </span>
       </div>
 
       <div className="relative mt-4 space-y-2.5">
-        {PAGE_SECTIONS.map(({ label, icon: Icon }, itemIndex) => {
+        {PAGE_SECTIONS.map(({ label, logo }, itemIndex) => {
           const active = itemIndex === phase;
 
           return (
@@ -362,7 +359,11 @@ function CompositionPanel({
                   : "bg-background/35 backdrop-blur-md",
               )}
             >
-              <Icon className="size-4 text-foreground" />
+              {logo ? (
+                <img src={logo} alt="" className="size-4 shrink-0 object-contain" />
+              ) : (
+                <Brain aria-hidden="true" className="size-4 shrink-0 text-foreground" />
+              )}
               <span className="font-medium text-foreground text-xs">
                 {label}
               </span>
@@ -378,7 +379,7 @@ function CompositionPanel({
       </div>
 
       <div className="relative mt-4 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Responsive preview</span>
+        <span className="text-muted-foreground">100% complete</span>
         <span className="font-medium text-foreground tabular-nums">
           {phase + 1} / 3 ready
         </span>
@@ -387,11 +388,22 @@ function CompositionPanel({
   );
 }
 
-const SOURCE_FILES = ["hero.tsx", "features.tsx", "pricing.tsx"] as const;
-const CODE_LINES = [
-  ["section", "motion.section", "initial", "visible"],
-  ["theme", "bg-background", "radius", "rounded-none"],
-  ["layout", "grid-cols-3", "motion", "SPRING_PANEL"],
+const KATA_LESSONS = [
+  {
+    title: "Normalize",
+    code: "const handle =\n  normalize(name)",
+    passed: true,
+  },
+  {
+    title: "Validate",
+    code: "const result =\n  validate(input)",
+    passed: true,
+  },
+  {
+    title: "Summarize",
+    code: "const summary =\n  summarize(rows)",
+    passed: false,
+  },
 ] as const;
 
 function SourcePanel({
@@ -401,44 +413,43 @@ function SourcePanel({
   phase: number;
   reduceMotion: boolean;
 }) {
+  const lesson = KATA_LESSONS[phase];
   return (
     <div className="relative -mb-7 w-full max-w-sm overflow-hidden border border-dashed border-b-0 border-border/80 bg-background/70 backdrop-blur-2xl backdrop-saturate-150 ring-1 ring-foreground/10">
-      <GlassSheen />
       <div className="relative flex items-center justify-between border-border/50 border-b [border-bottom-style:dashed] px-4 py-3.5">
         <div className="flex items-center gap-2">
           <Braces className="size-4 text-foreground" />
           <span className="font-medium text-foreground text-xs">
-            Source workspace
+            Kata Course
           </span>
         </div>
         <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
           <BadgeCheck className="size-3.5" />
-          Installed
+          2 / 3 passed
         </span>
       </div>
 
       <div className="relative grid min-h-56 grid-cols-[7rem_1fr] gap-2 p-2">
         <div className="border border-dashed border-border/60 bg-background/25 py-2 backdrop-blur-md">
-          {SOURCE_FILES.map((file, fileIndex) => (
+          {KATA_LESSONS.map((item, lessonIndex) => (
             <div
-              key={file}
+              key={item.title}
               className={cn(
-                "mx-2 flex items-center gap-2 border border-dashed px-2 py-2 font-mono text-xs transition-colors duration-500",
-                fileIndex === phase
-                  ? "border-border/60 bg-background/70 text-foreground backdrop-blur-md"
-                  : "border-transparent text-muted-foreground",
+                "mx-1 flex items-center gap-1.5 border border-dashed px-1 py-2 text-xs transition-colors duration-500",
+                lessonIndex === phase
+                  ? "border-border/60 bg-background/70 backdrop-blur-md"
+                  : "border-transparent",
+                "text-foreground",
               )}
             >
-              <FileCode2 className="size-3" />
-              <span className="truncate">{file}</span>
+              <span className="font-mono text-[10px]">0{lessonIndex + 1}</span>
+              <span className="truncate">{item.title}</span>
+              {item.passed ? <Check className="ml-auto size-3 shrink-0 text-green-500" /> : <ArrowRight className="ml-auto size-3 shrink-0" />}
             </div>
           ))}
         </div>
 
-        <div className="min-w-0 overflow-hidden border border-dashed border-border/60 bg-background/25 px-4 py-4 font-mono text-xs leading-5 backdrop-blur-md">
-          <p className="text-muted-foreground">
-            <span className="text-foreground">export</span> const section =
-          </p>
+        <div className="min-w-0 overflow-hidden border border-dashed border-border/60 bg-background/25 px-4 py-4 text-xs leading-5 backdrop-blur-md">
           <div className="grid">
             <AnimatePresence initial={false}>
               <motion.div
@@ -463,39 +474,17 @@ function SourcePanel({
                 transition={{ duration: 0.3, ease: EASE_IN_OUT }}
                 className="col-start-1 row-start-1"
               >
-                <p className="text-muted-foreground">{"{"}</p>
-                {CODE_LINES[phase].map((line, lineIndex) => (
-                  <p key={line} className="truncate pl-3 text-muted-foreground">
-                    <span className="text-foreground">{lineIndex + 1}</span>
-                    {"  "}
-                    {line}
-                  </p>
-                ))}
-                <p className="text-muted-foreground">{"}"}</p>
+                <pre className="whitespace-pre-wrap font-mono text-xs leading-5 text-foreground"><code>{lesson.code}</code></pre>
+                <span className={cn("mt-3 inline-flex items-center gap-1", lesson.passed ? "text-green-500" : "text-muted-foreground")}>
+                  {lesson.passed ? <Check className="size-3" /> : <ArrowRight className="size-3" />}
+                  {lesson.passed ? "Tests passed" : "Ongoing"}
+                </span>
               </motion.div>
             </AnimatePresence>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 border border-dashed border-border/60 px-2 py-1 text-muted-foreground">
-              <Palette className="size-3" /> themed
-            </span>
-            <span className="inline-flex items-center gap-1 border border-dashed border-border/60 px-2 py-1 text-muted-foreground">
-              <BadgeCheck className="size-3" /> editable
-            </span>
-          </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function GlassSheen() {
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/50 to-transparent" />
-      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-foreground/25 to-transparent" />
-      <div className="absolute -right-12 -top-16 size-40 rounded-full bg-foreground/5 blur-3xl" />
     </div>
   );
 }

@@ -6,7 +6,7 @@ environment that can teach structured skills, explore a curriculum with the
 learner, and adapt its teaching without taking the work away from them.
 
 This document describes product direction, not a compatibility promise. Kata
-and interactive runtime contracts are implemented; exploritative and deshi
+and interactive runtime contracts are implemented; explorative and mentor
 examples remain design sketches until they are implemented and versioned.
 
 ## Principles
@@ -50,14 +50,14 @@ modes are:
 
 ```json
 {
-  "mode": "exploritative",
+  "mode": "explorative",
   "curriculum": "curriculum.json"
 }
 ```
 
 ```json
 {
-  "mode": "deshi",
+  "mode": "mentor",
   "project": "project.json"
 }
 ```
@@ -83,7 +83,7 @@ concept sequence, presentation, assessments, and intended destination. The
 Sensei facilitates the material, reacts to answers, and gives appropriate
 hints without replacing the authored curriculum.
 
-### `exploritative`
+### `explorative`
 
 An adaptive learning environment in which the learner and Sensei explore a
 subject together. Topics form areas or clusters in a curriculum graph rather
@@ -110,12 +110,10 @@ learner revises, applies, or challenges
           └──▶ choose the next useful area together
 ```
 
-### `deshi`
+### `mentor`
 
 A sustained apprenticeship in which the learner develops an authentic artifact
-or performance under the Sensei's guidance. `Deshi` (弟子) means a disciple,
-pupil, or apprentice learning directly from a teacher. In dojofoo it names the
-learning contract, not a rank: the learner attempts real work, receives
+or performance under the Sensei's guidance. The learner attempts real work, receives
 critique, revises it, and gradually becomes more independent.
 
 ```text
@@ -132,7 +130,7 @@ both the evolving artifact and the learner's decisions.
 
 Unlike `katas`, attempts contribute to one sustained body of work. Unlike
 `interactive`, there need not be a fixed presentation sequence. Unlike
-`exploritative`, curriculum coverage is supporting evidence rather than the
+`explorative`, curriculum coverage is supporting evidence rather than the
 main route through the course. Progress is demonstrated through artifact
 quality, reasoning, reflection, transfer, and increasing independence from the
 Sensei.
@@ -143,7 +141,7 @@ the course-level and lesson-level Sensei instructions.
 
 Future modes should be added only when they require meaningfully different
 learning behavior. A course may eventually embed an interactive lesson or kata
-inside an exploritative graph, or use either to support a `deshi` project, but
+inside an explorative graph, or use either to support a `mentor` project, but
 each top-level mode should initially keep authoring and runtime behavior
 obvious.
 
@@ -166,7 +164,7 @@ curriculum dynamically.
 
 ## Curriculum graphs
 
-Exploritative courses should describe knowledge as a graph of areas, clusters,
+Explorative courses should describe knowledge as a graph of areas, clusters,
 and relationships rather than a numbered list:
 
 ```text
@@ -211,9 +209,9 @@ the learner an inspectable map of what is coming and forces the system to make
 its reasoning and dependencies explicit instead of improvising an unexamined
 sequence.
 
-## Exploritative learning loop
+## Explorative learning loop
 
-An exploritative session should follow a deliberate calibration loop:
+An explorative session should follow a deliberate calibration loop:
 
 ```text
 goal
@@ -257,9 +255,9 @@ sources, and continuously test understanding. dojofoo extends that session
 pattern with authorable coverage graphs, durable learner evidence, course
 modes, and cross-session continuity.
 
-## Exploritative assessment and navigation
+## Explorative assessment and navigation
 
-An exploritative Sensei should be able to:
+An explorative Sensei should be able to:
 
 1. Sample the curriculum to establish what the learner already understands.
 2. Ask questions, inspect notes or code, and propose small exercises.
@@ -371,7 +369,7 @@ claim that a learner has one fixed style.
 
 ## Evolving learner notebook
 
-Exploritative courses should provide a shared notebook that follows the learner
+Explorative courses should provide a shared notebook that follows the learner
 through the curriculum and can itself influence where the exploration goes. It
 can contain:
 
@@ -441,11 +439,11 @@ If the project includes `mise.toml`, dojofoo prepares its declared tools and
 - Build one fixed-curriculum interactive dojo and validate authored navigation
   and assessment.
 - Define the smallest useful curriculum graph schema.
-- Build one exploritative dojo with diagnostic, remediation, extension, and
+- Build one explorative dojo with diagnostic, remediation, extension, and
   learner-led paths.
-- Define a `deshi` project contract for briefs, milestones, artifacts, critique,
+- Define a `mentor` project contract for briefs, milestones, artifacts, critique,
   reflection, and diminishing scaffolding.
-- Build one `deshi` dojo that evaluates an evolving artifact and the learner's
+- Build one `mentor` dojo that evaluates an evolving artifact and the learner's
   growing independence across multiple sessions.
 - Define an authorable objective, rubric, and hidden-probe schema.
 - Add an append-only evidence ledger with source and authorship references.
@@ -479,7 +477,7 @@ If the project includes `mise.toml`, dojofoo prepares its declared tools and
   learning-management system?
 - What common project schema can support code, writing, research, design, and
   performance without flattening their domain-specific review practices?
-- How should a `deshi` course measure independence without withholding help the
+- How should a `mentor` course measure independence without withholding help the
   learner genuinely needs?
 - Which assessment evidence can be normalized across mathematics, conceptual
   subjects, and programming?
