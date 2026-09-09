@@ -19,6 +19,12 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@beui": "https://beui.dev/r/{name}.json"
+    "@beui": "https://beui.dev/r/{name}.json",
+    "@reactbits-starter": {
+      "url": "https://pro.reactbits.dev/api/r/starter/{name}.json",
+      "headers": {
+        "Authorization": "Bearer ${REACTBITS_API_KEY}"
+      }
+    }
   }
 }
