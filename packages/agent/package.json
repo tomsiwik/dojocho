@@ -1,0 +1,80 @@
+{
+  "name": "@dojofoo/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Eve with an experimental provider for official AI SDK harness adapters.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "patches"
+  ],
+  "exports": {
+    "./eve.patch": "./patches/eve@0.53.0.patch",
+    "./sveltekit": {
+      "types": "./dist/sveltekit.d.ts",
+      "import": "./dist/sveltekit.js"
+    },
+    "./instructions": {
+      "types": "./dist/instructions.d.ts",
+      "import": "./dist/instructions.js"
+    },
+    "./tools/ask_question": {
+      "types": "./dist/tools-ask-question.d.ts",
+      "import": "./dist/tools-ask-question.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./harness": {
+      "types": "./dist/harness.d.ts",
+      "import": "./dist/harness.js"
+    },
+    "./sandbox": {
+      "types": "./dist/sandbox.d.ts",
+      "import": "./dist/sandbox.js"
+    },
+    "./sandbox/just-bash": {
+      "types": "./dist/sandbox-just-bash.d.ts",
+      "import": "./dist/sandbox-just-bash.js"
+    },
+    "./experimental": {
+      "types": "./dist/harness-model.d.ts",
+      "import": "./dist/harness-model.js"
+    },
+    "./experimental/local": {
+      "types": "./dist/local-runtime.d.ts",
+      "import": "./dist/local-runtime.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "types:check": "tsc --noEmit",
+    "test": "pnpm build && node --test --test-timeout=10000 experiments/model-provider/local-sandbox.test.mjs experiments/model-provider/local-process-host.test.mjs && node experiments/model-provider/run.mjs"
+  },
+  "dependencies": {
+    "@ai-sdk/harness": "1.0.108",
+    "@ai-sdk/provider": "4.0.14",
+    "ai": "7.0.98",
+    "comlink": "4.4.2",
+    "eve": "0.53.0"
+  },
+  "devDependencies": {
+    "@ai-sdk/harness-pi": "1.0.110",
+    "@ai-sdk/sandbox-just-bash": "1.0.108",
+    "@types/node": "^26.1.2",
+    "typescript": "6.0.3"
+  }
+}

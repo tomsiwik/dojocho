@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./KYOSHI.md": "./src/contracts/KYOSHI.md",
+    "./eve/instructions": "./src/eve/instructions.ts",
+    "./eve/ask": "./src/eve/ask.ts",
+    "./eve/messages": "./src/eve/messages.ts",
+    "./eve/stream": "./src/eve/stream.ts",
+    "./eve/server": "./src/eve/routes.ts",
+    "./sandbox": "./src/sandbox.ts",
     "./scaffold": "./src/scaffold.ts",
     "./files": "./src/server/files.ts",
     "./server": "./src/server/routes.ts",
@@ -15,7 +22,9 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
+    "@dojofoo/agent": "workspace:*",
     "@dojofoo/config": "workspace:*",
+    "@tanstack/ai": "0.47.1",
     "hono": "^4.13.1",
     "yaml": "^2.9.0"
   },

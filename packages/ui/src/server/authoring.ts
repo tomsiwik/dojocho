@@ -8,6 +8,7 @@ import { dojofooHarness } from "./harness/registry";
 import { streamAcpAsAgUi } from "./lesson/agui-stream";
 import { acpClient } from "./lesson/codex-client";
 import { resolveRequestWorkspace } from "./control/workspace";
+import { mountEveAuthoring } from "./authoring-eve";
 
 const agent: AuthoringRouteDependencies["agent"] = {
   currentHarness: dojofooHarness,
@@ -38,4 +39,10 @@ export const authoringRoutes = createAuthoringRoutes({
   stream: ({ execute, runId, threadId }) => toServerSentEventsResponse(
     streamAcpAsAgUi({ execute, runId, threadId })
   ),
+});
+
+mountEveAuthoring(authoringRoutes, {
+  host: process.env.EVE_BASE_URL,
+  root: () => resolveRequestWorkspace(new Request("http://localhost/")),
+  resolveWorkspace: resolveRequestWorkspace,
 });
